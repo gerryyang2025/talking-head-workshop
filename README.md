@@ -39,11 +39,17 @@
 
 ## 本地口播工作台
 
-在本机已配置的工程目录运行以下命令，然后打开 [帧间工作台](http://127.0.0.1:8765/)。
+在本机已配置的工程目录运行 `./optools.sh start`，然后打开 [帧间工作台](http://127.0.0.1:8765/)。服务在后台运行，可以关闭终端。
 
 ```bash
-.venv/bin/python -m studio
+./optools.sh status    # 显示 PID、网页就绪状态和访问地址
+./optools.sh logs      # 查看最近 80 行后台日志
+./optools.sh logs -f   # 持续查看日志，按 Ctrl+C 退出查看
+./optools.sh restart   # 重启
+./optools.sh stop      # 停止
 ```
+
+脚本也能识别用 `.venv/bin/python -m studio` 手动启动的工作台。手动启动时日志在原终端，脚本启动时日志追加到 `build/studio/service.log`。停止或重启会中断正在生成的视频，请等渲染完成后再操作。需要换端口时可运行 `KOUBO_STUDIO_PORT=8766 ./optools.sh restart`。
 
 在「准备母片」导入同一人物的照片或视频，在「切片打标」复核画面、调整入出点和标签。输入文案可用 macOS 普通话声音逐句合成，也可导入配音后手动校对句段。每句话都可选镜和版式，包括人物全屏、分屏、圆形小窗、动态图文、外部补充画面。生成时只对出镜句段运行本机 MuseTalk。导出记录提供播放器、MP4、时间轴和切片使用次数。
 
@@ -52,7 +58,7 @@
 ```bash
 .venv/bin/python -m pip install -r studio/requirements.txt
 .venv/bin/python -m studio.setup_models
-.venv/bin/python -m studio
+./optools.sh start
 ```
 
 工作台支持单人、单条最多 120 秒、25 fps 的短片，可导出 1280 × 720 或 720 × 1280。单张照片可驱动口型；不同景别、转身和手势来自导入的母片。语义标签需人工复核。系统配音按实际逐句音频定时，上传录音的台词先按字数初排，可在「选镜与口型」调整时间。新工作区可直接上传素材，当前草稿保存在浏览器中，渲染历史、推理缓存和素材库保存在 `build/studio/`。
