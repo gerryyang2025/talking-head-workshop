@@ -287,6 +287,12 @@ main {
   margin: auto;
   padding: 25px clamp(18px, 2.5vw, 42px) 38px;
 }
+.creator-credit {
+  margin-bottom: 8px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
 .headline {
   display: flex;
   align-items: center;

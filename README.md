@@ -1,16 +1,12 @@
-<p align="center">
-  <img src="assets/cover-21x9.png" alt="岚叔无限流数字人口播：一套数字人，无限出片" width="100%">
-</p>
-
-<h1 align="center">lanshu-infinite-stream-koubo</h1>
+<h1 align="center">帧间 · 本地口播工作台</h1>
 
 <p align="center">
-  <strong>岚叔 · 无限流数字人口播</strong><br>
+  <strong>Gerry · 无限流数字人口播</strong><br>
   母片先做好，切片反复用。换文案、换镜头、换风格，持续出片。
 </p>
 
 <p align="center">
-  <a href="https://github.com/cclank/lanshu-infinite-stream-koubo/actions/workflows/test.yml"><img src="https://github.com/cclank/lanshu-infinite-stream-koubo/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
+  <a href="https://github.com/gerryyang2025/lanshu-infinite-stream-koubo/actions/workflows/test.yml"><img src="https://github.com/gerryyang2025/lanshu-infinite-stream-koubo/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-22C55E?style=flat-square" alt="MIT License"></a>
   <a href="SKILL.md"><img src="https://img.shields.io/badge/Agent-Skill-111827?style=flat-square" alt="Agent Skill"></a>
   <a href="#快速开始"><img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+"></a>
@@ -23,9 +19,6 @@
   <a href="SKILL.md"><img src="https://img.shields.io/badge/Output-16%3A9_%7C_9%3A16-0284C7?style=flat-square" alt="16:9 and 9:16"></a>
   <a href="SKILL.md"><img src="https://img.shields.io/badge/Quality-QC_Workflow-475569?style=flat-square" alt="Quality-control workflow"></a>
 </p>
-<p align="center">
-  <a href="https://x.com/LufzzLiz"><img src="https://img.shields.io/badge/X-%E5%B2%9A%E5%8F%94_%40LufzzLiz-111111?style=for-the-badge&logo=x&logoColor=white" alt="在 X 上关注岚叔 @LufzzLiz"></a>
-</p>
 
 ## 无限流怎么玩
 
@@ -35,7 +28,7 @@
 
 ![同一套人物切片和音轨，组合成六种剪辑风格](assets/showcase.gif)
 
-同一套人物切片和音轨，组合成六种剪辑风格。上图为现有成片节选。
+上图为原项目的剪辑示例，同一套人物切片和音轨组合成六种风格。
 
 ## 本地口播工作台
 
@@ -97,7 +90,7 @@
 本地命令入口：
 
 ```bash
-git clone https://github.com/cclank/lanshu-infinite-stream-koubo.git
+git clone https://github.com/gerryyang2025/lanshu-infinite-stream-koubo.git
 cd lanshu-infinite-stream-koubo
 python3 -m venv .venv
 source .venv/bin/activate
@@ -150,4 +143,4 @@ bash tools/run_demo.sh
 
 ---
 
-由 **岚叔（Lanshu）** 整理与维护。[在 X 上关注 @LufzzLiz →](https://x.com/LufzzLiz)
+本项目的制作流程源自[岚叔的开源工程](https://github.com/cclank/lanshu-infinite-stream-koubo)。

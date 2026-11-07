@@ -10,7 +10,7 @@ description: >-
   Not for full-body acting, multi-person scenes, product handling or strong emotion — route those to full generation or live shooting.
 ---
 
-# 岚叔无限流 · Lanshu Infinite Stream Koubo
+# Gerry · 无限流数字人口播
 
 **一句话：** 主播的“表演”只买一次，之后每条视频只花“嘴”和“剪”的钱；剪辑由脚本驱动、像代码一样可改、每一步都有标签和 QC 兜底。
 
