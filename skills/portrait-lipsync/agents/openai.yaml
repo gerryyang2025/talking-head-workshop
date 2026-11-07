@@ -1,0 +1,4 @@
+interface:
+  display_name: "单人照片口播与口型校准"
+  short_description: "用指定照片和配音生成口播，逐帧排查唇线重影、停顿和音画偏移"
+  default_prompt: "使用 $portrait-lipsync，按我指定的照片和配音生成口播，并检查闭唇、句间停顿和音画同步。"

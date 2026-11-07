@@ -1,0 +1,449 @@
+import collections
+import json
+import math
+import re
+import subprocess
+import textwrap
+from contextlib import contextmanager
+
+import cv2 as cv
+import numpy as np
+from istream.lipsync import zh_mouth_risk
+from .media import (
+    STORE,
+    FPS,
+    LAYOUTS,
+    asset,
+    db,
+    ff,
+    inspect_file,
+    number,
+    shots_for,
+    signature,
+)
+
+STYLES = {
+    "studio": ["full"],
+    "editorial": ["full", "split", "card"],
+    "lecture": ["full", "pip", "split"],
+}
+SIZES = {"16:9": (1280, 720), "9:16": (720, 1280)}
+
+
+def plan(config):
+    vid = config.get("voiceId", "")
+    if not re.fullmatch("[a-f0-9]{64}", vid):
+        raise ValueError("请先生成或载入配音")
+    path = STORE / "voices" / vid / "voice.json"
+    if not path.is_file():
+        raise ValueError("配音已失效，请重新生成")
+    voice = json.loads(path.read_text())
+    inputs = config.get("lines")
+    if not isinstance(inputs, list) or len(inputs) != len(voice["lines"]):
+        raise ValueError("文案已变更，请先更新配音")
+    aspect, style = config.get("aspect"), config.get("style")
+    if aspect not in SIZES or style not in STYLES:
+        raise ValueError("无效的画幅或版式")
+    ids = config.get("hosts", [])
+    if not isinstance(ids, list) or len(ids) > 30:
+        raise ValueError("母片选择无效")
+    pool = []
+    for ident in dict.fromkeys(ids):
+        a = asset(ident)
+        if a["role"] != "host":
+            raise ValueError("所选素材不能用作人物母片")
+        pool.extend(s for s in shots_for(a) if s["enabled"])
+    insert = config.get("insert")
+    if insert and asset(insert)["role"] != "insert":
+        raise ValueError("请选择补充画面素材")
+    with db() as con:
+        uses = collections.Counter(
+            dict(
+                con.execute(
+                    "SELECT shot,sum(times) FROM usage GROUP BY shot"
+                ).fetchall()
+            )
+        )
+    rows = []
+    last = 0
+    for i, (line, original) in enumerate(zip(inputs, voice["lines"])):
+        if line.get("text") != original["text"]:
+            raise ValueError("文案与配音不匹配，请重新生成配音")
+        start = number(
+            line.get("start"), last, voice["duration"] + 0.001, "句子开始时间重叠或越界"
+        )
+        end = number(
+            line.get("end"), start, voice["duration"] + 0.001, "句子结束时间无效"
+        )
+        first, stop = round(start * FPS), round(end * FPS)
+        if stop <= first:
+            raise ValueError("每句话至少需要一帧")
+        last = end
+        layout = line.get("layout", "auto")
+        if layout == "auto":
+            pattern = STYLES[style]
+            layout = pattern[i % len(pattern)]
+        if layout not in LAYOUTS or (layout == "insert" and not insert):
+            raise ValueError("补充画面镜头需要先导入对应素材")
+        shot = None
+        if layout not in ("card", "insert"):
+            candidates = (
+                pool
+                if not line.get("shot")
+                else [s for s in pool if s["id"] == line["shot"]]
+            )
+            if not candidates:
+                raise ValueError("出镜句缺少可用切片，请到切片打标中启用镜头")
+            shot = min(
+                candidates,
+                key=lambda s: (
+                    uses[s["id"]],
+                    0 if s["end"] == 0 or s["end"] - s["start"] >= end - start else 1,
+                ),
+            )
+            uses[shot["id"]] += 1
+        rows.append(
+            dict(
+                first=first,
+                stop=stop,
+                text=line["text"],
+                start=start,
+                end=end,
+                layout=layout,
+                shot=shot,
+                risk=zh_mouth_risk(line["text"], end - start)["level"],
+            )
+        )
+    return dict(
+        title=str(config.get("title", "未命名口播"))[:80],
+        aspect=aspect,
+        style=style,
+        voice=vid,
+        frames=math.ceil(voice["duration"] * FPS - 1e-8),
+        duration=voice["duration"],
+        rows=rows,
+        insert=insert,
+        shift=int(number(config.get("shift", 0), -8, 8, "口型时移限于正负 8 帧")),
+        subtitles=config.get("subtitles", True) is True,
+    )
+
+
+class Frames:
+    def __init__(self, info, start=0, end=0):
+        self.fixed = info["kind"] == "photo"
+        self.image = None
+        self.cap = None
+        self.pos = 0
+        if self.fixed:
+            self.image = cv.imread(info["path"])
+            if self.image is None:
+                raise ValueError("图片解码失败")
+            h, w = self.image.shape[:2]
+            ratio = min(1, 1280 / max(h, w))
+            self.image = cv.resize(
+                self.image,
+                (max(2, round(w * ratio / 2) * 2), max(2, round(h * ratio / 2) * 2)),
+                interpolation=cv.INTER_AREA,
+            )
+        else:
+            self.cap = cv.VideoCapture(info["path"])
+            self.rate = self.cap.get(cv.CAP_PROP_FPS) or FPS
+            self.start = round(start * self.rate)
+            self.length = max(
+                1, round((end - start if end else info["duration"] - start) * self.rate)
+            )
+            self.last = -2
+            self.image = None
+
+    def next(self):
+        if self.fixed:
+            return self.image.copy()
+        target = self.start + int(self.pos * self.rate / FPS) % self.length
+        if target != self.last:
+            if target != self.last + 1:
+                self.cap.set(cv.CAP_PROP_POS_FRAMES, target)
+            ok, frame = self.cap.read()
+            if not ok:
+                raise ValueError("母片无法读取所选帧，请复核入出点")
+            h, w = frame.shape[:2]
+            ratio = min(1, 1280 / max(h, w))
+            self.image = cv.resize(
+                frame,
+                (max(2, round(w * ratio / 2) * 2), max(2, round(h * ratio / 2) * 2)),
+                interpolation=cv.INTER_AREA,
+            )
+            self.last = target
+        self.pos += 1
+        return self.image.copy()
+
+    def close(self):
+        if self.cap:
+            self.cap.release()
+
+
+@contextmanager
+def encoder(path, size, *extra):
+    w, h = size
+    args = [
+        "ffmpeg",
+        "-y",
+        "-v",
+        "error",
+        "-f",
+        "rawvideo",
+        "-pix_fmt",
+        "bgr24",
+        "-s",
+        f"{w}x{h}",
+        "-r",
+        str(FPS),
+        "-i",
+        "pipe:0",
+        *map(str, extra),
+        "-c:v",
+        "libx264",
+        "-threads",
+        "4",
+        "-preset",
+        "veryfast",
+        "-crf",
+        "17",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        str(path),
+    ]
+    with subprocess.Popen(args, stdin=subprocess.PIPE) as p:
+        try:
+            yield p.stdin
+        finally:
+            p.stdin.close()
+        if p.wait():
+            raise ValueError("FFmpeg 编码失败")
+
+
+def fit(frame, w, h, cover=True):
+    fh, fw = frame.shape[:2]
+    scale = (max if cover else min)(w / fw, h / fh)
+    ww, hh = max(1, round(fw * scale)), max(1, round(fh * scale))
+    image = cv.resize(
+        frame, (ww, hh), interpolation=cv.INTER_AREA if scale < 1 else cv.INTER_CUBIC
+    )
+    if cover:
+        x, y = (ww - w) // 2, max(0, round((hh - h) * 0.12))
+        return image[y : y + h, x : x + w]
+    return image
+
+
+def compose(frame, layout, size):
+    w, h = size
+    canvas = np.full((h, w, 3), (33, 33, 28), np.uint8)
+    if layout == "card" or frame is None:
+        return canvas
+    if layout in ("full", "insert"):
+        return fit(frame, w, h)
+    if layout == "split":
+        if w > h:
+            cw = round(w * 0.54)
+            canvas[:, :cw] = fit(frame, cw, h)
+        else:
+            ch = round(h * 0.54)
+            canvas[:ch] = fit(frame, w, ch)
+    else:
+        radius = round(min(w, h) * 0.20)
+        x, y = round(w * 0.70), round(h * 0.34)
+        square = fit(frame, 2 * radius, 2 * radius)
+        yy, xx = np.ogrid[-radius:radius, -radius:radius]
+        mask = xx * xx + yy * yy < radius * radius
+        canvas[y - radius : y + radius, x - radius : x + radius][mask] = square[mask]
+        cv.circle(canvas, (x, y), radius, (106, 233, 197), 2, cv.LINE_AA)
+    return canvas
+
+
+def ass_time(frame):
+    cs = round(frame * 100 / FPS)
+    return f"{cs // 360000}:{cs // 6000 % 60:02}:{cs // 100 % 60:02}.{cs % 100:02}"
+
+
+def safe_text(s, width):
+    s = s.replace("\\", "＼").replace("{", "｛").replace("}", "｝").replace("\n", " ")
+    return r"\N".join(textwrap.wrap(s, width=width, break_on_hyphens=False))
+
+
+def write_ass(tl, path):
+    w, h = SIZES[tl["aspect"]]
+    header = f"""[Script Info]
+ScriptType: v4.00+
+PlayResX: {w}
+PlayResY: {h}
+WrapStyle: 0
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Main,Heiti SC,38,&H00FFFFFF,&H00FFFFFF,&H00201C18,&H50201C18,0,0,0,0,100,100,0,0,1,2,1,2,26,26,40,1
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+"""
+    events = []
+    for row in tl["rows"]:
+
+        def add(text):
+            events.append(
+                f"Dialogue: 0,{ass_time(row['first'])},{ass_time(row['stop'])},Main,,0,0,0,,{text}"
+            )
+
+        layout = row["layout"]
+        if layout in ("split", "card", "pip"):
+            x, y = (
+                ((0.765, 0.48) if w > h else (0.50, 0.73))
+                if layout == "split"
+                else ((0.5, 0.64) if layout == "pip" else (0.5, 0.5))
+            )
+            add(
+                r"{\an5\fad(160,110)\pos("
+                + f"{int(w * x)},{int(h * y)}"
+                + r")\fs44}"
+                + safe_text(row["text"], 10 if layout == "split" else 14)
+            )
+        elif tl["subtitles"]:
+            add(safe_text(row["text"], 18 if w > h else 13))
+    path.write_text(header + "\n".join(events) + "\n")
+
+
+def render(tl, folder, notify):
+    size = SIZES[tl["aspect"]]
+    cache = STORE / "synced"
+    cache.mkdir(exist_ok=True)
+    voice = STORE / "voices" / tl["voice"] / "voice.wav"
+    parts = []
+    engine = None
+    inferred = cached = 0
+    total = tl["frames"]
+    rows = tl["rows"]
+    for index, row in enumerate(rows):
+        count = row["stop"] - row["first"]
+        shot = row["shot"]
+        if not shot:
+            parts.append(None)
+            continue
+        key = signature(
+            "musetalk-v1",
+            tl["voice"],
+            row["first"],
+            row["stop"],
+            tl["shift"],
+            shot["asset"],
+            shot["start"],
+            shot["end"],
+        )
+        path = cache / (key + ".mp4")
+        if path.exists():
+            parts.append(path)
+            cached += count
+            continue
+        if engine is None:
+            from .engine import MouthEngine
+
+            notify(8, "正在载入本机 MuseTalk 口型模型")
+            # Decode a band-limited inference copy of the final audio.
+            raw = ff("-i", voice, "-ar", "16000", "-ac", "1", "-f", "f32le", "pipe:1")
+            samples = np.frombuffer(raw, "<f4")
+            samples = np.pad(samples, (0, max(0, total * 640 - len(samples))))
+            engine = MouthEngine(samples)
+        src = Frames(asset(shot["asset"]), shot["start"], shot["end"])
+        tmp = folder / (key + ".mp4")
+        state = {}
+        try:
+            first_frame = src.next()
+            with encoder(tmp, first_frame.shape[1::-1]) as sink:
+                for j in range(0, count, 4):
+                    ix = list(range(j, min(count, j + 4)))
+                    frames = [first_frame.copy() if k == 0 else src.next() for k in ix]
+                    engine.sync(
+                        frames,
+                        [row["first"] + k for k in ix],
+                        tl["shift"],
+                        src.fixed,
+                        state,
+                    )
+                    for f in frames:
+                        sink.write(f.tobytes())
+                    notify(
+                        10 + int(62 * (row["first"] + ix[-1]) / total),
+                        f"口型推理 · 第 {index + 1} 句",
+                    )
+        finally:
+            src.close()
+        tmp.replace(path)
+        parts.append(path)
+        inferred += count
+    notify(76, "正在组合镜头、动态图文和字幕")
+    ass = folder / "captions.ass"
+    write_ass(tl, ass)
+    output = folder / "film.mp4"
+    from istream.render import _esc
+
+    with encoder(
+        output,
+        size,
+        "-i",
+        voice,
+        "-map",
+        "0:v:0",
+        "-map",
+        "1:a:0",
+        "-vf",
+        "subtitles='" + _esc(str(ass)) + "'",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "160k",
+    ) as sink:
+
+        def section(row, part, n, talking):
+            if n <= 0:
+                return
+            source = None
+            try:
+                if row["layout"] == "insert":
+                    source = Frames(asset(tl["insert"]))
+                elif row["shot"]:
+                    s = row["shot"]
+                    source = (
+                        Frames(dict(kind="video", path=str(part), duration=n / FPS))
+                        if talking
+                        else Frames(asset(s["asset"]), s["start"], s["end"])
+                    )
+                for _ in range(n):
+                    f = source.next() if source else None
+                    sink.write(compose(f, row["layout"], size).tobytes())
+            finally:
+                if source:
+                    source.close()
+
+        cursor = 0
+        for row, part in zip(rows, parts):
+            section(row, None, row["first"] - cursor, False)
+            section(row, part, row["stop"] - row["first"], True)
+            cursor = row["stop"]
+        section(rows[-1], None, total - cursor, False)
+    notify(95, "正在逐帧解码并核对音画时长")
+    ff("-xerror", "-i", output, "-map", "0:v:0", "-map", "0:a:0", "-f", "null", "-")
+    info = inspect_file(output)
+    v = next(s for s in info["streams"] if s["codec_type"] == "video")
+    a = next(s for s in info["streams"] if s["codec_type"] == "audio")
+    if (
+        int(v["nb_frames"]) != total
+        or abs(float(a["duration"]) - tl["duration"]) > 0.06
+    ):
+        raise ValueError("导出帧数或音轨时长与时间轴不一致")
+    return dict(
+        frames=total,
+        duration=tl["duration"],
+        size=list(size),
+        inferred=inferred,
+        cached=cached,
+        skipped=total - inferred - cached,
+        video=v["codec_name"],
+        audio=a["codec_name"],
+    )

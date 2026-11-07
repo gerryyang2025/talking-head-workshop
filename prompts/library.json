@@ -1,2572 +1,2572 @@
 {
- "version": "istream.prompts/1",
- "note": "Source of truth for plate prompts. Compose = lock + identity + setting + performance + timeline + avoid. K01–K03 recompose byte-for-byte to dh-plates-final-koubo.md.",
- "blocks": {
-  "identity": {
-   "en": "Identity: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses.",
-   "zh": "人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。"
-  },
-  "setting": {
-   "en": "Setting and light: plain warm light-grey seamless wall behind her, evenly lit, nothing else in frame. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light from behind, neutral 5600K white balance, constant exposure for the whole shot. Photorealistic, true-to-life skin texture, sharp focus on the face, natural color, fine film grain, no flicker. Quiet room tone, no music.",
-   "zh": "场景与光线：身后是纯净的浅暖灰无缝墙，照明均匀，画面中没有其他物体。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，身后细微的发丝轮廓光，5600K 中性白平衡，整个镜头曝光恒定。写实，真实皮肤纹理，脸部焦点清晰，自然色彩，细腻胶片颗粒，无闪烁。安静的室内环境声，无音乐。"
-  },
-  "lock.mcu.916.30": {
-   "en": "30-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium close-up from mid-chest up, subject centered, eyes on the upper third line, a little headroom.",
-   "zh": "30 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。胸部以上近景，人物居中，眼睛位于画面上三分之一线，头顶略留空间。"
-  },
-  "lock.ms.916.30": {
-   "en": "30-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium shot from the waist up, subject centered, eyes on the upper third line, with enough room on both sides that her hands stay fully inside the frame when she gestures.",
-   "zh": "30 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。腰部以上中景，人物居中，眼睛位于画面上三分之一线，两侧留足空间，做手势时双手完整留在画面内。"
-  },
-  "lock.mcu.916.60": {
-   "en": "60-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium close-up from mid-chest up, subject centered, eyes on the upper third line, a little headroom.",
-   "zh": "60 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。胸部以上近景，人物居中，眼睛位于画面上三分之一线，头顶略留空间。"
-  },
-  "lock.ms.916.60": {
-   "en": "60-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium shot from the waist up, subject centered, eyes on the upper third line, with enough room on both sides that her hands stay fully inside the frame when she gestures.",
-   "zh": "60 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。腰部以上中景，人物居中，眼睛位于画面上三分之一线，两侧留足空间，做手势时双手完整留在画面内。"
-  },
-  "lock.mcu.169L.30": {
-   "en": "30-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 16:9 horizontal. Medium close-up from mid-chest up, subject on the left third of the frame facing the lens, eyes on the upper third line, a little headroom; the right half of the frame is clean, softly lit wall left free for graphics.",
-   "zh": "30 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。16:9 横屏。胸部以上近景，人物位于画面左三分之一处、正对镜头，眼睛位于画面上三分之一线，头顶略留空间；画面右半边是干净、柔和受光的墙面，留给后期放图形。"
-  },
-  "continue": {
-   "en": "Continue seamlessly from the previous shot, starting from the home pose.",
-   "zh": "从上一段的回位姿势无缝接续。"
-  }
- },
- "first_frames": {
-  "IMG-A": {
-   "en": "Photorealistic 9:16 vertical portrait photo, medium close-up from mid-chest up, subject centered, eyes on the upper third line, a little headroom. Subject: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses. She faces the lens directly with a relaxed neutral expression, lips relaxed and gently closed, shoulders relaxed and level, hands out of view below the frame. Background: plain warm light-grey seamless wall. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light, neutral 5600K. True-to-life skin texture, sharp focus on the eyes, natural color. No text, no logo.",
-   "zh": "写实 9:16 竖幅人像照片，胸部以上近景，人物居中，眼睛位于画面上三分之一线，头顶略留空间。人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。她正对镜头，表情放松中性，嘴唇放松、轻轻闭合，双肩放松、水平，双手在画面以下不入画。背景：纯净的浅暖灰无缝墙。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，细微发丝轮廓光，5600K 中性色温。真实皮肤纹理，眼睛焦点清晰，自然色彩。无文字，无 logo。"
-  },
-  "IMG-B": {
-   "en": "Photorealistic 9:16 vertical portrait photo, medium shot from the waist up, subject centered, eyes on the upper third line, room on both sides of the body. Subject: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses. She faces the lens directly with a relaxed neutral expression, lips relaxed and gently closed, shoulders relaxed and level, hands loosely clasped in front of the waist, all fingers natural. Background: plain warm light-grey seamless wall. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light, neutral 5600K. True-to-life skin texture, sharp focus on the eyes, natural color. No text, no logo.",
-   "zh": "写实 9:16 竖幅人像照片，腰部以上中景，人物居中，眼睛位于画面上三分之一线，身体两侧留有空间。人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。她正对镜头，表情放松中性，嘴唇放松、轻轻闭合，双肩放松、水平，双手在腰前轻握，手指自然。背景：纯净的浅暖灰无缝墙。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，细微发丝轮廓光，5600K 中性色温。真实皮肤纹理，眼睛焦点清晰，自然色彩。无文字，无 logo。"
-  },
-  "IMG-A169": {
-   "en": "Photorealistic 16:9 horizontal photo, medium close-up from mid-chest up, subject on the left third facing the lens, eyes on the upper third line, a little headroom, the right half of the frame clean softly lit wall. Subject: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses. She faces the lens directly with a relaxed neutral expression, lips relaxed and gently closed, shoulders relaxed and level, hands out of view below the frame. Background: plain warm light-grey seamless wall. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light, neutral 5600K. True-to-life skin texture, sharp focus on the eyes, natural color. No text, no logo.",
-   "zh": "写实 16:9 横幅照片，胸部以上近景，人物位于左三分之一处、正对镜头，眼睛位于画面上三分之一线，头顶略留空间，画面右半边是干净、柔和受光的墙面。人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。她正对镜头，表情放松中性，嘴唇放松、轻轻闭合，双肩放松、水平，双手在画面以下不入画。背景：纯净的浅暖灰无缝墙。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，细微发丝轮廓光，5600K 中性色温。真实皮肤纹理，眼睛焦点清晰，自然色彩。无文字，无 logo。"
-  }
- },
- "plates": {
-  "K01": {
-   "title_zh": "近景口播主底板",
-   "title_en": "Main close-up talking plate",
-   "file": "liz01_o1_mcu_916_koubo-main_mid_30s_v01.mov",
-   "framing": "mcu",
-   "aspect": "9:16",
-   "duration": 30,
-   "lock": "lock.mcu.916.30",
-   "first_frame": "IMG-A",
-   "status": "frozen (dh-plates-final-koubo.md)",
-   "performance": {
-    "en": "Performance: In the first three sections she speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm; in the last section she stops speaking and listens with her lips gently closed. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay out of view below the frame the whole time. Home pose: head centered and facing the lens, shoulders relaxed and level, hands resting together low and out of view below the bottom edge of the frame, lips relaxed. Energy: low to medium — only small, subtle, natural movements, so that every section can be reused many times and even played in reverse without looking odd.",
-    "zh": "表演：前三段她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松；最后一段她停止说话，双唇轻轻闭合地倾听。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手全程在画面底边以下不入画。回位姿势：头部居中面向镜头，双肩放松、水平，双手放低并拢在画面底边以下（不入画），嘴唇放松。能量：低到中——只有细小、自然的动作，让每一段都能被反复使用，甚至倒放也不显得奇怪。"
-   },
-   "avoid": {
-    "en": "Avoid: hands touching or covering the face or mouth, head turned more than 20 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, hands entering the frame, laughing, opening the mouth in the last section.",
-    "zh": "避免：手触碰或遮挡脸和嘴，头部转动超过 20 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，手进入画面，大笑，最后一段张嘴。"
-   },
-   "negative": "hands touching face, hand covering mouth, profile view, head turned away, looking away, hair over face, jewelry, earrings, glasses, patterned clothing, logo, text, subtitles, watermark, camera movement, zoom, cut, jump cut, flicker, lighting change, extra people, extra fingers, deformed hands, distorted face, plastic skin, hands in frame, laughing, wide open mouth, talking in the last section",
-   "cut_points": [
-    0.5,
-    7.5,
-    14.5,
-    21.5,
-    29.0
-   ],
-   "timeline": [
-    {
-     "t": [
-      0.0,
-      1.0
-     ],
-     "en": "She holds the home pose, then begins speaking.",
-     "zh": "保持回位姿势，然后开始说话。",
-     "kind": "start"
+  "version": "istream.prompts/1",
+  "note": "Source of truth for plate prompts. Compose = lock + identity + setting + performance + timeline + avoid. K01–K03 recompose byte-for-byte to dh-plates-final-koubo.md.",
+  "blocks": {
+    "identity": {
+      "en": "Identity: exactly the same person as in the attached reference image (same face, hair, skin tone, age appearance). clothing matches the reference image unless an outfit lock is given. No jewelry, no glasses unless visible in the reference.",
+      "zh": "人物：与所附参考图中为同一人（脸型、发型、肤色、年龄感一致）。服装与参考图一致（除非另行指定服装锁定）。不戴首饰；除非参考图中可见，否则不戴眼镜。"
     },
-    {
-     "t": [
-      1.0,
-      7.0
-     ],
-     "en": "Calm, neutral narration with small, slow nods on stressed words; shoulders almost still.",
-     "zh": "平静、中性地叙述，在重音处缓慢地小幅点头，肩部几乎不动。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "narrate",
-       "explain"
-      ],
-      "energy": 2,
-      "emotion": "neutral",
-      "gestures": [
-       {
-        "g": "nod",
-        "t": 3.0
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "good"
-     }
+    "setting": {
+      "en": "Setting and light: plain warm light-grey seamless wall behind her, evenly lit, nothing else in frame. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light from behind, neutral 5600K white balance, constant exposure for the whole shot. Photorealistic, true-to-life skin texture, sharp focus on the face, natural color, fine film grain, no flicker. Quiet room tone, no music.",
+      "zh": "场景与光线：身后是纯净的浅暖灰无缝墙，照明均匀，画面中没有其他物体。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，身后细微的发丝轮廓光，5600K 中性白平衡，整个镜头曝光恒定。写实，真实皮肤纹理，脸部焦点清晰，自然色彩，细腻胶片颗粒，无闪烁。安静的室内环境声，无音乐。"
     },
-    {
-     "t": [
-      7.0,
-      8.0
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
+    "lock.mcu.916.30": {
+      "en": "30-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium close-up from mid-chest up, subject centered, eyes on the upper third line, a little headroom.",
+      "zh": "30 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。胸部以上近景，人物居中，眼睛位于画面上三分之一线，头顶略留空间。"
     },
-    {
-     "t": [
-      8.0,
-      14.0
-     ],
-     "en": "She keeps speaking with a very slight head tilt to the left and one small eyebrow raise on a key word, then straightens.",
-     "zh": "继续说话，头部极轻微地向左倾斜，在关键词处轻扬一次眉毛，然后回正。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "narrate",
-       "question"
-      ],
-      "energy": 3,
-      "emotion": "curious",
-      "gestures": [
-       {
-        "g": "head_tilt",
-        "t": 2.0
-       },
-       {
-        "g": "brow_raise",
-        "t": 3.5
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "good"
-     }
+    "lock.ms.916.30": {
+      "en": "30-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium shot from the waist up, subject centered, eyes on the upper third line, with enough room on both sides that her hands stay fully inside the frame when she gestures.",
+      "zh": "30 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。腰部以上中景，人物居中，眼睛位于画面上三分之一线，两侧留足空间，做手势时双手完整留在画面内。"
     },
-    {
-     "t": [
-      14.0,
-      15.0
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
+    "lock.mcu.916.60": {
+      "en": "60-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium close-up from mid-chest up, subject centered, eyes on the upper third line, a little headroom.",
+      "zh": "60 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。胸部以上近景，人物居中，眼睛位于画面上三分之一线，头顶略留空间。"
     },
-    {
-     "t": [
-      15.0,
-      21.0
-     ],
-     "en": "She looks into the lens with a bright, warm smile and a small welcoming nod, then keeps speaking warmly with a soft smile.",
-     "zh": "她看向镜头，露出明亮温暖的笑容，轻轻点头表示欢迎，然后带着浅笑温暖地继续说。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "open",
-       "hook",
-       "close"
-      ],
-      "energy": 3,
-      "emotion": "warm",
-      "gestures": [
-       {
-        "g": "smile_greet",
-        "t": 1.0
-       },
-       {
-        "g": "nod",
-        "t": 2.0
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "no"
-     }
+    "lock.ms.916.60": {
+      "en": "60-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium shot from the waist up, subject centered, eyes on the upper third line, with enough room on both sides that her hands stay fully inside the frame when she gestures.",
+      "zh": "60 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。腰部以上中景，人物居中，眼睛位于画面上三分之一线，两侧留足空间，做手势时双手完整留在画面内。"
     },
-    {
-     "t": [
-      21.0,
-      22.0
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
+    "lock.mcu.169L.30": {
+      "en": "30-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 16:9 horizontal. Medium close-up from mid-chest up, subject on the left third of the frame facing the lens, eyes on the upper third line, a little headroom; the right half of the frame is clean, softly lit wall left free for graphics.",
+      "zh": "30 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。16:9 横屏。胸部以上近景，人物位于画面左三分之一处、正对镜头，眼睛位于画面上三分之一线，头顶略留空间；画面右半边是干净、柔和受光的墙面，留给后期放图形。"
     },
-    {
-     "t": [
-      22.0,
-      28.0
-     ],
-     "en": "She stops speaking; with her lips gently closed she listens attentively, gives two small slow nods with a soft closed-lip smile, and blinks once naturally.",
-     "zh": "她停止说话，双唇轻闭，专注倾听，带着闭唇浅笑缓慢地小幅点头两次，自然眨眼一次。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "pause",
-       "listen",
-       "close",
-       "cta"
-      ],
-      "energy": 1,
-      "emotion": "warm",
-      "gestures": [
-       {
-        "g": "nod",
-        "t": 2.0
-       },
-       {
-        "g": "nod",
-        "t": 4.0
-       }
-      ],
-      "mouth": "smile_closed",
-      "hands": "out_of_frame",
-      "reversible": "good"
-     }
-    },
-    {
-     "t": [
-      28.0,
-      30.0
-     ],
-     "en": "She relaxes back into the home pose with a calm, faint closed-lip smile and holds it still until the end, the final frame matching the first frame as closely as possible.",
-     "zh": "放松回到回位姿势，只留一丝平静的闭唇笑意，静止保持到结束，最后一帧尽量与第一帧一致。",
-     "kind": "end"
+    "continue": {
+      "en": "Continue seamlessly from the previous shot, starting from the home pose.",
+      "zh": "从上一段的回位姿势无缝接续。"
     }
-   ]
   },
-  "K02": {
-   "title_zh": "中景口播底板（自然手势）",
-   "title_en": "Medium-shot talking plate with natural hands",
-   "file": "liz01_o1_ms_916_koubo-hands_mid_30s_v01.mov",
-   "framing": "ms",
-   "aspect": "9:16",
-   "duration": 30,
-   "lock": "lock.ms.916.30",
-   "first_frame": "IMG-B",
-   "status": "frozen (dh-plates-final-koubo.md)",
-   "performance": {
-    "en": "Performance: She speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay between waist and chest height and never touch or cover the face or mouth. Home pose: head centered and facing the lens, shoulders relaxed and level, hands loosely clasped in front of the waist, lips relaxed. Energy: medium — natural conversational nods and small eyebrow movements; hand movements are small and relaxed, and every gesture starts from and returns to the home pose.",
-    "zh": "表演：她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手始终在腰部到胸口之间活动，绝不触碰或遮挡脸部和嘴。回位姿势：头部居中面向镜头，双肩放松、水平，双手在腰前轻握，嘴唇放松。能量：中——自然的对话式点头和细微的眉毛动作；手部动作小而放松，每个手势都从回位姿势开始，并回到回位姿势。"
-   },
-   "avoid": {
-    "en": "Avoid: hands touching or covering the face or mouth, head turned more than 20 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, counting on fingers, pointing, waving, hands rising above chest height, deformed fingers.",
-    "zh": "避免：手触碰或遮挡脸和嘴，头部转动超过 20 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，数手指，指向，挥手，手抬到胸口以上，手指畸形。"
-   },
-   "negative": "hands touching face, hand covering mouth, profile view, head turned away, looking away, hair over face, jewelry, earrings, glasses, patterned clothing, logo, text, subtitles, watermark, camera movement, zoom, cut, jump cut, flicker, lighting change, extra people, extra fingers, deformed hands, distorted face, plastic skin, counting fingers, pointing, waving, fused fingers",
-   "cut_points": [
-    0.5,
-    7.5,
-    14.5,
-    21.5,
-    29.0
-   ],
-   "timeline": [
-    {
-     "t": [
-      0.0,
-      1.0
-     ],
-     "en": "She holds the home pose, then begins speaking.",
-     "zh": "保持回位姿势，然后开始说话。",
-     "kind": "start"
+  "first_frames": {
+    "IMG-A": {
+      "en": "Photorealistic 9:16 vertical portrait photo, medium close-up from mid-chest up, subject centered, eyes on the upper third line, a little headroom. Subject: exactly the same person as in the attached reference image (same face, hair, skin tone, age appearance). clothing matches the reference image unless an outfit lock is given. No jewelry, no glasses unless visible in the reference. She faces the lens directly with a relaxed neutral expression, lips relaxed and gently closed, shoulders relaxed and level, hands out of view below the frame. Background: plain warm light-grey seamless wall. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light, neutral 5600K. True-to-life skin texture, sharp focus on the eyes, natural color. No text, no logo.",
+      "zh": "写实 9:16 竖幅人像照片，胸部以上近景，人物居中，眼睛位于画面上三分之一线，头顶略留空间。人物：与所附参考图中为同一人（脸型、发型、肤色、年龄感一致）。服装与参考图一致（除非另行指定服装锁定）。不戴首饰；除非参考图中可见，否则不戴眼镜。她正对镜头，表情放松中性，嘴唇放松、轻轻闭合，双肩放松、水平，双手在画面以下不入画。背景：纯净的浅暖灰无缝墙。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，细微发丝轮廓光，5600K 中性色温。真实皮肤纹理，眼睛焦点清晰，自然色彩。无文字，无 logo。"
     },
-    {
-     "t": [
-      1.0,
-      7.0
-     ],
-     "en": "Natural conversational talking with her hands loosely clasped at the waist and small nods.",
-     "zh": "自然的对话式说话，双手在腰前轻握，小幅点头。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "narrate"
-      ],
-      "energy": 3,
-      "emotion": "neutral",
-      "gestures": [
-       {
-        "g": "nod",
-        "t": 3.0
-       }
-      ],
-      "mouth": "talking",
-      "hands": "low",
-      "reversible": "ok"
-     }
+    "IMG-B": {
+      "en": "Photorealistic 9:16 vertical portrait photo, medium shot from the waist up, subject centered, eyes on the upper third line, room on both sides of the body. Subject: exactly the same person as in the attached reference image (same face, hair, skin tone, age appearance). clothing matches the reference image unless an outfit lock is given. No jewelry, no glasses unless visible in the reference. She faces the lens directly with a relaxed neutral expression, lips relaxed and gently closed, shoulders relaxed and level, hands loosely clasped in front of the waist, all fingers natural. Background: plain warm light-grey seamless wall. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light, neutral 5600K. True-to-life skin texture, sharp focus on the eyes, natural color. No text, no logo.",
+      "zh": "写实 9:16 竖幅人像照片，腰部以上中景，人物居中，眼睛位于画面上三分之一线，身体两侧留有空间。人物：与所附参考图中为同一人（脸型、发型、肤色、年龄感一致）。服装与参考图一致（除非另行指定服装锁定）。不戴首饰；除非参考图中可见，否则不戴眼镜。她正对镜头，表情放松中性，嘴唇放松、轻轻闭合，双肩放松、水平，双手在腰前轻握，手指自然。背景：纯净的浅暖灰无缝墙。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，细微发丝轮廓光，5600K 中性色温。真实皮肤纹理，眼睛焦点清晰，自然色彩。无文字，无 logo。"
     },
-    {
-     "t": [
-      7.0,
-      8.0
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      8.0,
-      14.0
-     ],
-     "en": "Both palms open outward at chest height in a relaxed explaining gesture, then come back together at the waist.",
-     "zh": "双手在胸口高度向外摊开，做一个放松的讲解手势，然后回到腰前合拢。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "explain"
-      ],
-      "energy": 3,
-      "emotion": "neutral",
-      "gestures": [
-       {
-        "g": "palms_open",
-        "t": 2.5
-       }
-      ],
-      "mouth": "talking",
-      "hands": "chest",
-      "reversible": "no",
-      "keep_out": [
-       [
-        1.5,
-        4.5
-       ]
-      ]
-     }
-    },
-    {
-     "t": [
-      14.0,
-      15.0
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      15.0,
-      21.0
-     ],
-     "en": "She keeps talking with a light smile while her right hand makes one small, relaxed open-palm movement at waist height, then rejoins the other hand.",
-     "zh": "带着浅笑继续说话，右手在腰部高度做一个小幅、放松的摊掌动作，然后与另一只手重新合拢。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "narrate",
-       "story"
-      ],
-      "energy": 3,
-      "emotion": "warm",
-      "gestures": [
-       {
-        "g": "palm_single",
-        "t": 3.0
-       }
-      ],
-      "mouth": "talking",
-      "hands": "low",
-      "reversible": "no",
-      "keep_out": [
-       [
-        2.0,
-        4.5
-       ]
-      ]
-     }
-    },
-    {
-     "t": [
-      21.0,
-      22.0
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      22.0,
-      28.0
-     ],
-     "en": "To sum up, both hands come loosely together in front of her chest, then lower back to the waist as she gives one firm, confident nod.",
-     "zh": "总结时双手在胸前轻轻合拢，再放回腰前，同时自信有力地点头一次。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "summary",
-       "emphasis"
-      ],
-      "energy": 3,
-      "emotion": "confident",
-      "gestures": [
-       {
-        "g": "hands_together",
-        "t": 2.0
-       },
-       {
-        "g": "nod",
-        "t": 3.5
-       }
-      ],
-      "mouth": "talking",
-      "hands": "chest",
-      "reversible": "no"
-     }
-    },
-    {
-     "t": [
-      28.0,
-      30.0
-     ],
-     "en": "She finishes her sentence, returns to the home pose and holds it still until the end, the final frame matching the first frame as closely as possible.",
-     "zh": "说完这句话，回到回位姿势，静止保持到结束，最后一帧尽量与第一帧一致。",
-     "kind": "end"
+    "IMG-A169": {
+      "en": "Photorealistic 16:9 horizontal photo, medium close-up from mid-chest up, subject on the left third facing the lens, eyes on the upper third line, a little headroom, the right half of the frame clean softly lit wall. Subject: exactly the same person as in the attached reference image (same face, hair, skin tone, age appearance). clothing matches the reference image unless an outfit lock is given. No jewelry, no glasses unless visible in the reference. She faces the lens directly with a relaxed neutral expression, lips relaxed and gently closed, shoulders relaxed and level, hands out of view below the frame. Background: plain warm light-grey seamless wall. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light, neutral 5600K. True-to-life skin texture, sharp focus on the eyes, natural color. No text, no logo.",
+      "zh": "写实 16:9 横幅照片，胸部以上近景，人物位于左三分之一处、正对镜头，眼睛位于画面上三分之一线，头顶略留空间，画面右半边是干净、柔和受光的墙面。人物：与所附参考图中为同一人（脸型、发型、肤色、年龄感一致）。服装与参考图一致（除非另行指定服装锁定）。不戴首饰；除非参考图中可见，否则不戴眼镜。她正对镜头，表情放松中性，嘴唇放松、轻轻闭合，双肩放松、水平，双手在画面以下不入画。背景：纯净的浅暖灰无缝墙。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，细微发丝轮廓光，5600K 中性色温。真实皮肤纹理，眼睛焦点清晰，自然色彩。无文字，无 logo。"
     }
-   ]
   },
-  "K03": {
-   "title_zh": "近景口播变体（可选）",
-   "title_en": "Alternate close-up talking plate",
-   "file": "liz01_o1_mcu_916_koubo-alt_mid_30s_v01.mov",
-   "framing": "mcu",
-   "aspect": "9:16",
-   "duration": 30,
-   "lock": "lock.mcu.916.30",
-   "first_frame": "IMG-A",
-   "status": "frozen (dh-plates-final-koubo.md)",
-   "performance": {
-    "en": "Performance: She speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay out of view below the frame the whole time. Home pose: head centered and facing the lens, shoulders relaxed and level, hands resting together low and out of view below the bottom edge of the frame, lips relaxed. Energy: medium — natural conversational nods and small eyebrow movements.",
-    "zh": "表演：她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手全程在画面底边以下不入画。回位姿势：头部居中面向镜头，双肩放松、水平，双手放低并拢在画面底边以下（不入画），嘴唇放松。能量：中——自然的对话式点头和细微的眉毛动作。"
-   },
-   "avoid": {
-    "en": "Avoid: hands touching or covering the face or mouth, head turned more than 20 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, hands entering the frame, frowning, laughing.",
-    "zh": "避免：手触碰或遮挡脸和嘴，头部转动超过 20 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，手进入画面，皱眉，大笑。"
-   },
-   "negative": "hands touching face, hand covering mouth, profile view, head turned away, looking away, hair over face, jewelry, earrings, glasses, patterned clothing, logo, text, subtitles, watermark, camera movement, zoom, cut, jump cut, flicker, lighting change, extra people, extra fingers, deformed hands, distorted face, plastic skin, hands in frame, frowning, angry, laughing, wide open mouth",
-   "cut_points": [
-    0.5,
-    7.5,
-    14.5,
-    21.5,
-    29.0
-   ],
-   "timeline": [
-    {
-     "t": [
-      0.0,
-      1.0
-     ],
-     "en": "She holds the home pose, then begins speaking.",
-     "zh": "保持回位姿势，然后开始说话。",
-     "kind": "start"
-    },
-    {
-     "t": [
-      1.0,
-      7.0
-     ],
-     "en": "Conversational delivery with her head moving slightly side to side in rhythm with the words.",
-     "zh": "对话式讲述，头部随着语言节奏轻微地左右摆动。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "narrate",
-       "story"
-      ],
-      "energy": 3,
-      "emotion": "warm",
-      "gestures": [
-       {
-        "g": "sway",
-        "t": 3.0
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "good"
-     }
-    },
-    {
-     "t": [
-      7.0,
-      8.0
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      8.0,
-      14.0
-     ],
-     "en": "Three quick small nods in a row as if agreeing with her own point.",
-     "zh": "连续三个快速的小点头，像在肯定自己的观点。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "summary",
-       "emphasis"
-      ],
-      "energy": 3,
-      "emotion": "confident",
-      "gestures": [
-       {
-        "g": "nod_multi",
-        "t": 2.5
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "ok"
-     }
-    },
-    {
-     "t": [
-      14.0,
-      15.0
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      15.0,
-      21.0
-     ],
-     "en": "Calm and focused for a serious point: steady gaze, eyebrows drawn very slightly together in concentration (not frowning), and one slow nod.",
-     "zh": "讲严肃观点时平静专注：目光坚定，眉头因专注而极轻微地收拢（不是皱眉），缓慢点头一次。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "data",
-       "emphasis",
-       "explain"
-      ],
-      "energy": 2,
-      "emotion": "serious",
-      "gestures": [
-       {
-        "g": "nod",
-        "t": 4.0
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "no"
-     }
-    },
-    {
-     "t": [
-      21.0,
-      22.0
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      22.0,
-      28.0
-     ],
-     "en": "A brief warm smile while speaking, then a slight lean back, relaxed and confident, as she finishes the thought.",
-     "zh": "说话时短暂地温暖一笑，然后身体略微后靠，放松而自信地把话说完。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "close",
-       "cta",
-       "summary"
-      ],
-      "energy": 3,
-      "emotion": "warm",
-      "gestures": [
-       {
-        "g": "lean_back",
-        "t": 3.0
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "no"
-     }
-    },
-    {
-     "t": [
-      28.0,
-      30.0
-     ],
-     "en": "She finishes her sentence, returns to the home pose and holds it still until the end, the final frame matching the first frame as closely as possible.",
-     "zh": "说完这句话，回到回位姿势，静止保持到结束，最后一帧尽量与第一帧一致。",
-     "kind": "end"
-    }
-   ]
-  },
-  "K01H": {
-   "title_zh": "近景口播主底板 · 横屏左三分之一",
-   "title_en": "Main close-up talking plate · 16:9 left third",
-   "file": "liz01_o1_mcu_169_koubo-main-left_mid_30s_v01.mov",
-   "framing": "mcu",
-   "aspect": "16:9",
-   "duration": 30,
-   "lock": "lock.mcu.169L.30",
-   "first_frame": "IMG-A169",
-   "status": "new (lock-line swap of K01)",
-   "performance": {
-    "en": "Performance: In the first three sections she speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm; in the last section she stops speaking and listens with her lips gently closed. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay out of view below the frame the whole time. Home pose: head centered and facing the lens, shoulders relaxed and level, hands resting together low and out of view below the bottom edge of the frame, lips relaxed. Energy: low to medium — only small, subtle, natural movements, so that every section can be reused many times and even played in reverse without looking odd.",
-    "zh": "表演：前三段她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松；最后一段她停止说话，双唇轻轻闭合地倾听。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手全程在画面底边以下不入画。回位姿势：头部居中面向镜头，双肩放松、水平，双手放低并拢在画面底边以下（不入画），嘴唇放松。能量：低到中——只有细小、自然的动作，让每一段都能被反复使用，甚至倒放也不显得奇怪。"
-   },
-   "avoid": {
-    "en": "Avoid: hands touching or covering the face or mouth, head turned more than 20 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, hands entering the frame, laughing, opening the mouth in the last section.",
-    "zh": "避免：手触碰或遮挡脸和嘴，头部转动超过 20 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，手进入画面，大笑，最后一段张嘴。"
-   },
-   "negative": "hands touching face, hand covering mouth, profile view, head turned away, looking away, hair over face, jewelry, earrings, glasses, patterned clothing, logo, text, subtitles, watermark, camera movement, zoom, cut, jump cut, flicker, lighting change, extra people, extra fingers, deformed hands, distorted face, plastic skin, hands in frame, laughing, wide open mouth, talking in the last section",
-   "cut_points": [
-    0.5,
-    7.5,
-    14.5,
-    21.5,
-    29.0
-   ],
-   "timeline": [
-    {
-     "t": [
-      0.0,
-      1.0
-     ],
-     "en": "She holds the home pose, then begins speaking.",
-     "zh": "保持回位姿势，然后开始说话。",
-     "kind": "start"
-    },
-    {
-     "t": [
-      1.0,
-      7.0
-     ],
-     "en": "Calm, neutral narration with small, slow nods on stressed words; shoulders almost still.",
-     "zh": "平静、中性地叙述，在重音处缓慢地小幅点头，肩部几乎不动。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "narrate",
-       "explain"
-      ],
-      "energy": 2,
-      "emotion": "neutral",
-      "gestures": [
-       {
-        "g": "nod",
-        "t": 3.0
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "good"
-     }
-    },
-    {
-     "t": [
-      7.0,
-      8.0
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      8.0,
-      14.0
-     ],
-     "en": "She keeps speaking with a very slight head tilt to the left and one small eyebrow raise on a key word, then straightens.",
-     "zh": "继续说话，头部极轻微地向左倾斜，在关键词处轻扬一次眉毛，然后回正。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "narrate",
-       "question"
-      ],
-      "energy": 3,
-      "emotion": "curious",
-      "gestures": [
-       {
-        "g": "head_tilt",
-        "t": 2.0
-       },
-       {
-        "g": "brow_raise",
-        "t": 3.5
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "good"
-     }
-    },
-    {
-     "t": [
-      14.0,
-      15.0
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      15.0,
-      21.0
-     ],
-     "en": "She looks into the lens with a bright, warm smile and a small welcoming nod, then keeps speaking warmly with a soft smile.",
-     "zh": "她看向镜头，露出明亮温暖的笑容，轻轻点头表示欢迎，然后带着浅笑温暖地继续说。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "open",
-       "hook",
-       "close"
-      ],
-      "energy": 3,
-      "emotion": "warm",
-      "gestures": [
-       {
-        "g": "smile_greet",
-        "t": 1.0
-       },
-       {
-        "g": "nod",
-        "t": 2.0
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "no"
-     }
-    },
-    {
-     "t": [
-      21.0,
-      22.0
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      22.0,
-      28.0
-     ],
-     "en": "She stops speaking; with her lips gently closed she listens attentively, gives two small slow nods with a soft closed-lip smile, and blinks once naturally.",
-     "zh": "她停止说话，双唇轻闭，专注倾听，带着闭唇浅笑缓慢地小幅点头两次，自然眨眼一次。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "pause",
-       "listen",
-       "close",
-       "cta"
-      ],
-      "energy": 1,
-      "emotion": "warm",
-      "gestures": [
-       {
-        "g": "nod",
-        "t": 2.0
-       },
-       {
-        "g": "nod",
-        "t": 4.0
-       }
-      ],
-      "mouth": "smile_closed",
-      "hands": "out_of_frame",
-      "reversible": "good"
-     }
-    },
-    {
-     "t": [
-      28.0,
-      30.0
-     ],
-     "en": "She relaxes back into the home pose with a calm, faint closed-lip smile and holds it still until the end, the final frame matching the first frame as closely as possible.",
-     "zh": "放松回到回位姿势，只留一丝平静的闭唇笑意，静止保持到结束，最后一帧尽量与第一帧一致。",
-     "kind": "end"
-    }
-   ],
-   "subject_pos": "left"
-  },
-  "L01": {
-   "title_zh": "近景 60 秒长底板（8 段不重样）",
-   "title_en": "60-second close-up plate, eight distinct sections",
-   "file": "liz01_o1_mcu_916_koubo-long_mid_60s_v01.mov",
-   "framing": "mcu",
-   "aspect": "9:16",
-   "duration": 60,
-   "lock": "lock.mcu.916.60",
-   "first_frame": "IMG-A",
-   "status": "new",
-   "performance": {
-    "en": "Performance: She speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm; whenever the timeline says she listens, she stops speaking and keeps her lips gently closed. Her eyes stay on the lens except for one brief thoughtful glance, she blinks naturally, head turns stay within 20 degrees, and her hands stay out of view below the frame the whole time. Home pose: head centered and facing the lens, shoulders relaxed and level, hands resting together low and out of view below the bottom edge of the frame, lips relaxed. Energy: low to medium — small, natural movements only, and every section looks different from the others so the sections can be reused in any order.",
-    "zh": "表演：她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松；时间线写到“倾听”时，她停止说话，双唇轻轻闭合。除了一次短暂的思考式目光，视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手全程在画面底边以下不入画。回位姿势：头部居中面向镜头，双肩放松、水平，双手放低并拢在画面底边以下（不入画），嘴唇放松。能量：低到中——只有细小、自然的动作，而且每一段都和其他段不一样，方便以任意顺序复用。"
-   },
-   "avoid": {
-    "en": "Avoid: hands touching or covering the face or mouth, head turned more than 20 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, hands entering the frame, frowning, laughing.",
-    "zh": "避免：手触碰或遮挡脸和嘴，头部转动超过 20 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，手进入画面，皱眉，大笑。"
-   },
-   "negative": "hands touching face, hand covering mouth, profile view, head turned away, looking away, hair over face, jewelry, earrings, glasses, patterned clothing, logo, text, subtitles, watermark, camera movement, zoom, cut, jump cut, flicker, lighting change, extra people, extra fingers, deformed hands, distorted face, plastic skin, hands in frame, frowning, angry, laughing, wide open mouth",
-   "cut_points": [
-    0.5,
-    7.5,
-    14.5,
-    21.5,
-    29.5,
-    37.5,
-    44.5,
-    51.5,
-    59.0
-   ],
-   "chain_split": 29.5,
-   "timeline": [
-    {
-     "t": [
-      0,
-      1
-     ],
-     "en": "She holds the home pose, then begins speaking.",
-     "zh": "保持回位姿势，然后开始说话。",
-     "kind": "start"
-    },
-    {
-     "t": [
-      1,
-      7
-     ],
-     "en": "Calm, measured narration with one slow nod at the end of each phrase; shoulders still.",
-     "zh": "平稳、从容地叙述，每句话末尾缓慢点头一次，肩部保持不动。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "narrate",
-       "explain"
-      ],
-      "energy": 2,
-      "emotion": "neutral",
-      "gestures": [
-       {
-        "g": "nod",
-        "t": 4.5
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "good"
-     }
-    },
-    {
-     "t": [
-      7,
-      8
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      8,
-      14
-     ],
-     "en": "She leans in very slightly toward the lens for an important point, eyebrows lifting a little, then settles back.",
-     "zh": "讲到重点时身体极轻微地向镜头前倾，眉毛微微上扬，然后坐回。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "emphasis",
-       "explain"
-      ],
-      "energy": 3,
-      "emotion": "confident",
-      "gestures": [
-       {
-        "g": "lean_in",
-        "t": 2.5
-       },
-       {
-        "g": "brow_raise",
-        "t": 3.0
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "no"
-     }
-    },
-    {
-     "t": [
-      14,
-      15
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      15,
-      21
-     ],
-     "en": "A brief thoughtful glance up and to the left as if recalling something, then her eyes come back to the lens and she continues with a small knowing nod.",
-     "zh": "像在回想什么，目光短暂地向左上方看一下，随即回到镜头，带着心中有数的小点头继续说。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "question",
-       "story"
-      ],
-      "energy": 3,
-      "emotion": "curious",
-      "gestures": [
-       {
-        "g": "nod",
-        "t": 3.5
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "no",
-      "keep_out": [
-       [
+  "plates": {
+    "K01": {
+      "title_zh": "近景口播主底板",
+      "title_en": "Main close-up talking plate",
+      "file": "liz01_o1_mcu_916_koubo-main_mid_30s_v01.mov",
+      "framing": "mcu",
+      "aspect": "9:16",
+      "duration": 30,
+      "lock": "lock.mcu.916.30",
+      "first_frame": "IMG-A",
+      "status": "frozen (dh-plates-final-koubo.md)",
+      "performance": {
+        "en": "Performance: In the first three sections she speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm; in the last section she stops speaking and listens with her lips gently closed. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay out of view below the frame the whole time. Home pose: head centered and facing the lens, shoulders relaxed and level, hands resting together low and out of view below the bottom edge of the frame, lips relaxed. Energy: low to medium — only small, subtle, natural movements, so that every section can be reused many times and even played in reverse without looking odd.",
+        "zh": "表演：前三段她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松；最后一段她停止说话，双唇轻轻闭合地倾听。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手全程在画面底边以下不入画。回位姿势：头部居中面向镜头，双肩放松、水平，双手放低并拢在画面底边以下（不入画），嘴唇放松。能量：低到中——只有细小、自然的动作，让每一段都能被反复使用，甚至倒放也不显得奇怪。"
+      },
+      "avoid": {
+        "en": "Avoid: hands touching or covering the face or mouth, head turned more than 20 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, hands entering the frame, laughing, opening the mouth in the last section.",
+        "zh": "避免：手触碰或遮挡脸和嘴，头部转动超过 20 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，手进入画面，大笑，最后一段张嘴。"
+      },
+      "negative": "hands touching face, hand covering mouth, profile view, head turned away, looking away, hair over face, jewelry, earrings, glasses, patterned clothing, logo, text, subtitles, watermark, camera movement, zoom, cut, jump cut, flicker, lighting change, extra people, extra fingers, deformed hands, distorted face, plastic skin, hands in frame, laughing, wide open mouth, talking in the last section",
+      "cut_points": [
         0.5,
-        2.5
-       ]
+        7.5,
+        14.5,
+        21.5,
+        29.0
+      ],
+      "timeline": [
+        {
+          "t": [
+            0.0,
+            1.0
+          ],
+          "en": "She holds the home pose, then begins speaking.",
+          "zh": "保持回位姿势，然后开始说话。",
+          "kind": "start"
+        },
+        {
+          "t": [
+            1.0,
+            7.0
+          ],
+          "en": "Calm, neutral narration with small, slow nods on stressed words; shoulders almost still.",
+          "zh": "平静、中性地叙述，在重音处缓慢地小幅点头，肩部几乎不动。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "narrate",
+              "explain"
+            ],
+            "energy": 2,
+            "emotion": "neutral",
+            "gestures": [
+              {
+                "g": "nod",
+                "t": 3.0
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "good"
+          }
+        },
+        {
+          "t": [
+            7.0,
+            8.0
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            8.0,
+            14.0
+          ],
+          "en": "She keeps speaking with a very slight head tilt to the left and one small eyebrow raise on a key word, then straightens.",
+          "zh": "继续说话，头部极轻微地向左倾斜，在关键词处轻扬一次眉毛，然后回正。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "narrate",
+              "question"
+            ],
+            "energy": 3,
+            "emotion": "curious",
+            "gestures": [
+              {
+                "g": "head_tilt",
+                "t": 2.0
+              },
+              {
+                "g": "brow_raise",
+                "t": 3.5
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "good"
+          }
+        },
+        {
+          "t": [
+            14.0,
+            15.0
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            15.0,
+            21.0
+          ],
+          "en": "She looks into the lens with a bright, warm smile and a small welcoming nod, then keeps speaking warmly with a soft smile.",
+          "zh": "她看向镜头，露出明亮温暖的笑容，轻轻点头表示欢迎，然后带着浅笑温暖地继续说。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "open",
+              "hook",
+              "close"
+            ],
+            "energy": 3,
+            "emotion": "warm",
+            "gestures": [
+              {
+                "g": "smile_greet",
+                "t": 1.0
+              },
+              {
+                "g": "nod",
+                "t": 2.0
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "no"
+          }
+        },
+        {
+          "t": [
+            21.0,
+            22.0
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            22.0,
+            28.0
+          ],
+          "en": "She stops speaking; with her lips gently closed she listens attentively, gives two small slow nods with a soft closed-lip smile, and blinks once naturally.",
+          "zh": "她停止说话，双唇轻闭，专注倾听，带着闭唇浅笑缓慢地小幅点头两次，自然眨眼一次。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "pause",
+              "listen",
+              "close",
+              "cta"
+            ],
+            "energy": 1,
+            "emotion": "warm",
+            "gestures": [
+              {
+                "g": "nod",
+                "t": 2.0
+              },
+              {
+                "g": "nod",
+                "t": 4.0
+              }
+            ],
+            "mouth": "smile_closed",
+            "hands": "out_of_frame",
+            "reversible": "good"
+          }
+        },
+        {
+          "t": [
+            28.0,
+            30.0
+          ],
+          "en": "She relaxes back into the home pose with a calm, faint closed-lip smile and holds it still until the end, the final frame matching the first frame as closely as possible.",
+          "zh": "放松回到回位姿势，只留一丝平静的闭唇笑意，静止保持到结束，最后一帧尽量与第一帧一致。",
+          "kind": "end"
+        }
       ]
-     }
     },
-    {
-     "t": [
-      21,
-      22
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      22,
-      28
-     ],
-     "en": "A light smile with a slight head tilt to the right, friendly and relaxed.",
-     "zh": "带着浅笑，头部轻微向右侧倾，亲切放松。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "narrate",
-       "open"
+    "K02": {
+      "title_zh": "中景口播底板（自然手势）",
+      "title_en": "Medium-shot talking plate with natural hands",
+      "file": "liz01_o1_ms_916_koubo-hands_mid_30s_v01.mov",
+      "framing": "ms",
+      "aspect": "9:16",
+      "duration": 30,
+      "lock": "lock.ms.916.30",
+      "first_frame": "IMG-B",
+      "status": "frozen (dh-plates-final-koubo.md)",
+      "performance": {
+        "en": "Performance: She speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay between waist and chest height and never touch or cover the face or mouth. Home pose: head centered and facing the lens, shoulders relaxed and level, hands loosely clasped in front of the waist, lips relaxed. Energy: medium — natural conversational nods and small eyebrow movements; hand movements are small and relaxed, and every gesture starts from and returns to the home pose.",
+        "zh": "表演：她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手始终在腰部到胸口之间活动，绝不触碰或遮挡脸部和嘴。回位姿势：头部居中面向镜头，双肩放松、水平，双手在腰前轻握，嘴唇放松。能量：中——自然的对话式点头和细微的眉毛动作；手部动作小而放松，每个手势都从回位姿势开始，并回到回位姿势。"
+      },
+      "avoid": {
+        "en": "Avoid: hands touching or covering the face or mouth, head turned more than 20 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, counting on fingers, pointing, waving, hands rising above chest height, deformed fingers.",
+        "zh": "避免：手触碰或遮挡脸和嘴，头部转动超过 20 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，数手指，指向，挥手，手抬到胸口以上，手指畸形。"
+      },
+      "negative": "hands touching face, hand covering mouth, profile view, head turned away, looking away, hair over face, jewelry, earrings, glasses, patterned clothing, logo, text, subtitles, watermark, camera movement, zoom, cut, jump cut, flicker, lighting change, extra people, extra fingers, deformed hands, distorted face, plastic skin, counting fingers, pointing, waving, fused fingers",
+      "cut_points": [
+        0.5,
+        7.5,
+        14.5,
+        21.5,
+        29.0
       ],
-      "energy": 3,
-      "emotion": "warm",
-      "gestures": [
-       {
-        "g": "head_tilt",
-        "t": 2.0
-       }
+      "timeline": [
+        {
+          "t": [
+            0.0,
+            1.0
+          ],
+          "en": "She holds the home pose, then begins speaking.",
+          "zh": "保持回位姿势，然后开始说话。",
+          "kind": "start"
+        },
+        {
+          "t": [
+            1.0,
+            7.0
+          ],
+          "en": "Natural conversational talking with her hands loosely clasped at the waist and small nods.",
+          "zh": "自然的对话式说话，双手在腰前轻握，小幅点头。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "narrate"
+            ],
+            "energy": 3,
+            "emotion": "neutral",
+            "gestures": [
+              {
+                "g": "nod",
+                "t": 3.0
+              }
+            ],
+            "mouth": "talking",
+            "hands": "low",
+            "reversible": "ok"
+          }
+        },
+        {
+          "t": [
+            7.0,
+            8.0
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            8.0,
+            14.0
+          ],
+          "en": "Both palms open outward at chest height in a relaxed explaining gesture, then come back together at the waist.",
+          "zh": "双手在胸口高度向外摊开，做一个放松的讲解手势，然后回到腰前合拢。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "explain"
+            ],
+            "energy": 3,
+            "emotion": "neutral",
+            "gestures": [
+              {
+                "g": "palms_open",
+                "t": 2.5
+              }
+            ],
+            "mouth": "talking",
+            "hands": "chest",
+            "reversible": "no",
+            "keep_out": [
+              [
+                1.5,
+                4.5
+              ]
+            ]
+          }
+        },
+        {
+          "t": [
+            14.0,
+            15.0
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            15.0,
+            21.0
+          ],
+          "en": "She keeps talking with a light smile while her right hand makes one small, relaxed open-palm movement at waist height, then rejoins the other hand.",
+          "zh": "带着浅笑继续说话，右手在腰部高度做一个小幅、放松的摊掌动作，然后与另一只手重新合拢。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "narrate",
+              "story"
+            ],
+            "energy": 3,
+            "emotion": "warm",
+            "gestures": [
+              {
+                "g": "palm_single",
+                "t": 3.0
+              }
+            ],
+            "mouth": "talking",
+            "hands": "low",
+            "reversible": "no",
+            "keep_out": [
+              [
+                2.0,
+                4.5
+              ]
+            ]
+          }
+        },
+        {
+          "t": [
+            21.0,
+            22.0
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            22.0,
+            28.0
+          ],
+          "en": "To sum up, both hands come loosely together in front of her chest, then lower back to the waist as she gives one firm, confident nod.",
+          "zh": "总结时双手在胸前轻轻合拢，再放回腰前，同时自信有力地点头一次。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "summary",
+              "emphasis"
+            ],
+            "energy": 3,
+            "emotion": "confident",
+            "gestures": [
+              {
+                "g": "hands_together",
+                "t": 2.0
+              },
+              {
+                "g": "nod",
+                "t": 3.5
+              }
+            ],
+            "mouth": "talking",
+            "hands": "chest",
+            "reversible": "no"
+          }
+        },
+        {
+          "t": [
+            28.0,
+            30.0
+          ],
+          "en": "She finishes her sentence, returns to the home pose and holds it still until the end, the final frame matching the first frame as closely as possible.",
+          "zh": "说完这句话，回到回位姿势，静止保持到结束，最后一帧尽量与第一帧一致。",
+          "kind": "end"
+        }
+      ]
+    },
+    "K03": {
+      "title_zh": "近景口播变体（可选）",
+      "title_en": "Alternate close-up talking plate",
+      "file": "liz01_o1_mcu_916_koubo-alt_mid_30s_v01.mov",
+      "framing": "mcu",
+      "aspect": "9:16",
+      "duration": 30,
+      "lock": "lock.mcu.916.30",
+      "first_frame": "IMG-A",
+      "status": "frozen (dh-plates-final-koubo.md)",
+      "performance": {
+        "en": "Performance: She speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay out of view below the frame the whole time. Home pose: head centered and facing the lens, shoulders relaxed and level, hands resting together low and out of view below the bottom edge of the frame, lips relaxed. Energy: medium — natural conversational nods and small eyebrow movements.",
+        "zh": "表演：她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手全程在画面底边以下不入画。回位姿势：头部居中面向镜头，双肩放松、水平，双手放低并拢在画面底边以下（不入画），嘴唇放松。能量：中——自然的对话式点头和细微的眉毛动作。"
+      },
+      "avoid": {
+        "en": "Avoid: hands touching or covering the face or mouth, head turned more than 20 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, hands entering the frame, frowning, laughing.",
+        "zh": "避免：手触碰或遮挡脸和嘴，头部转动超过 20 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，手进入画面，皱眉，大笑。"
+      },
+      "negative": "hands touching face, hand covering mouth, profile view, head turned away, looking away, hair over face, jewelry, earrings, glasses, patterned clothing, logo, text, subtitles, watermark, camera movement, zoom, cut, jump cut, flicker, lighting change, extra people, extra fingers, deformed hands, distorted face, plastic skin, hands in frame, frowning, angry, laughing, wide open mouth",
+      "cut_points": [
+        0.5,
+        7.5,
+        14.5,
+        21.5,
+        29.0
       ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "ok"
-     }
+      "timeline": [
+        {
+          "t": [
+            0.0,
+            1.0
+          ],
+          "en": "She holds the home pose, then begins speaking.",
+          "zh": "保持回位姿势，然后开始说话。",
+          "kind": "start"
+        },
+        {
+          "t": [
+            1.0,
+            7.0
+          ],
+          "en": "Conversational delivery with her head moving slightly side to side in rhythm with the words.",
+          "zh": "对话式讲述，头部随着语言节奏轻微地左右摆动。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "narrate",
+              "story"
+            ],
+            "energy": 3,
+            "emotion": "warm",
+            "gestures": [
+              {
+                "g": "sway",
+                "t": 3.0
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "good"
+          }
+        },
+        {
+          "t": [
+            7.0,
+            8.0
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            8.0,
+            14.0
+          ],
+          "en": "Three quick small nods in a row as if agreeing with her own point.",
+          "zh": "连续三个快速的小点头，像在肯定自己的观点。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "summary",
+              "emphasis"
+            ],
+            "energy": 3,
+            "emotion": "confident",
+            "gestures": [
+              {
+                "g": "nod_multi",
+                "t": 2.5
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "ok"
+          }
+        },
+        {
+          "t": [
+            14.0,
+            15.0
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            15.0,
+            21.0
+          ],
+          "en": "Calm and focused for a serious point: steady gaze, eyebrows drawn very slightly together in concentration (not frowning), and one slow nod.",
+          "zh": "讲严肃观点时平静专注：目光坚定，眉头因专注而极轻微地收拢（不是皱眉），缓慢点头一次。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "data",
+              "emphasis",
+              "explain"
+            ],
+            "energy": 2,
+            "emotion": "serious",
+            "gestures": [
+              {
+                "g": "nod",
+                "t": 4.0
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "no"
+          }
+        },
+        {
+          "t": [
+            21.0,
+            22.0
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            22.0,
+            28.0
+          ],
+          "en": "A brief warm smile while speaking, then a slight lean back, relaxed and confident, as she finishes the thought.",
+          "zh": "说话时短暂地温暖一笑，然后身体略微后靠，放松而自信地把话说完。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "close",
+              "cta",
+              "summary"
+            ],
+            "energy": 3,
+            "emotion": "warm",
+            "gestures": [
+              {
+                "g": "lean_back",
+                "t": 3.0
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "no"
+          }
+        },
+        {
+          "t": [
+            28.0,
+            30.0
+          ],
+          "en": "She finishes her sentence, returns to the home pose and holds it still until the end, the final frame matching the first frame as closely as possible.",
+          "zh": "说完这句话，回到回位姿势，静止保持到结束，最后一帧尽量与第一帧一致。",
+          "kind": "end"
+        }
+      ]
     },
-    {
-     "t": [
-      28,
-      30
-     ],
-     "en": "She returns to the home pose and holds it still for two seconds.",
-     "zh": "回到回位姿势，静止保持两秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      30,
-      31
-     ],
-     "en": "She holds the home pose, then begins speaking again.",
-     "zh": "保持回位姿势，然后重新开始说话。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      31,
-      37
-     ],
-     "en": "Serious and focused for a key fact: steady gaze, almost no movement, one slow nod.",
-     "zh": "讲关键事实时严肃专注：目光稳定，几乎不动，缓慢点头一次。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "data",
-       "emphasis"
+    "K01H": {
+      "title_zh": "近景口播主底板 · 横屏左三分之一",
+      "title_en": "Main close-up talking plate · 16:9 left third",
+      "file": "liz01_o1_mcu_169_koubo-main-left_mid_30s_v01.mov",
+      "framing": "mcu",
+      "aspect": "16:9",
+      "duration": 30,
+      "lock": "lock.mcu.169L.30",
+      "first_frame": "IMG-A169",
+      "status": "new (lock-line swap of K01)",
+      "performance": {
+        "en": "Performance: In the first three sections she speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm; in the last section she stops speaking and listens with her lips gently closed. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay out of view below the frame the whole time. Home pose: head centered and facing the lens, shoulders relaxed and level, hands resting together low and out of view below the bottom edge of the frame, lips relaxed. Energy: low to medium — only small, subtle, natural movements, so that every section can be reused many times and even played in reverse without looking odd.",
+        "zh": "表演：前三段她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松；最后一段她停止说话，双唇轻轻闭合地倾听。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手全程在画面底边以下不入画。回位姿势：头部居中面向镜头，双肩放松、水平，双手放低并拢在画面底边以下（不入画），嘴唇放松。能量：低到中——只有细小、自然的动作，让每一段都能被反复使用，甚至倒放也不显得奇怪。"
+      },
+      "avoid": {
+        "en": "Avoid: hands touching or covering the face or mouth, head turned more than 20 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, hands entering the frame, laughing, opening the mouth in the last section.",
+        "zh": "避免：手触碰或遮挡脸和嘴，头部转动超过 20 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，手进入画面，大笑，最后一段张嘴。"
+      },
+      "negative": "hands touching face, hand covering mouth, profile view, head turned away, looking away, hair over face, jewelry, earrings, glasses, patterned clothing, logo, text, subtitles, watermark, camera movement, zoom, cut, jump cut, flicker, lighting change, extra people, extra fingers, deformed hands, distorted face, plastic skin, hands in frame, laughing, wide open mouth, talking in the last section",
+      "cut_points": [
+        0.5,
+        7.5,
+        14.5,
+        21.5,
+        29.0
       ],
-      "energy": 2,
-      "emotion": "serious",
-      "gestures": [
-       {
-        "g": "nod",
-        "t": 4.0
-       }
+      "timeline": [
+        {
+          "t": [
+            0.0,
+            1.0
+          ],
+          "en": "She holds the home pose, then begins speaking.",
+          "zh": "保持回位姿势，然后开始说话。",
+          "kind": "start"
+        },
+        {
+          "t": [
+            1.0,
+            7.0
+          ],
+          "en": "Calm, neutral narration with small, slow nods on stressed words; shoulders almost still.",
+          "zh": "平静、中性地叙述，在重音处缓慢地小幅点头，肩部几乎不动。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "narrate",
+              "explain"
+            ],
+            "energy": 2,
+            "emotion": "neutral",
+            "gestures": [
+              {
+                "g": "nod",
+                "t": 3.0
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "good"
+          }
+        },
+        {
+          "t": [
+            7.0,
+            8.0
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            8.0,
+            14.0
+          ],
+          "en": "She keeps speaking with a very slight head tilt to the left and one small eyebrow raise on a key word, then straightens.",
+          "zh": "继续说话，头部极轻微地向左倾斜，在关键词处轻扬一次眉毛，然后回正。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "narrate",
+              "question"
+            ],
+            "energy": 3,
+            "emotion": "curious",
+            "gestures": [
+              {
+                "g": "head_tilt",
+                "t": 2.0
+              },
+              {
+                "g": "brow_raise",
+                "t": 3.5
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "good"
+          }
+        },
+        {
+          "t": [
+            14.0,
+            15.0
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            15.0,
+            21.0
+          ],
+          "en": "She looks into the lens with a bright, warm smile and a small welcoming nod, then keeps speaking warmly with a soft smile.",
+          "zh": "她看向镜头，露出明亮温暖的笑容，轻轻点头表示欢迎，然后带着浅笑温暖地继续说。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "open",
+              "hook",
+              "close"
+            ],
+            "energy": 3,
+            "emotion": "warm",
+            "gestures": [
+              {
+                "g": "smile_greet",
+                "t": 1.0
+              },
+              {
+                "g": "nod",
+                "t": 2.0
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "no"
+          }
+        },
+        {
+          "t": [
+            21.0,
+            22.0
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            22.0,
+            28.0
+          ],
+          "en": "She stops speaking; with her lips gently closed she listens attentively, gives two small slow nods with a soft closed-lip smile, and blinks once naturally.",
+          "zh": "她停止说话，双唇轻闭，专注倾听，带着闭唇浅笑缓慢地小幅点头两次，自然眨眼一次。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "pause",
+              "listen",
+              "close",
+              "cta"
+            ],
+            "energy": 1,
+            "emotion": "warm",
+            "gestures": [
+              {
+                "g": "nod",
+                "t": 2.0
+              },
+              {
+                "g": "nod",
+                "t": 4.0
+              }
+            ],
+            "mouth": "smile_closed",
+            "hands": "out_of_frame",
+            "reversible": "good"
+          }
+        },
+        {
+          "t": [
+            28.0,
+            30.0
+          ],
+          "en": "She relaxes back into the home pose with a calm, faint closed-lip smile and holds it still until the end, the final frame matching the first frame as closely as possible.",
+          "zh": "放松回到回位姿势，只留一丝平静的闭唇笑意，静止保持到结束，最后一帧尽量与第一帧一致。",
+          "kind": "end"
+        }
       ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "good"
-     }
+      "subject_pos": "left"
     },
-    {
-     "t": [
-      37,
-      38
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      38,
-      44
-     ],
-     "en": "Two quick small nods as if saying \"right?\", with a small confident smile.",
-     "zh": "连续两个快速的小点头，像在说“对吧？”，带一点笃定的浅笑。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "summary",
-       "emphasis"
+    "L01": {
+      "title_zh": "近景 60 秒长底板（8 段不重样）",
+      "title_en": "60-second close-up plate, eight distinct sections",
+      "file": "liz01_o1_mcu_916_koubo-long_mid_60s_v01.mov",
+      "framing": "mcu",
+      "aspect": "9:16",
+      "duration": 60,
+      "lock": "lock.mcu.916.60",
+      "first_frame": "IMG-A",
+      "status": "new",
+      "performance": {
+        "en": "Performance: She speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm; whenever the timeline says she listens, she stops speaking and keeps her lips gently closed. Her eyes stay on the lens except for one brief thoughtful glance, she blinks naturally, head turns stay within 20 degrees, and her hands stay out of view below the frame the whole time. Home pose: head centered and facing the lens, shoulders relaxed and level, hands resting together low and out of view below the bottom edge of the frame, lips relaxed. Energy: low to medium — small, natural movements only, and every section looks different from the others so the sections can be reused in any order.",
+        "zh": "表演：她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松；时间线写到“倾听”时，她停止说话，双唇轻轻闭合。除了一次短暂的思考式目光，视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手全程在画面底边以下不入画。回位姿势：头部居中面向镜头，双肩放松、水平，双手放低并拢在画面底边以下（不入画），嘴唇放松。能量：低到中——只有细小、自然的动作，而且每一段都和其他段不一样，方便以任意顺序复用。"
+      },
+      "avoid": {
+        "en": "Avoid: hands touching or covering the face or mouth, head turned more than 20 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, hands entering the frame, frowning, laughing.",
+        "zh": "避免：手触碰或遮挡脸和嘴，头部转动超过 20 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，手进入画面，皱眉，大笑。"
+      },
+      "negative": "hands touching face, hand covering mouth, profile view, head turned away, looking away, hair over face, jewelry, earrings, glasses, patterned clothing, logo, text, subtitles, watermark, camera movement, zoom, cut, jump cut, flicker, lighting change, extra people, extra fingers, deformed hands, distorted face, plastic skin, hands in frame, frowning, angry, laughing, wide open mouth",
+      "cut_points": [
+        0.5,
+        7.5,
+        14.5,
+        21.5,
+        29.5,
+        37.5,
+        44.5,
+        51.5,
+        59.0
       ],
-      "energy": 3,
-      "emotion": "confident",
-      "gestures": [
-       {
-        "g": "nod_multi",
-        "t": 2.5
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "ok"
-     }
+      "chain_split": 29.5,
+      "timeline": [
+        {
+          "t": [
+            0,
+            1
+          ],
+          "en": "She holds the home pose, then begins speaking.",
+          "zh": "保持回位姿势，然后开始说话。",
+          "kind": "start"
+        },
+        {
+          "t": [
+            1,
+            7
+          ],
+          "en": "Calm, measured narration with one slow nod at the end of each phrase; shoulders still.",
+          "zh": "平稳、从容地叙述，每句话末尾缓慢点头一次，肩部保持不动。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "narrate",
+              "explain"
+            ],
+            "energy": 2,
+            "emotion": "neutral",
+            "gestures": [
+              {
+                "g": "nod",
+                "t": 4.5
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "good"
+          }
+        },
+        {
+          "t": [
+            7,
+            8
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            8,
+            14
+          ],
+          "en": "She leans in very slightly toward the lens for an important point, eyebrows lifting a little, then settles back.",
+          "zh": "讲到重点时身体极轻微地向镜头前倾，眉毛微微上扬，然后坐回。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "emphasis",
+              "explain"
+            ],
+            "energy": 3,
+            "emotion": "confident",
+            "gestures": [
+              {
+                "g": "lean_in",
+                "t": 2.5
+              },
+              {
+                "g": "brow_raise",
+                "t": 3.0
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "no"
+          }
+        },
+        {
+          "t": [
+            14,
+            15
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            15,
+            21
+          ],
+          "en": "A brief thoughtful glance up and to the left as if recalling something, then her eyes come back to the lens and she continues with a small knowing nod.",
+          "zh": "像在回想什么，目光短暂地向左上方看一下，随即回到镜头，带着心中有数的小点头继续说。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "question",
+              "story"
+            ],
+            "energy": 3,
+            "emotion": "curious",
+            "gestures": [
+              {
+                "g": "nod",
+                "t": 3.5
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "no",
+            "keep_out": [
+              [
+                0.5,
+                2.5
+              ]
+            ]
+          }
+        },
+        {
+          "t": [
+            21,
+            22
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            22,
+            28
+          ],
+          "en": "A light smile with a slight head tilt to the right, friendly and relaxed.",
+          "zh": "带着浅笑，头部轻微向右侧倾，亲切放松。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "narrate",
+              "open"
+            ],
+            "energy": 3,
+            "emotion": "warm",
+            "gestures": [
+              {
+                "g": "head_tilt",
+                "t": 2.0
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "ok"
+          }
+        },
+        {
+          "t": [
+            28,
+            30
+          ],
+          "en": "She returns to the home pose and holds it still for two seconds.",
+          "zh": "回到回位姿势，静止保持两秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            30,
+            31
+          ],
+          "en": "She holds the home pose, then begins speaking again.",
+          "zh": "保持回位姿势，然后重新开始说话。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            31,
+            37
+          ],
+          "en": "Serious and focused for a key fact: steady gaze, almost no movement, one slow nod.",
+          "zh": "讲关键事实时严肃专注：目光稳定，几乎不动，缓慢点头一次。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "data",
+              "emphasis"
+            ],
+            "energy": 2,
+            "emotion": "serious",
+            "gestures": [
+              {
+                "g": "nod",
+                "t": 4.0
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "good"
+          }
+        },
+        {
+          "t": [
+            37,
+            38
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            38,
+            44
+          ],
+          "en": "Two quick small nods as if saying \"right?\", with a small confident smile.",
+          "zh": "连续两个快速的小点头，像在说“对吧？”，带一点笃定的浅笑。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "summary",
+              "emphasis"
+            ],
+            "energy": 3,
+            "emotion": "confident",
+            "gestures": [
+              {
+                "g": "nod_multi",
+                "t": 2.5
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "ok"
+          }
+        },
+        {
+          "t": [
+            44,
+            45
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            45,
+            51
+          ],
+          "en": "Softer, empathetic delivery: slightly slower, warm eyes, one gentle nod.",
+          "zh": "语气更柔和、带共情：语速略慢，眼神温暖，轻轻点头一次。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "explain",
+              "narrate"
+            ],
+            "energy": 2,
+            "emotion": "empathetic",
+            "gestures": [
+              {
+                "g": "nod",
+                "t": 3.5
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "good"
+          }
+        },
+        {
+          "t": [
+            51,
+            52
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            52,
+            58
+          ],
+          "en": "She stops speaking and listens with her lips gently closed, a soft closed-lip smile, one slow nod and a natural blink.",
+          "zh": "她停止说话，双唇轻闭地倾听，带着闭唇浅笑缓慢点头一次，自然眨眼。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "pause",
+              "listen",
+              "close"
+            ],
+            "energy": 1,
+            "emotion": "warm",
+            "gestures": [
+              {
+                "g": "nod",
+                "t": 3.0
+              }
+            ],
+            "mouth": "smile_closed",
+            "hands": "out_of_frame",
+            "reversible": "good"
+          }
+        },
+        {
+          "t": [
+            58,
+            60
+          ],
+          "en": "She relaxes into the home pose and holds it still until the end, the final frame matching the first frame as closely as possible.",
+          "zh": "放松回到回位姿势，静止保持到结束，最后一帧尽量与第一帧一致。",
+          "kind": "end"
+        }
+      ]
     },
-    {
-     "t": [
-      44,
-      45
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      45,
-      51
-     ],
-     "en": "Softer, empathetic delivery: slightly slower, warm eyes, one gentle nod.",
-     "zh": "语气更柔和、带共情：语速略慢，眼神温暖，轻轻点头一次。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "explain",
-       "narrate"
+    "L02": {
+      "title_zh": "中景 60 秒长底板（含左右托举位）",
+      "title_en": "60-second medium plate with left/right present beats",
+      "file": "liz01_o1_ms_916_koubo-hands-long_mid_60s_v01.mov",
+      "framing": "ms",
+      "aspect": "9:16",
+      "duration": 60,
+      "lock": "lock.ms.916.60",
+      "first_frame": "IMG-B",
+      "status": "new",
+      "performance": {
+        "en": "Performance: She speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay between waist and chest height and never touch or cover the face or mouth. Home pose: head centered and facing the lens, shoulders relaxed and level, hands loosely clasped in front of the waist, lips relaxed. Energy: medium — natural conversational nods; hand movements are small and relaxed, every gesture starts from and returns to the home pose, and no two sections use the same gesture.",
+        "zh": "表演：她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手始终在腰部到胸口之间活动，绝不触碰或遮挡脸部和嘴。回位姿势：头部居中面向镜头，双肩放松、水平，双手在腰前轻握，嘴唇放松。能量：中——自然的对话式点头；手部动作小而放松，每个手势都从回位姿势开始并回到回位姿势，任意两段不用同一个手势。"
+      },
+      "avoid": {
+        "en": "Avoid: hands touching or covering the face or mouth, head turned more than 20 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, counting on fingers, pointing, waving, hands rising above chest height, deformed fingers.",
+        "zh": "避免：手触碰或遮挡脸和嘴，头部转动超过 20 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，数手指，指向，挥手，手抬到胸口以上，手指畸形。"
+      },
+      "negative": "hands touching face, hand covering mouth, profile view, head turned away, looking away, hair over face, jewelry, earrings, glasses, patterned clothing, logo, text, subtitles, watermark, camera movement, zoom, cut, jump cut, flicker, lighting change, extra people, extra fingers, deformed hands, distorted face, plastic skin, counting fingers, pointing, waving, fused fingers",
+      "cut_points": [
+        0.5,
+        7.5,
+        14.5,
+        21.5,
+        29.5,
+        37.5,
+        44.5,
+        51.5,
+        59.0
       ],
-      "energy": 2,
-      "emotion": "empathetic",
-      "gestures": [
-       {
-        "g": "nod",
-        "t": 3.5
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "good"
-     }
+      "chain_split": 29.5,
+      "timeline": [
+        {
+          "t": [
+            0,
+            1
+          ],
+          "en": "She holds the home pose, then begins speaking.",
+          "zh": "保持回位姿势，然后开始说话。",
+          "kind": "start"
+        },
+        {
+          "t": [
+            1,
+            7
+          ],
+          "en": "Natural conversational talking with her hands loosely clasped at the waist and small nods.",
+          "zh": "自然的对话式说话，双手在腰前轻握，小幅点头。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "narrate"
+            ],
+            "energy": 3,
+            "emotion": "neutral",
+            "gestures": [
+              {
+                "g": "nod",
+                "t": 3.0
+              }
+            ],
+            "mouth": "talking",
+            "hands": "low",
+            "reversible": "ok"
+          }
+        },
+        {
+          "t": [
+            7,
+            8
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            8,
+            14
+          ],
+          "en": "Her hand on the screen-right side turns palm-up at chest height and gently presents toward screen-right as if holding something small on her palm, holds for a beat, then returns to the waist.",
+          "zh": "画面右侧的那只手在胸口高度掌心向上，轻轻向画面右侧呈现，像托着一个小东西，停一拍，然后回到腰前。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "emphasis",
+              "data",
+              "explain"
+            ],
+            "energy": 3,
+            "emotion": "confident",
+            "gestures": [
+              {
+                "g": "palm_present",
+                "t": 2.5,
+                "zone": "right_half"
+              }
+            ],
+            "mouth": "talking",
+            "hands": "chest",
+            "reversible": "no",
+            "keep_out": [
+              [
+                1.5,
+                4.5
+              ]
+            ]
+          }
+        },
+        {
+          "t": [
+            14,
+            15
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            15,
+            21
+          ],
+          "en": "Both palms open outward at chest height in a relaxed explaining gesture, then come back together at the waist.",
+          "zh": "双手在胸口高度向外摊开，做一个放松的讲解手势，然后回到腰前合拢。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "explain"
+            ],
+            "energy": 3,
+            "emotion": "neutral",
+            "gestures": [
+              {
+                "g": "palms_open",
+                "t": 2.5
+              }
+            ],
+            "mouth": "talking",
+            "hands": "chest",
+            "reversible": "no",
+            "keep_out": [
+              [
+                1.5,
+                4.5
+              ]
+            ]
+          }
+        },
+        {
+          "t": [
+            21,
+            22
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            22,
+            28
+          ],
+          "en": "To sum up, both hands come loosely together in front of her chest with one confident nod, then lower back to the waist.",
+          "zh": "总结时双手在胸前轻轻合拢，自信地点头一次，再放回腰前。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "summary"
+            ],
+            "energy": 3,
+            "emotion": "confident",
+            "gestures": [
+              {
+                "g": "hands_together",
+                "t": 2.0
+              },
+              {
+                "g": "nod",
+                "t": 3.0
+              }
+            ],
+            "mouth": "talking",
+            "hands": "chest",
+            "reversible": "no"
+          }
+        },
+        {
+          "t": [
+            28,
+            30
+          ],
+          "en": "She returns to the home pose and holds it still for two seconds.",
+          "zh": "回到回位姿势，静止保持两秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            30,
+            31
+          ],
+          "en": "She holds the home pose, then begins speaking again.",
+          "zh": "保持回位姿势，然后重新开始说话。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            31,
+            37
+          ],
+          "en": "She leans forward very slightly with her hands resting at the waist and speaks in a serious, focused tone.",
+          "zh": "她身体极轻微地前倾，双手放在腰前，用严肃专注的语气说话。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "data",
+              "emphasis"
+            ],
+            "energy": 2,
+            "emotion": "serious",
+            "gestures": [
+              {
+                "g": "lean_in",
+                "t": 1.5
+              }
+            ],
+            "mouth": "talking",
+            "hands": "low",
+            "reversible": "ok"
+          }
+        },
+        {
+          "t": [
+            37,
+            38
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            38,
+            44
+          ],
+          "en": "Her hand on the screen-left side turns palm-up at chest height and gently presents toward screen-left, holds for a beat, then returns to the waist.",
+          "zh": "画面左侧的那只手在胸口高度掌心向上，轻轻向画面左侧呈现，停一拍，然后回到腰前。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "emphasis",
+              "data",
+              "explain"
+            ],
+            "energy": 3,
+            "emotion": "confident",
+            "gestures": [
+              {
+                "g": "palm_present",
+                "t": 2.5,
+                "zone": "left_half"
+              }
+            ],
+            "mouth": "talking",
+            "hands": "chest",
+            "reversible": "no",
+            "keep_out": [
+              [
+                1.5,
+                4.5
+              ]
+            ]
+          }
+        },
+        {
+          "t": [
+            44,
+            45
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            45,
+            51
+          ],
+          "en": "Hands loosely clasped, she marks three short phrases with three small nods, without counting on her fingers.",
+          "zh": "双手轻握，用三个小点头标出三个短句，不数手指。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "list"
+            ],
+            "energy": 3,
+            "emotion": "neutral",
+            "gestures": [
+              {
+                "g": "nod_multi",
+                "t": 2.5
+              }
+            ],
+            "mouth": "talking",
+            "hands": "low",
+            "reversible": "ok"
+          }
+        },
+        {
+          "t": [
+            51,
+            52
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            52,
+            58
+          ],
+          "en": "A warm close: a friendly smile while finishing her sentence, then her hands rest together at the waist and she gives a small, warm nod.",
+          "zh": "温暖收尾：说完这句话时露出亲切的笑容，然后双手在腰前合拢，温暖地轻轻点头。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "close",
+              "cta"
+            ],
+            "energy": 2,
+            "emotion": "warm",
+            "gestures": [
+              {
+                "g": "nod",
+                "t": 4.0
+              }
+            ],
+            "mouth": "talking",
+            "hands": "low",
+            "reversible": "no"
+          }
+        },
+        {
+          "t": [
+            58,
+            60
+          ],
+          "en": "She returns to the home pose and holds it still until the end, the final frame matching the first frame as closely as possible.",
+          "zh": "回到回位姿势，静止保持到结束，最后一帧尽量与第一帧一致。",
+          "kind": "end"
+        }
+      ]
     },
-    {
-     "t": [
-      51,
-      52
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      52,
-      58
-     ],
-     "en": "She stops speaking and listens with her lips gently closed, a soft closed-lip smile, one slow nod and a natural blink.",
-     "zh": "她停止说话，双唇轻闭地倾听，带着闭唇浅笑缓慢点头一次，自然眨眼。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "pause",
-       "listen",
-       "close"
+    "O01": {
+      "title_zh": "开场入镜底板（4 种自然开场）",
+      "title_en": "Opening plate — four natural ways to arrive on camera",
+      "file": "liz01_o1_mcu_916_opening-set_mid_30s_v01.mov",
+      "framing": "mcu",
+      "aspect": "9:16",
+      "duration": 30,
+      "lock": "lock.mcu.916.30",
+      "first_frame": "IMG-A",
+      "status": "new",
+      "performance": {
+        "en": "Performance: This plate holds four different natural ways of starting a video, separated by returns to the home pose. When she speaks, she is calm and natural with natural jaw and lip movement. Her hands stay out of view below the frame the whole time; head turns up to 30 degrees happen only in the short set-up moments before she starts speaking. Home pose: head centered and facing the lens, shoulders relaxed and level, hands resting together low and out of view below the bottom edge of the frame, lips relaxed. Energy: medium — unforced, like a real presenter settling in, never performed or theatrical.",
+        "zh": "表演：这条底板包含四种不同的自然开场方式，之间都回到回位姿势。她说话时平静自然，下颌与嘴唇自然运动。双手全程在画面底边以下不入画；最多 30 度的转头只出现在开口前的短暂准备动作里。回位姿势：头部居中面向镜头，双肩放松、水平，双手放低并拢在画面底边以下（不入画），嘴唇放松。能量：中——不刻意，像真实主播坐定开讲，绝不表演化、戏剧化。"
+      },
+      "avoid": {
+        "en": "Avoid: hands touching or covering the face or mouth, head turned more than 30 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, hands entering the frame, props, waving, laughing.",
+        "zh": "避免：手触碰或遮挡脸和嘴，头部转动超过 30 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，手进入画面，道具，挥手，大笑。"
+      },
+      "negative": "hands touching face, hand covering mouth, profile view, looking away, hair over face, jewelry, earrings, glasses, patterned clothing, logo, text, subtitles, watermark, camera movement, zoom, cut, jump cut, flicker, lighting change, extra people, extra fingers, deformed hands, distorted face, plastic skin, hands in frame, laughing, wide open mouth, talking in the last section",
+      "cut_points": [
+        0.5,
+        7.5,
+        14.5,
+        21.5,
+        29.0
       ],
-      "energy": 1,
-      "emotion": "warm",
-      "gestures": [
-       {
-        "g": "nod",
-        "t": 3.0
-       }
+      "shots_override": [
+        {
+          "id": "O01_s1",
+          "in": 2.2,
+          "out": 7.5,
+          "first_only": true,
+          "speech_offset": 1.6
+        },
+        {
+          "id": "O01_s2",
+          "in": 9.2,
+          "out": 14.5,
+          "first_only": true,
+          "speech_offset": 1.3
+        },
+        {
+          "id": "O01_s3",
+          "in": 16.2,
+          "out": 21.5,
+          "first_only": true,
+          "speech_offset": 1.3
+        },
+        {
+          "id": "O01_s4",
+          "in": 21.5,
+          "out": 29.0,
+          "first_only": false,
+          "speech_offset": 1.4
+        }
       ],
-      "mouth": "smile_closed",
-      "hands": "out_of_frame",
-      "reversible": "good"
-     }
-    },
-    {
-     "t": [
-      58,
-      60
-     ],
-     "en": "She relaxes into the home pose and holds it still until the end, the final frame matching the first frame as closely as possible.",
-     "zh": "放松回到回位姿势，静止保持到结束，最后一帧尽量与第一帧一致。",
-     "kind": "end"
+      "timeline": [
+        {
+          "t": [
+            0,
+            1
+          ],
+          "en": "She holds the home pose.",
+          "zh": "保持回位姿势。",
+          "kind": "start"
+        },
+        {
+          "t": [
+            1,
+            2.5
+          ],
+          "en": "Her eyes drop down and slightly to her left as if glancing at notes below the frame, lips closed.",
+          "zh": "她的目光向下、略偏左，像在看画面下方的提纲，嘴唇闭合。",
+          "kind": "setup"
+        },
+        {
+          "t": [
+            2.5,
+            7
+          ],
+          "en": "She lifts her eyes to the lens, takes a small natural breath, breaks into a warm smile and begins speaking.",
+          "zh": "她抬眼看向镜头，自然地吸一小口气，绽开温暖的笑容，开始说话。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "open"
+            ],
+            "energy": 3,
+            "emotion": "warm",
+            "gestures": [
+              {
+                "g": "look_up_to_lens",
+                "t": 0.5
+              },
+              {
+                "g": "smile_greet",
+                "t": 1.3
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "no"
+          }
+        },
+        {
+          "t": [
+            7,
+            8
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            8,
+            9.5
+          ],
+          "en": "She turns her head about 25 degrees to her right as if finishing a word with someone off camera, lips closed.",
+          "zh": "她把头向自己的右侧转约 25 度，像刚和镜头外的人说完一句话，嘴唇闭合。",
+          "kind": "setup"
+        },
+        {
+          "t": [
+            9.5,
+            14
+          ],
+          "en": "She turns back to the lens with a bright, easy smile and begins speaking.",
+          "zh": "她转回镜头，带着明亮、轻松的笑容开始说话。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "open"
+            ],
+            "energy": 3,
+            "emotion": "warm",
+            "gestures": [
+              {
+                "g": "turn_to_lens",
+                "t": 0.4
+              },
+              {
+                "g": "smile_greet",
+                "t": 1.0
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "no"
+          }
+        },
+        {
+          "t": [
+            14,
+            15
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            15,
+            16.5
+          ],
+          "en": "She sits back slightly and relaxes her shoulders.",
+          "zh": "她身体略向后靠，放松双肩。",
+          "kind": "setup"
+        },
+        {
+          "t": [
+            16.5,
+            21
+          ],
+          "en": "She leans in toward the lens into the home framing, eyebrows lifting with friendly energy, and begins speaking.",
+          "zh": "她向镜头前倾回到回位构图，眉毛带着友好的劲头微微上扬，开始说话。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "open",
+              "hook"
+            ],
+            "energy": 4,
+            "emotion": "curious",
+            "gestures": [
+              {
+                "g": "lean_in",
+                "t": 0.3
+              },
+              {
+                "g": "brow_raise",
+                "t": 1.0
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "no"
+          }
+        },
+        {
+          "t": [
+            21,
+            22
+          ],
+          "en": "She returns to the home pose and holds it still for one second.",
+          "zh": "回到回位姿势，静止保持一秒。",
+          "kind": "home"
+        },
+        {
+          "t": [
+            22,
+            28
+          ],
+          "en": "From complete stillness she takes a visible, calm breath with her shoulders rising slightly, gives a small smile and begins speaking calmly.",
+          "zh": "从完全静止开始，她平静地吸一口气，双肩微微抬起，露出一个小小的笑容，然后平静地开始说话。",
+          "kind": "section",
+          "tags": {
+            "roles": [
+              "open",
+              "transition"
+            ],
+            "energy": 2,
+            "emotion": "warm",
+            "gestures": [
+              {
+                "g": "settle_in",
+                "t": 0.8
+              },
+              {
+                "g": "smile_greet",
+                "t": 1.2
+              }
+            ],
+            "mouth": "talking",
+            "hands": "out_of_frame",
+            "reversible": "no"
+          }
+        },
+        {
+          "t": [
+            28,
+            30
+          ],
+          "en": "She relaxes back into the home pose and holds it still until the end, the final frame matching the first frame as closely as possible.",
+          "zh": "放松回到回位姿势，静止保持到结束，最后一帧尽量与第一帧一致。",
+          "kind": "end"
+        }
+      ]
     }
-   ]
   },
-  "L02": {
-   "title_zh": "中景 60 秒长底板（含左右托举位）",
-   "title_en": "60-second medium plate with left/right present beats",
-   "file": "liz01_o1_ms_916_koubo-hands-long_mid_60s_v01.mov",
-   "framing": "ms",
-   "aspect": "9:16",
-   "duration": 60,
-   "lock": "lock.ms.916.60",
-   "first_frame": "IMG-B",
-   "status": "new",
-   "performance": {
-    "en": "Performance: She speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay between waist and chest height and never touch or cover the face or mouth. Home pose: head centered and facing the lens, shoulders relaxed and level, hands loosely clasped in front of the waist, lips relaxed. Energy: medium — natural conversational nods; hand movements are small and relaxed, every gesture starts from and returns to the home pose, and no two sections use the same gesture.",
-    "zh": "表演：她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手始终在腰部到胸口之间活动，绝不触碰或遮挡脸部和嘴。回位姿势：头部居中面向镜头，双肩放松、水平，双手在腰前轻握，嘴唇放松。能量：中——自然的对话式点头；手部动作小而放松，每个手势都从回位姿势开始并回到回位姿势，任意两段不用同一个手势。"
-   },
-   "avoid": {
-    "en": "Avoid: hands touching or covering the face or mouth, head turned more than 20 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, counting on fingers, pointing, waving, hands rising above chest height, deformed fingers.",
-    "zh": "避免：手触碰或遮挡脸和嘴，头部转动超过 20 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，数手指，指向，挥手，手抬到胸口以上，手指畸形。"
-   },
-   "negative": "hands touching face, hand covering mouth, profile view, head turned away, looking away, hair over face, jewelry, earrings, glasses, patterned clothing, logo, text, subtitles, watermark, camera movement, zoom, cut, jump cut, flicker, lighting change, extra people, extra fingers, deformed hands, distorted face, plastic skin, counting fingers, pointing, waving, fused fingers",
-   "cut_points": [
-    0.5,
-    7.5,
-    14.5,
-    21.5,
-    29.5,
-    37.5,
-    44.5,
-    51.5,
-    59.0
-   ],
-   "chain_split": 29.5,
-   "timeline": [
+  "micro_actions": [
     {
-     "t": [
-      0,
-      1
-     ],
-     "en": "She holds the home pose, then begins speaking.",
-     "zh": "保持回位姿势，然后开始说话。",
-     "kind": "start"
+      "id": "K01.1",
+      "framing": "mcu",
+      "en": "Calm, neutral narration with small, slow nods on stressed words; shoulders almost still.",
+      "zh": "平静、中性地叙述，在重音处缓慢地小幅点头，肩部几乎不动。",
+      "tags": {
+        "roles": [
+          "narrate",
+          "explain"
+        ],
+        "energy": 2,
+        "emotion": "neutral",
+        "gestures": [
+          {
+            "g": "nod",
+            "t": 3.0
+          }
+        ],
+        "mouth": "talking",
+        "hands": "out_of_frame",
+        "reversible": "good"
+      },
+      "from": "K01"
     },
     {
-     "t": [
-      1,
-      7
-     ],
-     "en": "Natural conversational talking with her hands loosely clasped at the waist and small nods.",
-     "zh": "自然的对话式说话，双手在腰前轻握，小幅点头。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "narrate"
-      ],
-      "energy": 3,
-      "emotion": "neutral",
-      "gestures": [
-       {
-        "g": "nod",
-        "t": 3.0
-       }
-      ],
-      "mouth": "talking",
-      "hands": "low",
-      "reversible": "ok"
-     }
+      "id": "K01.2",
+      "framing": "mcu",
+      "en": "She keeps speaking with a very slight head tilt to the left and one small eyebrow raise on a key word, then straightens.",
+      "zh": "继续说话，头部极轻微地向左倾斜，在关键词处轻扬一次眉毛，然后回正。",
+      "tags": {
+        "roles": [
+          "narrate",
+          "question"
+        ],
+        "energy": 3,
+        "emotion": "curious",
+        "gestures": [
+          {
+            "g": "head_tilt",
+            "t": 2.0
+          },
+          {
+            "g": "brow_raise",
+            "t": 3.5
+          }
+        ],
+        "mouth": "talking",
+        "hands": "out_of_frame",
+        "reversible": "good"
+      },
+      "from": "K01"
     },
     {
-     "t": [
-      7,
-      8
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
+      "id": "K01.3",
+      "framing": "mcu",
+      "en": "She stops speaking; with her lips gently closed she listens attentively, gives two small slow nods with a soft closed-lip smile, and blinks once naturally.",
+      "zh": "她停止说话，双唇轻闭，专注倾听，带着闭唇浅笑缓慢地小幅点头两次，自然眨眼一次。",
+      "tags": {
+        "roles": [
+          "pause",
+          "listen",
+          "close",
+          "cta"
+        ],
+        "energy": 1,
+        "emotion": "warm",
+        "gestures": [
+          {
+            "g": "nod",
+            "t": 2.0
+          },
+          {
+            "g": "nod",
+            "t": 4.0
+          }
+        ],
+        "mouth": "smile_closed",
+        "hands": "out_of_frame",
+        "reversible": "good"
+      },
+      "from": "K01"
     },
     {
-     "t": [
-      8,
-      14
-     ],
-     "en": "Her hand on the screen-right side turns palm-up at chest height and gently presents toward screen-right as if holding something small on her palm, holds for a beat, then returns to the waist.",
-     "zh": "画面右侧的那只手在胸口高度掌心向上，轻轻向画面右侧呈现，像托着一个小东西，停一拍，然后回到腰前。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "emphasis",
-       "data",
-       "explain"
-      ],
-      "energy": 3,
-      "emotion": "confident",
-      "gestures": [
-       {
-        "g": "palm_present",
-        "t": 2.5,
-        "zone": "right_half"
-       }
-      ],
-      "mouth": "talking",
-      "hands": "chest",
-      "reversible": "no",
-      "keep_out": [
-       [
-        1.5,
-        4.5
-       ]
-      ]
-     }
+      "id": "K02.4",
+      "framing": "ms",
+      "en": "Natural conversational talking with her hands loosely clasped at the waist and small nods.",
+      "zh": "自然的对话式说话，双手在腰前轻握，小幅点头。",
+      "tags": {
+        "roles": [
+          "narrate"
+        ],
+        "energy": 3,
+        "emotion": "neutral",
+        "gestures": [
+          {
+            "g": "nod",
+            "t": 3.0
+          }
+        ],
+        "mouth": "talking",
+        "hands": "low",
+        "reversible": "ok"
+      },
+      "from": "K02"
     },
     {
-     "t": [
-      14,
-      15
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
+      "id": "K02.5",
+      "framing": "ms",
+      "en": "Both palms open outward at chest height in a relaxed explaining gesture, then come back together at the waist.",
+      "zh": "双手在胸口高度向外摊开，做一个放松的讲解手势，然后回到腰前合拢。",
+      "tags": {
+        "roles": [
+          "explain"
+        ],
+        "energy": 3,
+        "emotion": "neutral",
+        "gestures": [
+          {
+            "g": "palms_open",
+            "t": 2.5
+          }
+        ],
+        "mouth": "talking",
+        "hands": "chest",
+        "reversible": "no",
+        "keep_out": [
+          [
+            1.5,
+            4.5
+          ]
+        ]
+      },
+      "from": "K02"
     },
     {
-     "t": [
-      15,
-      21
-     ],
-     "en": "Both palms open outward at chest height in a relaxed explaining gesture, then come back together at the waist.",
-     "zh": "双手在胸口高度向外摊开，做一个放松的讲解手势，然后回到腰前合拢。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "explain"
-      ],
-      "energy": 3,
-      "emotion": "neutral",
-      "gestures": [
-       {
-        "g": "palms_open",
-        "t": 2.5
-       }
-      ],
-      "mouth": "talking",
-      "hands": "chest",
-      "reversible": "no",
-      "keep_out": [
-       [
-        1.5,
-        4.5
-       ]
-      ]
-     }
+      "id": "K02.6",
+      "framing": "ms",
+      "en": "She keeps talking with a light smile while her right hand makes one small, relaxed open-palm movement at waist height, then rejoins the other hand.",
+      "zh": "带着浅笑继续说话，右手在腰部高度做一个小幅、放松的摊掌动作，然后与另一只手重新合拢。",
+      "tags": {
+        "roles": [
+          "narrate",
+          "story"
+        ],
+        "energy": 3,
+        "emotion": "warm",
+        "gestures": [
+          {
+            "g": "palm_single",
+            "t": 3.0
+          }
+        ],
+        "mouth": "talking",
+        "hands": "low",
+        "reversible": "no",
+        "keep_out": [
+          [
+            2.0,
+            4.5
+          ]
+        ]
+      },
+      "from": "K02"
     },
     {
-     "t": [
-      21,
-      22
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
+      "id": "K02.7",
+      "framing": "ms",
+      "en": "To sum up, both hands come loosely together in front of her chest, then lower back to the waist as she gives one firm, confident nod.",
+      "zh": "总结时双手在胸前轻轻合拢，再放回腰前，同时自信有力地点头一次。",
+      "tags": {
+        "roles": [
+          "summary",
+          "emphasis"
+        ],
+        "energy": 3,
+        "emotion": "confident",
+        "gestures": [
+          {
+            "g": "hands_together",
+            "t": 2.0
+          },
+          {
+            "g": "nod",
+            "t": 3.5
+          }
+        ],
+        "mouth": "talking",
+        "hands": "chest",
+        "reversible": "no"
+      },
+      "from": "K02"
     },
     {
-     "t": [
-      22,
-      28
-     ],
-     "en": "To sum up, both hands come loosely together in front of her chest with one confident nod, then lower back to the waist.",
-     "zh": "总结时双手在胸前轻轻合拢，自信地点头一次，再放回腰前。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "summary"
-      ],
-      "energy": 3,
-      "emotion": "confident",
-      "gestures": [
-       {
-        "g": "hands_together",
-        "t": 2.0
-       },
-       {
-        "g": "nod",
-        "t": 3.0
-       }
-      ],
-      "mouth": "talking",
-      "hands": "chest",
-      "reversible": "no"
-     }
+      "id": "K03.8",
+      "framing": "mcu",
+      "en": "Conversational delivery with her head moving slightly side to side in rhythm with the words.",
+      "zh": "对话式讲述，头部随着语言节奏轻微地左右摆动。",
+      "tags": {
+        "roles": [
+          "narrate",
+          "story"
+        ],
+        "energy": 3,
+        "emotion": "warm",
+        "gestures": [
+          {
+            "g": "sway",
+            "t": 3.0
+          }
+        ],
+        "mouth": "talking",
+        "hands": "out_of_frame",
+        "reversible": "good"
+      },
+      "from": "K03"
     },
     {
-     "t": [
-      28,
-      30
-     ],
-     "en": "She returns to the home pose and holds it still for two seconds.",
-     "zh": "回到回位姿势，静止保持两秒。",
-     "kind": "home"
+      "id": "K03.9",
+      "framing": "mcu",
+      "en": "Three quick small nods in a row as if agreeing with her own point.",
+      "zh": "连续三个快速的小点头，像在肯定自己的观点。",
+      "tags": {
+        "roles": [
+          "summary",
+          "emphasis"
+        ],
+        "energy": 3,
+        "emotion": "confident",
+        "gestures": [
+          {
+            "g": "nod_multi",
+            "t": 2.5
+          }
+        ],
+        "mouth": "talking",
+        "hands": "out_of_frame",
+        "reversible": "ok"
+      },
+      "from": "K03"
     },
     {
-     "t": [
-      30,
-      31
-     ],
-     "en": "She holds the home pose, then begins speaking again.",
-     "zh": "保持回位姿势，然后重新开始说话。",
-     "kind": "home"
+      "id": "K03.10",
+      "framing": "mcu",
+      "en": "Calm and focused for a serious point: steady gaze, eyebrows drawn very slightly together in concentration (not frowning), and one slow nod.",
+      "zh": "讲严肃观点时平静专注：目光坚定，眉头因专注而极轻微地收拢（不是皱眉），缓慢点头一次。",
+      "tags": {
+        "roles": [
+          "data",
+          "emphasis",
+          "explain"
+        ],
+        "energy": 2,
+        "emotion": "serious",
+        "gestures": [
+          {
+            "g": "nod",
+            "t": 4.0
+          }
+        ],
+        "mouth": "talking",
+        "hands": "out_of_frame",
+        "reversible": "no"
+      },
+      "from": "K03"
     },
     {
-     "t": [
-      31,
-      37
-     ],
-     "en": "She leans forward very slightly with her hands resting at the waist and speaks in a serious, focused tone.",
-     "zh": "她身体极轻微地前倾，双手放在腰前，用严肃专注的语气说话。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "data",
-       "emphasis"
-      ],
-      "energy": 2,
-      "emotion": "serious",
-      "gestures": [
-       {
-        "g": "lean_in",
-        "t": 1.5
-       }
-      ],
-      "mouth": "talking",
-      "hands": "low",
-      "reversible": "ok"
-     }
+      "id": "K03.11",
+      "framing": "mcu",
+      "en": "A brief warm smile while speaking, then a slight lean back, relaxed and confident, as she finishes the thought.",
+      "zh": "说话时短暂地温暖一笑，然后身体略微后靠，放松而自信地把话说完。",
+      "tags": {
+        "roles": [
+          "close",
+          "cta",
+          "summary"
+        ],
+        "energy": 3,
+        "emotion": "warm",
+        "gestures": [
+          {
+            "g": "lean_back",
+            "t": 3.0
+          }
+        ],
+        "mouth": "talking",
+        "hands": "out_of_frame",
+        "reversible": "no"
+      },
+      "from": "K03"
     },
     {
-     "t": [
-      37,
-      38
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
+      "id": "L01.12",
+      "framing": "mcu",
+      "en": "Calm, measured narration with one slow nod at the end of each phrase; shoulders still.",
+      "zh": "平稳、从容地叙述，每句话末尾缓慢点头一次，肩部保持不动。",
+      "tags": {
+        "roles": [
+          "narrate",
+          "explain"
+        ],
+        "energy": 2,
+        "emotion": "neutral",
+        "gestures": [
+          {
+            "g": "nod",
+            "t": 4.5
+          }
+        ],
+        "mouth": "talking",
+        "hands": "out_of_frame",
+        "reversible": "good"
+      },
+      "from": "L01"
     },
     {
-     "t": [
-      38,
-      44
-     ],
-     "en": "Her hand on the screen-left side turns palm-up at chest height and gently presents toward screen-left, holds for a beat, then returns to the waist.",
-     "zh": "画面左侧的那只手在胸口高度掌心向上，轻轻向画面左侧呈现，停一拍，然后回到腰前。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "emphasis",
-       "data",
-       "explain"
-      ],
-      "energy": 3,
-      "emotion": "confident",
-      "gestures": [
-       {
-        "g": "palm_present",
-        "t": 2.5,
-        "zone": "left_half"
-       }
-      ],
-      "mouth": "talking",
-      "hands": "chest",
-      "reversible": "no",
-      "keep_out": [
-       [
-        1.5,
-        4.5
-       ]
-      ]
-     }
+      "id": "L01.13",
+      "framing": "mcu",
+      "en": "She leans in very slightly toward the lens for an important point, eyebrows lifting a little, then settles back.",
+      "zh": "讲到重点时身体极轻微地向镜头前倾，眉毛微微上扬，然后坐回。",
+      "tags": {
+        "roles": [
+          "emphasis",
+          "explain"
+        ],
+        "energy": 3,
+        "emotion": "confident",
+        "gestures": [
+          {
+            "g": "lean_in",
+            "t": 2.5
+          },
+          {
+            "g": "brow_raise",
+            "t": 3.0
+          }
+        ],
+        "mouth": "talking",
+        "hands": "out_of_frame",
+        "reversible": "no"
+      },
+      "from": "L01"
     },
     {
-     "t": [
-      44,
-      45
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
+      "id": "L01.14",
+      "framing": "mcu",
+      "en": "A brief thoughtful glance up and to the left as if recalling something, then her eyes come back to the lens and she continues with a small knowing nod.",
+      "zh": "像在回想什么，目光短暂地向左上方看一下，随即回到镜头，带着心中有数的小点头继续说。",
+      "tags": {
+        "roles": [
+          "question",
+          "story"
+        ],
+        "energy": 3,
+        "emotion": "curious",
+        "gestures": [
+          {
+            "g": "nod",
+            "t": 3.5
+          }
+        ],
+        "mouth": "talking",
+        "hands": "out_of_frame",
+        "reversible": "no",
+        "keep_out": [
+          [
+            0.5,
+            2.5
+          ]
+        ]
+      },
+      "from": "L01"
     },
     {
-     "t": [
-      45,
-      51
-     ],
-     "en": "Hands loosely clasped, she marks three short phrases with three small nods, without counting on her fingers.",
-     "zh": "双手轻握，用三个小点头标出三个短句，不数手指。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "list"
-      ],
-      "energy": 3,
-      "emotion": "neutral",
-      "gestures": [
-       {
-        "g": "nod_multi",
-        "t": 2.5
-       }
-      ],
-      "mouth": "talking",
-      "hands": "low",
-      "reversible": "ok"
-     }
+      "id": "L01.15",
+      "framing": "mcu",
+      "en": "Serious and focused for a key fact: steady gaze, almost no movement, one slow nod.",
+      "zh": "讲关键事实时严肃专注：目光稳定，几乎不动，缓慢点头一次。",
+      "tags": {
+        "roles": [
+          "data",
+          "emphasis"
+        ],
+        "energy": 2,
+        "emotion": "serious",
+        "gestures": [
+          {
+            "g": "nod",
+            "t": 4.0
+          }
+        ],
+        "mouth": "talking",
+        "hands": "out_of_frame",
+        "reversible": "good"
+      },
+      "from": "L01"
     },
     {
-     "t": [
-      51,
-      52
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
+      "id": "L01.16",
+      "framing": "mcu",
+      "en": "Two quick small nods as if saying \"right?\", with a small confident smile.",
+      "zh": "连续两个快速的小点头，像在说“对吧？”，带一点笃定的浅笑。",
+      "tags": {
+        "roles": [
+          "summary",
+          "emphasis"
+        ],
+        "energy": 3,
+        "emotion": "confident",
+        "gestures": [
+          {
+            "g": "nod_multi",
+            "t": 2.5
+          }
+        ],
+        "mouth": "talking",
+        "hands": "out_of_frame",
+        "reversible": "ok"
+      },
+      "from": "L01"
     },
     {
-     "t": [
-      52,
-      58
-     ],
-     "en": "A warm close: a friendly smile while finishing her sentence, then her hands rest together at the waist and she gives a small, warm nod.",
-     "zh": "温暖收尾：说完这句话时露出亲切的笑容，然后双手在腰前合拢，温暖地轻轻点头。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "close",
-       "cta"
-      ],
-      "energy": 2,
-      "emotion": "warm",
-      "gestures": [
-       {
-        "g": "nod",
-        "t": 4.0
-       }
-      ],
-      "mouth": "talking",
-      "hands": "low",
-      "reversible": "no"
-     }
+      "id": "L01.17",
+      "framing": "mcu",
+      "en": "Softer, empathetic delivery: slightly slower, warm eyes, one gentle nod.",
+      "zh": "语气更柔和、带共情：语速略慢，眼神温暖，轻轻点头一次。",
+      "tags": {
+        "roles": [
+          "explain",
+          "narrate"
+        ],
+        "energy": 2,
+        "emotion": "empathetic",
+        "gestures": [
+          {
+            "g": "nod",
+            "t": 3.5
+          }
+        ],
+        "mouth": "talking",
+        "hands": "out_of_frame",
+        "reversible": "good"
+      },
+      "from": "L01"
     },
     {
-     "t": [
-      58,
-      60
-     ],
-     "en": "She returns to the home pose and holds it still until the end, the final frame matching the first frame as closely as possible.",
-     "zh": "回到回位姿势，静止保持到结束，最后一帧尽量与第一帧一致。",
-     "kind": "end"
+      "id": "L01.18",
+      "framing": "mcu",
+      "en": "She stops speaking and listens with her lips gently closed, a soft closed-lip smile, one slow nod and a natural blink.",
+      "zh": "她停止说话，双唇轻闭地倾听，带着闭唇浅笑缓慢点头一次，自然眨眼。",
+      "tags": {
+        "roles": [
+          "pause",
+          "listen",
+          "close"
+        ],
+        "energy": 1,
+        "emotion": "warm",
+        "gestures": [
+          {
+            "g": "nod",
+            "t": 3.0
+          }
+        ],
+        "mouth": "smile_closed",
+        "hands": "out_of_frame",
+        "reversible": "good"
+      },
+      "from": "L01"
+    },
+    {
+      "id": "L02.19",
+      "framing": "ms",
+      "en": "Natural conversational talking with her hands loosely clasped at the waist and small nods.",
+      "zh": "自然的对话式说话，双手在腰前轻握，小幅点头。",
+      "tags": {
+        "roles": [
+          "narrate"
+        ],
+        "energy": 3,
+        "emotion": "neutral",
+        "gestures": [
+          {
+            "g": "nod",
+            "t": 3.0
+          }
+        ],
+        "mouth": "talking",
+        "hands": "low",
+        "reversible": "ok"
+      },
+      "from": "L02"
+    },
+    {
+      "id": "L02.20",
+      "framing": "ms",
+      "en": "Her hand on the screen-right side turns palm-up at chest height and gently presents toward screen-right as if holding something small on her palm, holds for a beat, then returns to the waist.",
+      "zh": "画面右侧的那只手在胸口高度掌心向上，轻轻向画面右侧呈现，像托着一个小东西，停一拍，然后回到腰前。",
+      "tags": {
+        "roles": [
+          "emphasis",
+          "data",
+          "explain"
+        ],
+        "energy": 3,
+        "emotion": "confident",
+        "gestures": [
+          {
+            "g": "palm_present",
+            "t": 2.5,
+            "zone": "right_half"
+          }
+        ],
+        "mouth": "talking",
+        "hands": "chest",
+        "reversible": "no",
+        "keep_out": [
+          [
+            1.5,
+            4.5
+          ]
+        ]
+      },
+      "from": "L02"
+    },
+    {
+      "id": "L02.21",
+      "framing": "ms",
+      "en": "Both palms open outward at chest height in a relaxed explaining gesture, then come back together at the waist.",
+      "zh": "双手在胸口高度向外摊开，做一个放松的讲解手势，然后回到腰前合拢。",
+      "tags": {
+        "roles": [
+          "explain"
+        ],
+        "energy": 3,
+        "emotion": "neutral",
+        "gestures": [
+          {
+            "g": "palms_open",
+            "t": 2.5
+          }
+        ],
+        "mouth": "talking",
+        "hands": "chest",
+        "reversible": "no",
+        "keep_out": [
+          [
+            1.5,
+            4.5
+          ]
+        ]
+      },
+      "from": "L02"
+    },
+    {
+      "id": "L02.22",
+      "framing": "ms",
+      "en": "To sum up, both hands come loosely together in front of her chest with one confident nod, then lower back to the waist.",
+      "zh": "总结时双手在胸前轻轻合拢，自信地点头一次，再放回腰前。",
+      "tags": {
+        "roles": [
+          "summary"
+        ],
+        "energy": 3,
+        "emotion": "confident",
+        "gestures": [
+          {
+            "g": "hands_together",
+            "t": 2.0
+          },
+          {
+            "g": "nod",
+            "t": 3.0
+          }
+        ],
+        "mouth": "talking",
+        "hands": "chest",
+        "reversible": "no"
+      },
+      "from": "L02"
+    },
+    {
+      "id": "L02.23",
+      "framing": "ms",
+      "en": "She leans forward very slightly with her hands resting at the waist and speaks in a serious, focused tone.",
+      "zh": "她身体极轻微地前倾，双手放在腰前，用严肃专注的语气说话。",
+      "tags": {
+        "roles": [
+          "data",
+          "emphasis"
+        ],
+        "energy": 2,
+        "emotion": "serious",
+        "gestures": [
+          {
+            "g": "lean_in",
+            "t": 1.5
+          }
+        ],
+        "mouth": "talking",
+        "hands": "low",
+        "reversible": "ok"
+      },
+      "from": "L02"
+    },
+    {
+      "id": "L02.24",
+      "framing": "ms",
+      "en": "Her hand on the screen-left side turns palm-up at chest height and gently presents toward screen-left, holds for a beat, then returns to the waist.",
+      "zh": "画面左侧的那只手在胸口高度掌心向上，轻轻向画面左侧呈现，停一拍，然后回到腰前。",
+      "tags": {
+        "roles": [
+          "emphasis",
+          "data",
+          "explain"
+        ],
+        "energy": 3,
+        "emotion": "confident",
+        "gestures": [
+          {
+            "g": "palm_present",
+            "t": 2.5,
+            "zone": "left_half"
+          }
+        ],
+        "mouth": "talking",
+        "hands": "chest",
+        "reversible": "no",
+        "keep_out": [
+          [
+            1.5,
+            4.5
+          ]
+        ]
+      },
+      "from": "L02"
+    },
+    {
+      "id": "L02.25",
+      "framing": "ms",
+      "en": "Hands loosely clasped, she marks three short phrases with three small nods, without counting on her fingers.",
+      "zh": "双手轻握，用三个小点头标出三个短句，不数手指。",
+      "tags": {
+        "roles": [
+          "list"
+        ],
+        "energy": 3,
+        "emotion": "neutral",
+        "gestures": [
+          {
+            "g": "nod_multi",
+            "t": 2.5
+          }
+        ],
+        "mouth": "talking",
+        "hands": "low",
+        "reversible": "ok"
+      },
+      "from": "L02"
+    },
+    {
+      "id": "L02.26",
+      "framing": "ms",
+      "en": "A warm close: a friendly smile while finishing her sentence, then her hands rest together at the waist and she gives a small, warm nod.",
+      "zh": "温暖收尾：说完这句话时露出亲切的笑容，然后双手在腰前合拢，温暖地轻轻点头。",
+      "tags": {
+        "roles": [
+          "close",
+          "cta"
+        ],
+        "energy": 2,
+        "emotion": "warm",
+        "gestures": [
+          {
+            "g": "nod",
+            "t": 4.0
+          }
+        ],
+        "mouth": "talking",
+        "hands": "low",
+        "reversible": "no"
+      },
+      "from": "L02"
+    },
+    {
+      "id": "X.27",
+      "framing": "mcu",
+      "en": "Mid-sentence she pauses for half a beat with her lips closed, as if choosing the right word, then continues with a small nod.",
+      "zh": "说到一半，双唇闭合停顿半拍，像在挑一个合适的词，然后轻轻点头继续说。",
+      "tags": {
+        "roles": [
+          "question",
+          "narrate"
+        ],
+        "energy": 2,
+        "emotion": "curious",
+        "gestures": [
+          {
+            "g": "nod",
+            "t": 3.5
+          }
+        ],
+        "mouth": "talking",
+        "hands": "out_of_frame",
+        "reversible": "no"
+      },
+      "from": "menu"
+    },
+    {
+      "id": "X.28",
+      "framing": "mcu",
+      "en": "A small amused smile breaks through mid-sentence, then she continues warmly.",
+      "zh": "说到一半忍不住露出一个被逗乐的浅笑，然后温暖地继续说。",
+      "tags": {
+        "roles": [
+          "story",
+          "narrate"
+        ],
+        "energy": 3,
+        "emotion": "playful",
+        "gestures": [
+          {
+            "g": "smile_greet",
+            "t": 2.5
+          }
+        ],
+        "mouth": "talking",
+        "hands": "out_of_frame",
+        "reversible": "no"
+      },
+      "from": "menu"
+    },
+    {
+      "id": "X.29",
+      "framing": "mcu",
+      "en": "She narrows her focus slightly and lowers her voice as if sharing something important, one slow nod.",
+      "zh": "她稍稍收拢目光、压低一点声音，像在分享一件重要的事，缓慢点头一次。",
+      "tags": {
+        "roles": [
+          "emphasis",
+          "data"
+        ],
+        "energy": 2,
+        "emotion": "serious",
+        "gestures": [
+          {
+            "g": "nod",
+            "t": 4.0
+          }
+        ],
+        "mouth": "talking",
+        "hands": "out_of_frame",
+        "reversible": "good"
+      },
+      "from": "menu"
+    },
+    {
+      "id": "X.30",
+      "framing": "ms",
+      "en": "A small modest shrug of the shoulders with an easy smile, as if saying 'it is simpler than it sounds'.",
+      "zh": "带着轻松的笑容，双肩小幅耸一下，像在说“其实没那么难”。",
+      "tags": {
+        "roles": [
+          "explain",
+          "narrate"
+        ],
+        "energy": 3,
+        "emotion": "playful",
+        "gestures": [
+          {
+            "g": "lean_back",
+            "t": 2.5
+          }
+        ],
+        "mouth": "talking",
+        "hands": "low",
+        "reversible": "no"
+      },
+      "from": "menu"
+    },
+    {
+      "id": "X.31",
+      "framing": "ms",
+      "en": "One hand rises to chest height and makes a slow, small horizontal sweep as if laying out a timeline, then returns to the waist.",
+      "zh": "一只手抬到胸口高度，缓慢地做一个小幅水平划动，像在摆出一条时间线，然后回到腰前。",
+      "tags": {
+        "roles": [
+          "story",
+          "explain"
+        ],
+        "energy": 3,
+        "emotion": "neutral",
+        "gestures": [
+          {
+            "g": "palm_single",
+            "t": 2.5
+          }
+        ],
+        "mouth": "talking",
+        "hands": "chest",
+        "reversible": "no"
+      },
+      "from": "menu"
     }
-   ]
-  },
-  "O01": {
-   "title_zh": "开场入镜底板（4 种自然开场）",
-   "title_en": "Opening plate — four natural ways to arrive on camera",
-   "file": "liz01_o1_mcu_916_opening-set_mid_30s_v01.mov",
-   "framing": "mcu",
-   "aspect": "9:16",
-   "duration": 30,
-   "lock": "lock.mcu.916.30",
-   "first_frame": "IMG-A",
-   "status": "new",
-   "performance": {
-    "en": "Performance: This plate holds four different natural ways of starting a video, separated by returns to the home pose. When she speaks, she is calm and natural with natural jaw and lip movement. Her hands stay out of view below the frame the whole time; head turns up to 30 degrees happen only in the short set-up moments before she starts speaking. Home pose: head centered and facing the lens, shoulders relaxed and level, hands resting together low and out of view below the bottom edge of the frame, lips relaxed. Energy: medium — unforced, like a real presenter settling in, never performed or theatrical.",
-    "zh": "表演：这条底板包含四种不同的自然开场方式，之间都回到回位姿势。她说话时平静自然，下颌与嘴唇自然运动。双手全程在画面底边以下不入画；最多 30 度的转头只出现在开口前的短暂准备动作里。回位姿势：头部居中面向镜头，双肩放松、水平，双手放低并拢在画面底边以下（不入画），嘴唇放松。能量：中——不刻意，像真实主播坐定开讲，绝不表演化、戏剧化。"
-   },
-   "avoid": {
-    "en": "Avoid: hands touching or covering the face or mouth, head turned more than 30 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, hands entering the frame, props, waving, laughing.",
-    "zh": "避免：手触碰或遮挡脸和嘴，头部转动超过 30 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，手进入画面，道具，挥手，大笑。"
-   },
-   "negative": "hands touching face, hand covering mouth, profile view, looking away, hair over face, jewelry, earrings, glasses, patterned clothing, logo, text, subtitles, watermark, camera movement, zoom, cut, jump cut, flicker, lighting change, extra people, extra fingers, deformed hands, distorted face, plastic skin, hands in frame, laughing, wide open mouth, talking in the last section",
-   "cut_points": [
-    0.5,
-    7.5,
-    14.5,
-    21.5,
-    29.0
-   ],
-   "shots_override": [
-    {
-     "id": "O01_s1",
-     "in": 2.2,
-     "out": 7.5,
-     "first_only": true,
-     "speech_offset": 1.6
-    },
-    {
-     "id": "O01_s2",
-     "in": 9.2,
-     "out": 14.5,
-     "first_only": true,
-     "speech_offset": 1.3
-    },
-    {
-     "id": "O01_s3",
-     "in": 16.2,
-     "out": 21.5,
-     "first_only": true,
-     "speech_offset": 1.3
-    },
-    {
-     "id": "O01_s4",
-     "in": 21.5,
-     "out": 29.0,
-     "first_only": false,
-     "speech_offset": 1.4
-    }
-   ],
-   "timeline": [
-    {
-     "t": [
-      0,
-      1
-     ],
-     "en": "She holds the home pose.",
-     "zh": "保持回位姿势。",
-     "kind": "start"
-    },
-    {
-     "t": [
-      1,
-      2.5
-     ],
-     "en": "Her eyes drop down and slightly to her left as if glancing at notes below the frame, lips closed.",
-     "zh": "她的目光向下、略偏左，像在看画面下方的提纲，嘴唇闭合。",
-     "kind": "setup"
-    },
-    {
-     "t": [
-      2.5,
-      7
-     ],
-     "en": "She lifts her eyes to the lens, takes a small natural breath, breaks into a warm smile and begins speaking.",
-     "zh": "她抬眼看向镜头，自然地吸一小口气，绽开温暖的笑容，开始说话。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "open"
-      ],
-      "energy": 3,
-      "emotion": "warm",
-      "gestures": [
-       {
-        "g": "look_up_to_lens",
-        "t": 0.5
-       },
-       {
-        "g": "smile_greet",
-        "t": 1.3
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "no"
-     }
-    },
-    {
-     "t": [
-      7,
-      8
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      8,
-      9.5
-     ],
-     "en": "She turns her head about 25 degrees to her right as if finishing a word with someone off camera, lips closed.",
-     "zh": "她把头向自己的右侧转约 25 度，像刚和镜头外的人说完一句话，嘴唇闭合。",
-     "kind": "setup"
-    },
-    {
-     "t": [
-      9.5,
-      14
-     ],
-     "en": "She turns back to the lens with a bright, easy smile and begins speaking.",
-     "zh": "她转回镜头，带着明亮、轻松的笑容开始说话。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "open"
-      ],
-      "energy": 3,
-      "emotion": "warm",
-      "gestures": [
-       {
-        "g": "turn_to_lens",
-        "t": 0.4
-       },
-       {
-        "g": "smile_greet",
-        "t": 1.0
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "no"
-     }
-    },
-    {
-     "t": [
-      14,
-      15
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      15,
-      16.5
-     ],
-     "en": "She sits back slightly and relaxes her shoulders.",
-     "zh": "她身体略向后靠，放松双肩。",
-     "kind": "setup"
-    },
-    {
-     "t": [
-      16.5,
-      21
-     ],
-     "en": "She leans in toward the lens into the home framing, eyebrows lifting with friendly energy, and begins speaking.",
-     "zh": "她向镜头前倾回到回位构图，眉毛带着友好的劲头微微上扬，开始说话。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "open",
-       "hook"
-      ],
-      "energy": 4,
-      "emotion": "curious",
-      "gestures": [
-       {
-        "g": "lean_in",
-        "t": 0.3
-       },
-       {
-        "g": "brow_raise",
-        "t": 1.0
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "no"
-     }
-    },
-    {
-     "t": [
-      21,
-      22
-     ],
-     "en": "She returns to the home pose and holds it still for one second.",
-     "zh": "回到回位姿势，静止保持一秒。",
-     "kind": "home"
-    },
-    {
-     "t": [
-      22,
-      28
-     ],
-     "en": "From complete stillness she takes a visible, calm breath with her shoulders rising slightly, gives a small smile and begins speaking calmly.",
-     "zh": "从完全静止开始，她平静地吸一口气，双肩微微抬起，露出一个小小的笑容，然后平静地开始说话。",
-     "kind": "section",
-     "tags": {
-      "roles": [
-       "open",
-       "transition"
-      ],
-      "energy": 2,
-      "emotion": "warm",
-      "gestures": [
-       {
-        "g": "settle_in",
-        "t": 0.8
-       },
-       {
-        "g": "smile_greet",
-        "t": 1.2
-       }
-      ],
-      "mouth": "talking",
-      "hands": "out_of_frame",
-      "reversible": "no"
-     }
-    },
-    {
-     "t": [
-      28,
-      30
-     ],
-     "en": "She relaxes back into the home pose and holds it still until the end, the final frame matching the first frame as closely as possible.",
-     "zh": "放松回到回位姿势，静止保持到结束，最后一帧尽量与第一帧一致。",
-     "kind": "end"
-    }
-   ]
+  ],
+  "frozen_check": {
+    "en:K01": "30-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium close-up from mid-chest up, subject centered, eyes on the upper third line, a little headroom.\nIdentity: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses.\nSetting and light: plain warm light-grey seamless wall behind her, evenly lit, nothing else in frame. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light from behind, neutral 5600K white balance, constant exposure for the whole shot. Photorealistic, true-to-life skin texture, sharp focus on the face, natural color, fine film grain, no flicker. Quiet room tone, no music.\nPerformance: In the first three sections she speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm; in the last section she stops speaking and listens with her lips gently closed. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay out of view below the frame the whole time. Home pose: head centered and facing the lens, shoulders relaxed and level, hands resting together low and out of view below the bottom edge of the frame, lips relaxed. Energy: low to medium — only small, subtle, natural movements, so that every section can be reused many times and even played in reverse without looking odd.\nTimeline:\n0–1s: She holds the home pose, then begins speaking.\n1–7s: Calm, neutral narration with small, slow nods on stressed words; shoulders almost still.\n7–8s: She returns to the home pose and holds it still for one second.\n8–14s: She keeps speaking with a very slight head tilt to the left and one small eyebrow raise on a key word, then straightens.\n14–15s: She returns to the home pose and holds it still for one second.\n15–21s: She looks into the lens with a bright, warm smile and a small welcoming nod, then keeps speaking warmly with a soft smile.\n21–22s: She returns to the home pose and holds it still for one second.\n22–28s: She stops speaking; with her lips gently closed she listens attentively, gives two small slow nods with a soft closed-lip smile, and blinks once naturally.\n28–30s: She relaxes back into the home pose with a calm, faint closed-lip smile and holds it still until the end, the final frame matching the first frame as closely as possible.\nAvoid: hands touching or covering the face or mouth, head turned more than 20 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, hands entering the frame, laughing, opening the mouth in the last section.",
+    "zh:K01": "30 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。胸部以上近景，人物居中，眼睛位于画面上三分之一线，头顶略留空间。\n人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。\n场景与光线：身后是纯净的浅暖灰无缝墙，照明均匀，画面中没有其他物体。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，身后细微的发丝轮廓光，5600K 中性白平衡，整个镜头曝光恒定。写实，真实皮肤纹理，脸部焦点清晰，自然色彩，细腻胶片颗粒，无闪烁。安静的室内环境声，无音乐。\n表演：前三段她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松；最后一段她停止说话，双唇轻轻闭合地倾听。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手全程在画面底边以下不入画。回位姿势：头部居中面向镜头，双肩放松、水平，双手放低并拢在画面底边以下（不入画），嘴唇放松。能量：低到中——只有细小、自然的动作，让每一段都能被反复使用，甚至倒放也不显得奇怪。\n时间线：\n0–1 秒：保持回位姿势，然后开始说话。\n1–7 秒：平静、中性地叙述，在重音处缓慢地小幅点头，肩部几乎不动。\n7–8 秒：回到回位姿势，静止保持一秒。\n8–14 秒：继续说话，头部极轻微地向左倾斜，在关键词处轻扬一次眉毛，然后回正。\n14–15 秒：回到回位姿势，静止保持一秒。\n15–21 秒：她看向镜头，露出明亮温暖的笑容，轻轻点头表示欢迎，然后带着浅笑温暖地继续说。\n21–22 秒：回到回位姿势，静止保持一秒。\n22–28 秒：她停止说话，双唇轻闭，专注倾听，带着闭唇浅笑缓慢地小幅点头两次，自然眨眼一次。\n28–30 秒：放松回到回位姿势，只留一丝平静的闭唇笑意，静止保持到结束，最后一帧尽量与第一帧一致。\n避免：手触碰或遮挡脸和嘴，头部转动超过 20 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，手进入画面，大笑，最后一段张嘴。",
+    "en:K02": "30-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium shot from the waist up, subject centered, eyes on the upper third line, with enough room on both sides that her hands stay fully inside the frame when she gestures.\nIdentity: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses.\nSetting and light: plain warm light-grey seamless wall behind her, evenly lit, nothing else in frame. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light from behind, neutral 5600K white balance, constant exposure for the whole shot. Photorealistic, true-to-life skin texture, sharp focus on the face, natural color, fine film grain, no flicker. Quiet room tone, no music.\nPerformance: She speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay between waist and chest height and never touch or cover the face or mouth. Home pose: head centered and facing the lens, shoulders relaxed and level, hands loosely clasped in front of the waist, lips relaxed. Energy: medium — natural conversational nods and small eyebrow movements; hand movements are small and relaxed, and every gesture starts from and returns to the home pose.\nTimeline:\n0–1s: She holds the home pose, then begins speaking.\n1–7s: Natural conversational talking with her hands loosely clasped at the waist and small nods.\n7–8s: She returns to the home pose and holds it still for one second.\n8–14s: Both palms open outward at chest height in a relaxed explaining gesture, then come back together at the waist.\n14–15s: She returns to the home pose and holds it still for one second.\n15–21s: She keeps talking with a light smile while her right hand makes one small, relaxed open-palm movement at waist height, then rejoins the other hand.\n21–22s: She returns to the home pose and holds it still for one second.\n22–28s: To sum up, both hands come loosely together in front of her chest, then lower back to the waist as she gives one firm, confident nod.\n28–30s: She finishes her sentence, returns to the home pose and holds it still until the end, the final frame matching the first frame as closely as possible.\nAvoid: hands touching or covering the face or mouth, head turned more than 20 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, counting on fingers, pointing, waving, hands rising above chest height, deformed fingers.",
+    "zh:K02": "30 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。腰部以上中景，人物居中，眼睛位于画面上三分之一线，两侧留足空间，做手势时双手完整留在画面内。\n人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。\n场景与光线：身后是纯净的浅暖灰无缝墙，照明均匀，画面中没有其他物体。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，身后细微的发丝轮廓光，5600K 中性白平衡，整个镜头曝光恒定。写实，真实皮肤纹理，脸部焦点清晰，自然色彩，细腻胶片颗粒，无闪烁。安静的室内环境声，无音乐。\n表演：她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手始终在腰部到胸口之间活动，绝不触碰或遮挡脸部和嘴。回位姿势：头部居中面向镜头，双肩放松、水平，双手在腰前轻握，嘴唇放松。能量：中——自然的对话式点头和细微的眉毛动作；手部动作小而放松，每个手势都从回位姿势开始，并回到回位姿势。\n时间线：\n0–1 秒：保持回位姿势，然后开始说话。\n1–7 秒：自然的对话式说话，双手在腰前轻握，小幅点头。\n7–8 秒：回到回位姿势，静止保持一秒。\n8–14 秒：双手在胸口高度向外摊开，做一个放松的讲解手势，然后回到腰前合拢。\n14–15 秒：回到回位姿势，静止保持一秒。\n15–21 秒：带着浅笑继续说话，右手在腰部高度做一个小幅、放松的摊掌动作，然后与另一只手重新合拢。\n21–22 秒：回到回位姿势，静止保持一秒。\n22–28 秒：总结时双手在胸前轻轻合拢，再放回腰前，同时自信有力地点头一次。\n28–30 秒：说完这句话，回到回位姿势，静止保持到结束，最后一帧尽量与第一帧一致。\n避免：手触碰或遮挡脸和嘴，头部转动超过 20 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，数手指，指向，挥手，手抬到胸口以上，手指畸形。",
+    "en:K03": "30-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium close-up from mid-chest up, subject centered, eyes on the upper third line, a little headroom.\nIdentity: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses.\nSetting and light: plain warm light-grey seamless wall behind her, evenly lit, nothing else in frame. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light from behind, neutral 5600K white balance, constant exposure for the whole shot. Photorealistic, true-to-life skin texture, sharp focus on the face, natural color, fine film grain, no flicker. Quiet room tone, no music.\nPerformance: She speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay out of view below the frame the whole time. Home pose: head centered and facing the lens, shoulders relaxed and level, hands resting together low and out of view below the bottom edge of the frame, lips relaxed. Energy: medium — natural conversational nods and small eyebrow movements.\nTimeline:\n0–1s: She holds the home pose, then begins speaking.\n1–7s: Conversational delivery with her head moving slightly side to side in rhythm with the words.\n7–8s: She returns to the home pose and holds it still for one second.\n8–14s: Three quick small nods in a row as if agreeing with her own point.\n14–15s: She returns to the home pose and holds it still for one second.\n15–21s: Calm and focused for a serious point: steady gaze, eyebrows drawn very slightly together in concentration (not frowning), and one slow nod.\n21–22s: She returns to the home pose and holds it still for one second.\n22–28s: A brief warm smile while speaking, then a slight lean back, relaxed and confident, as she finishes the thought.\n28–30s: She finishes her sentence, returns to the home pose and holds it still until the end, the final frame matching the first frame as closely as possible.\nAvoid: hands touching or covering the face or mouth, head turned more than 20 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, hands entering the frame, frowning, laughing.",
+    "zh:K03": "30 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。胸部以上近景，人物居中，眼睛位于画面上三分之一线，头顶略留空间。\n人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。\n场景与光线：身后是纯净的浅暖灰无缝墙，照明均匀，画面中没有其他物体。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，身后细微的发丝轮廓光，5600K 中性白平衡，整个镜头曝光恒定。写实，真实皮肤纹理，脸部焦点清晰，自然色彩，细腻胶片颗粒，无闪烁。安静的室内环境声，无音乐。\n表演：她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手全程在画面底边以下不入画。回位姿势：头部居中面向镜头，双肩放松、水平，双手放低并拢在画面底边以下（不入画），嘴唇放松。能量：中——自然的对话式点头和细微的眉毛动作。\n时间线：\n0–1 秒：保持回位姿势，然后开始说话。\n1–7 秒：对话式讲述，头部随着语言节奏轻微地左右摆动。\n7–8 秒：回到回位姿势，静止保持一秒。\n8–14 秒：连续三个快速的小点头，像在肯定自己的观点。\n14–15 秒：回到回位姿势，静止保持一秒。\n15–21 秒：讲严肃观点时平静专注：目光坚定，眉头因专注而极轻微地收拢（不是皱眉），缓慢点头一次。\n21–22 秒：回到回位姿势，静止保持一秒。\n22–28 秒：说话时短暂地温暖一笑，然后身体略微后靠，放松而自信地把话说完。\n28–30 秒：说完这句话，回到回位姿势，静止保持到结束，最后一帧尽量与第一帧一致。\n避免：手触碰或遮挡脸和嘴，头部转动超过 20 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，手进入画面，皱眉，大笑。"
   }
- },
- "micro_actions": [
-  {
-   "id": "K01.1",
-   "framing": "mcu",
-   "en": "Calm, neutral narration with small, slow nods on stressed words; shoulders almost still.",
-   "zh": "平静、中性地叙述，在重音处缓慢地小幅点头，肩部几乎不动。",
-   "tags": {
-    "roles": [
-     "narrate",
-     "explain"
-    ],
-    "energy": 2,
-    "emotion": "neutral",
-    "gestures": [
-     {
-      "g": "nod",
-      "t": 3.0
-     }
-    ],
-    "mouth": "talking",
-    "hands": "out_of_frame",
-    "reversible": "good"
-   },
-   "from": "K01"
-  },
-  {
-   "id": "K01.2",
-   "framing": "mcu",
-   "en": "She keeps speaking with a very slight head tilt to the left and one small eyebrow raise on a key word, then straightens.",
-   "zh": "继续说话，头部极轻微地向左倾斜，在关键词处轻扬一次眉毛，然后回正。",
-   "tags": {
-    "roles": [
-     "narrate",
-     "question"
-    ],
-    "energy": 3,
-    "emotion": "curious",
-    "gestures": [
-     {
-      "g": "head_tilt",
-      "t": 2.0
-     },
-     {
-      "g": "brow_raise",
-      "t": 3.5
-     }
-    ],
-    "mouth": "talking",
-    "hands": "out_of_frame",
-    "reversible": "good"
-   },
-   "from": "K01"
-  },
-  {
-   "id": "K01.3",
-   "framing": "mcu",
-   "en": "She stops speaking; with her lips gently closed she listens attentively, gives two small slow nods with a soft closed-lip smile, and blinks once naturally.",
-   "zh": "她停止说话，双唇轻闭，专注倾听，带着闭唇浅笑缓慢地小幅点头两次，自然眨眼一次。",
-   "tags": {
-    "roles": [
-     "pause",
-     "listen",
-     "close",
-     "cta"
-    ],
-    "energy": 1,
-    "emotion": "warm",
-    "gestures": [
-     {
-      "g": "nod",
-      "t": 2.0
-     },
-     {
-      "g": "nod",
-      "t": 4.0
-     }
-    ],
-    "mouth": "smile_closed",
-    "hands": "out_of_frame",
-    "reversible": "good"
-   },
-   "from": "K01"
-  },
-  {
-   "id": "K02.4",
-   "framing": "ms",
-   "en": "Natural conversational talking with her hands loosely clasped at the waist and small nods.",
-   "zh": "自然的对话式说话，双手在腰前轻握，小幅点头。",
-   "tags": {
-    "roles": [
-     "narrate"
-    ],
-    "energy": 3,
-    "emotion": "neutral",
-    "gestures": [
-     {
-      "g": "nod",
-      "t": 3.0
-     }
-    ],
-    "mouth": "talking",
-    "hands": "low",
-    "reversible": "ok"
-   },
-   "from": "K02"
-  },
-  {
-   "id": "K02.5",
-   "framing": "ms",
-   "en": "Both palms open outward at chest height in a relaxed explaining gesture, then come back together at the waist.",
-   "zh": "双手在胸口高度向外摊开，做一个放松的讲解手势，然后回到腰前合拢。",
-   "tags": {
-    "roles": [
-     "explain"
-    ],
-    "energy": 3,
-    "emotion": "neutral",
-    "gestures": [
-     {
-      "g": "palms_open",
-      "t": 2.5
-     }
-    ],
-    "mouth": "talking",
-    "hands": "chest",
-    "reversible": "no",
-    "keep_out": [
-     [
-      1.5,
-      4.5
-     ]
-    ]
-   },
-   "from": "K02"
-  },
-  {
-   "id": "K02.6",
-   "framing": "ms",
-   "en": "She keeps talking with a light smile while her right hand makes one small, relaxed open-palm movement at waist height, then rejoins the other hand.",
-   "zh": "带着浅笑继续说话，右手在腰部高度做一个小幅、放松的摊掌动作，然后与另一只手重新合拢。",
-   "tags": {
-    "roles": [
-     "narrate",
-     "story"
-    ],
-    "energy": 3,
-    "emotion": "warm",
-    "gestures": [
-     {
-      "g": "palm_single",
-      "t": 3.0
-     }
-    ],
-    "mouth": "talking",
-    "hands": "low",
-    "reversible": "no",
-    "keep_out": [
-     [
-      2.0,
-      4.5
-     ]
-    ]
-   },
-   "from": "K02"
-  },
-  {
-   "id": "K02.7",
-   "framing": "ms",
-   "en": "To sum up, both hands come loosely together in front of her chest, then lower back to the waist as she gives one firm, confident nod.",
-   "zh": "总结时双手在胸前轻轻合拢，再放回腰前，同时自信有力地点头一次。",
-   "tags": {
-    "roles": [
-     "summary",
-     "emphasis"
-    ],
-    "energy": 3,
-    "emotion": "confident",
-    "gestures": [
-     {
-      "g": "hands_together",
-      "t": 2.0
-     },
-     {
-      "g": "nod",
-      "t": 3.5
-     }
-    ],
-    "mouth": "talking",
-    "hands": "chest",
-    "reversible": "no"
-   },
-   "from": "K02"
-  },
-  {
-   "id": "K03.8",
-   "framing": "mcu",
-   "en": "Conversational delivery with her head moving slightly side to side in rhythm with the words.",
-   "zh": "对话式讲述，头部随着语言节奏轻微地左右摆动。",
-   "tags": {
-    "roles": [
-     "narrate",
-     "story"
-    ],
-    "energy": 3,
-    "emotion": "warm",
-    "gestures": [
-     {
-      "g": "sway",
-      "t": 3.0
-     }
-    ],
-    "mouth": "talking",
-    "hands": "out_of_frame",
-    "reversible": "good"
-   },
-   "from": "K03"
-  },
-  {
-   "id": "K03.9",
-   "framing": "mcu",
-   "en": "Three quick small nods in a row as if agreeing with her own point.",
-   "zh": "连续三个快速的小点头，像在肯定自己的观点。",
-   "tags": {
-    "roles": [
-     "summary",
-     "emphasis"
-    ],
-    "energy": 3,
-    "emotion": "confident",
-    "gestures": [
-     {
-      "g": "nod_multi",
-      "t": 2.5
-     }
-    ],
-    "mouth": "talking",
-    "hands": "out_of_frame",
-    "reversible": "ok"
-   },
-   "from": "K03"
-  },
-  {
-   "id": "K03.10",
-   "framing": "mcu",
-   "en": "Calm and focused for a serious point: steady gaze, eyebrows drawn very slightly together in concentration (not frowning), and one slow nod.",
-   "zh": "讲严肃观点时平静专注：目光坚定，眉头因专注而极轻微地收拢（不是皱眉），缓慢点头一次。",
-   "tags": {
-    "roles": [
-     "data",
-     "emphasis",
-     "explain"
-    ],
-    "energy": 2,
-    "emotion": "serious",
-    "gestures": [
-     {
-      "g": "nod",
-      "t": 4.0
-     }
-    ],
-    "mouth": "talking",
-    "hands": "out_of_frame",
-    "reversible": "no"
-   },
-   "from": "K03"
-  },
-  {
-   "id": "K03.11",
-   "framing": "mcu",
-   "en": "A brief warm smile while speaking, then a slight lean back, relaxed and confident, as she finishes the thought.",
-   "zh": "说话时短暂地温暖一笑，然后身体略微后靠，放松而自信地把话说完。",
-   "tags": {
-    "roles": [
-     "close",
-     "cta",
-     "summary"
-    ],
-    "energy": 3,
-    "emotion": "warm",
-    "gestures": [
-     {
-      "g": "lean_back",
-      "t": 3.0
-     }
-    ],
-    "mouth": "talking",
-    "hands": "out_of_frame",
-    "reversible": "no"
-   },
-   "from": "K03"
-  },
-  {
-   "id": "L01.12",
-   "framing": "mcu",
-   "en": "Calm, measured narration with one slow nod at the end of each phrase; shoulders still.",
-   "zh": "平稳、从容地叙述，每句话末尾缓慢点头一次，肩部保持不动。",
-   "tags": {
-    "roles": [
-     "narrate",
-     "explain"
-    ],
-    "energy": 2,
-    "emotion": "neutral",
-    "gestures": [
-     {
-      "g": "nod",
-      "t": 4.5
-     }
-    ],
-    "mouth": "talking",
-    "hands": "out_of_frame",
-    "reversible": "good"
-   },
-   "from": "L01"
-  },
-  {
-   "id": "L01.13",
-   "framing": "mcu",
-   "en": "She leans in very slightly toward the lens for an important point, eyebrows lifting a little, then settles back.",
-   "zh": "讲到重点时身体极轻微地向镜头前倾，眉毛微微上扬，然后坐回。",
-   "tags": {
-    "roles": [
-     "emphasis",
-     "explain"
-    ],
-    "energy": 3,
-    "emotion": "confident",
-    "gestures": [
-     {
-      "g": "lean_in",
-      "t": 2.5
-     },
-     {
-      "g": "brow_raise",
-      "t": 3.0
-     }
-    ],
-    "mouth": "talking",
-    "hands": "out_of_frame",
-    "reversible": "no"
-   },
-   "from": "L01"
-  },
-  {
-   "id": "L01.14",
-   "framing": "mcu",
-   "en": "A brief thoughtful glance up and to the left as if recalling something, then her eyes come back to the lens and she continues with a small knowing nod.",
-   "zh": "像在回想什么，目光短暂地向左上方看一下，随即回到镜头，带着心中有数的小点头继续说。",
-   "tags": {
-    "roles": [
-     "question",
-     "story"
-    ],
-    "energy": 3,
-    "emotion": "curious",
-    "gestures": [
-     {
-      "g": "nod",
-      "t": 3.5
-     }
-    ],
-    "mouth": "talking",
-    "hands": "out_of_frame",
-    "reversible": "no",
-    "keep_out": [
-     [
-      0.5,
-      2.5
-     ]
-    ]
-   },
-   "from": "L01"
-  },
-  {
-   "id": "L01.15",
-   "framing": "mcu",
-   "en": "Serious and focused for a key fact: steady gaze, almost no movement, one slow nod.",
-   "zh": "讲关键事实时严肃专注：目光稳定，几乎不动，缓慢点头一次。",
-   "tags": {
-    "roles": [
-     "data",
-     "emphasis"
-    ],
-    "energy": 2,
-    "emotion": "serious",
-    "gestures": [
-     {
-      "g": "nod",
-      "t": 4.0
-     }
-    ],
-    "mouth": "talking",
-    "hands": "out_of_frame",
-    "reversible": "good"
-   },
-   "from": "L01"
-  },
-  {
-   "id": "L01.16",
-   "framing": "mcu",
-   "en": "Two quick small nods as if saying \"right?\", with a small confident smile.",
-   "zh": "连续两个快速的小点头，像在说“对吧？”，带一点笃定的浅笑。",
-   "tags": {
-    "roles": [
-     "summary",
-     "emphasis"
-    ],
-    "energy": 3,
-    "emotion": "confident",
-    "gestures": [
-     {
-      "g": "nod_multi",
-      "t": 2.5
-     }
-    ],
-    "mouth": "talking",
-    "hands": "out_of_frame",
-    "reversible": "ok"
-   },
-   "from": "L01"
-  },
-  {
-   "id": "L01.17",
-   "framing": "mcu",
-   "en": "Softer, empathetic delivery: slightly slower, warm eyes, one gentle nod.",
-   "zh": "语气更柔和、带共情：语速略慢，眼神温暖，轻轻点头一次。",
-   "tags": {
-    "roles": [
-     "explain",
-     "narrate"
-    ],
-    "energy": 2,
-    "emotion": "empathetic",
-    "gestures": [
-     {
-      "g": "nod",
-      "t": 3.5
-     }
-    ],
-    "mouth": "talking",
-    "hands": "out_of_frame",
-    "reversible": "good"
-   },
-   "from": "L01"
-  },
-  {
-   "id": "L01.18",
-   "framing": "mcu",
-   "en": "She stops speaking and listens with her lips gently closed, a soft closed-lip smile, one slow nod and a natural blink.",
-   "zh": "她停止说话，双唇轻闭地倾听，带着闭唇浅笑缓慢点头一次，自然眨眼。",
-   "tags": {
-    "roles": [
-     "pause",
-     "listen",
-     "close"
-    ],
-    "energy": 1,
-    "emotion": "warm",
-    "gestures": [
-     {
-      "g": "nod",
-      "t": 3.0
-     }
-    ],
-    "mouth": "smile_closed",
-    "hands": "out_of_frame",
-    "reversible": "good"
-   },
-   "from": "L01"
-  },
-  {
-   "id": "L02.19",
-   "framing": "ms",
-   "en": "Natural conversational talking with her hands loosely clasped at the waist and small nods.",
-   "zh": "自然的对话式说话，双手在腰前轻握，小幅点头。",
-   "tags": {
-    "roles": [
-     "narrate"
-    ],
-    "energy": 3,
-    "emotion": "neutral",
-    "gestures": [
-     {
-      "g": "nod",
-      "t": 3.0
-     }
-    ],
-    "mouth": "talking",
-    "hands": "low",
-    "reversible": "ok"
-   },
-   "from": "L02"
-  },
-  {
-   "id": "L02.20",
-   "framing": "ms",
-   "en": "Her hand on the screen-right side turns palm-up at chest height and gently presents toward screen-right as if holding something small on her palm, holds for a beat, then returns to the waist.",
-   "zh": "画面右侧的那只手在胸口高度掌心向上，轻轻向画面右侧呈现，像托着一个小东西，停一拍，然后回到腰前。",
-   "tags": {
-    "roles": [
-     "emphasis",
-     "data",
-     "explain"
-    ],
-    "energy": 3,
-    "emotion": "confident",
-    "gestures": [
-     {
-      "g": "palm_present",
-      "t": 2.5,
-      "zone": "right_half"
-     }
-    ],
-    "mouth": "talking",
-    "hands": "chest",
-    "reversible": "no",
-    "keep_out": [
-     [
-      1.5,
-      4.5
-     ]
-    ]
-   },
-   "from": "L02"
-  },
-  {
-   "id": "L02.21",
-   "framing": "ms",
-   "en": "Both palms open outward at chest height in a relaxed explaining gesture, then come back together at the waist.",
-   "zh": "双手在胸口高度向外摊开，做一个放松的讲解手势，然后回到腰前合拢。",
-   "tags": {
-    "roles": [
-     "explain"
-    ],
-    "energy": 3,
-    "emotion": "neutral",
-    "gestures": [
-     {
-      "g": "palms_open",
-      "t": 2.5
-     }
-    ],
-    "mouth": "talking",
-    "hands": "chest",
-    "reversible": "no",
-    "keep_out": [
-     [
-      1.5,
-      4.5
-     ]
-    ]
-   },
-   "from": "L02"
-  },
-  {
-   "id": "L02.22",
-   "framing": "ms",
-   "en": "To sum up, both hands come loosely together in front of her chest with one confident nod, then lower back to the waist.",
-   "zh": "总结时双手在胸前轻轻合拢，自信地点头一次，再放回腰前。",
-   "tags": {
-    "roles": [
-     "summary"
-    ],
-    "energy": 3,
-    "emotion": "confident",
-    "gestures": [
-     {
-      "g": "hands_together",
-      "t": 2.0
-     },
-     {
-      "g": "nod",
-      "t": 3.0
-     }
-    ],
-    "mouth": "talking",
-    "hands": "chest",
-    "reversible": "no"
-   },
-   "from": "L02"
-  },
-  {
-   "id": "L02.23",
-   "framing": "ms",
-   "en": "She leans forward very slightly with her hands resting at the waist and speaks in a serious, focused tone.",
-   "zh": "她身体极轻微地前倾，双手放在腰前，用严肃专注的语气说话。",
-   "tags": {
-    "roles": [
-     "data",
-     "emphasis"
-    ],
-    "energy": 2,
-    "emotion": "serious",
-    "gestures": [
-     {
-      "g": "lean_in",
-      "t": 1.5
-     }
-    ],
-    "mouth": "talking",
-    "hands": "low",
-    "reversible": "ok"
-   },
-   "from": "L02"
-  },
-  {
-   "id": "L02.24",
-   "framing": "ms",
-   "en": "Her hand on the screen-left side turns palm-up at chest height and gently presents toward screen-left, holds for a beat, then returns to the waist.",
-   "zh": "画面左侧的那只手在胸口高度掌心向上，轻轻向画面左侧呈现，停一拍，然后回到腰前。",
-   "tags": {
-    "roles": [
-     "emphasis",
-     "data",
-     "explain"
-    ],
-    "energy": 3,
-    "emotion": "confident",
-    "gestures": [
-     {
-      "g": "palm_present",
-      "t": 2.5,
-      "zone": "left_half"
-     }
-    ],
-    "mouth": "talking",
-    "hands": "chest",
-    "reversible": "no",
-    "keep_out": [
-     [
-      1.5,
-      4.5
-     ]
-    ]
-   },
-   "from": "L02"
-  },
-  {
-   "id": "L02.25",
-   "framing": "ms",
-   "en": "Hands loosely clasped, she marks three short phrases with three small nods, without counting on her fingers.",
-   "zh": "双手轻握，用三个小点头标出三个短句，不数手指。",
-   "tags": {
-    "roles": [
-     "list"
-    ],
-    "energy": 3,
-    "emotion": "neutral",
-    "gestures": [
-     {
-      "g": "nod_multi",
-      "t": 2.5
-     }
-    ],
-    "mouth": "talking",
-    "hands": "low",
-    "reversible": "ok"
-   },
-   "from": "L02"
-  },
-  {
-   "id": "L02.26",
-   "framing": "ms",
-   "en": "A warm close: a friendly smile while finishing her sentence, then her hands rest together at the waist and she gives a small, warm nod.",
-   "zh": "温暖收尾：说完这句话时露出亲切的笑容，然后双手在腰前合拢，温暖地轻轻点头。",
-   "tags": {
-    "roles": [
-     "close",
-     "cta"
-    ],
-    "energy": 2,
-    "emotion": "warm",
-    "gestures": [
-     {
-      "g": "nod",
-      "t": 4.0
-     }
-    ],
-    "mouth": "talking",
-    "hands": "low",
-    "reversible": "no"
-   },
-   "from": "L02"
-  },
-  {
-   "id": "X.27",
-   "framing": "mcu",
-   "en": "Mid-sentence she pauses for half a beat with her lips closed, as if choosing the right word, then continues with a small nod.",
-   "zh": "说到一半，双唇闭合停顿半拍，像在挑一个合适的词，然后轻轻点头继续说。",
-   "tags": {
-    "roles": [
-     "question",
-     "narrate"
-    ],
-    "energy": 2,
-    "emotion": "curious",
-    "gestures": [
-     {
-      "g": "nod",
-      "t": 3.5
-     }
-    ],
-    "mouth": "talking",
-    "hands": "out_of_frame",
-    "reversible": "no"
-   },
-   "from": "menu"
-  },
-  {
-   "id": "X.28",
-   "framing": "mcu",
-   "en": "A small amused smile breaks through mid-sentence, then she continues warmly.",
-   "zh": "说到一半忍不住露出一个被逗乐的浅笑，然后温暖地继续说。",
-   "tags": {
-    "roles": [
-     "story",
-     "narrate"
-    ],
-    "energy": 3,
-    "emotion": "playful",
-    "gestures": [
-     {
-      "g": "smile_greet",
-      "t": 2.5
-     }
-    ],
-    "mouth": "talking",
-    "hands": "out_of_frame",
-    "reversible": "no"
-   },
-   "from": "menu"
-  },
-  {
-   "id": "X.29",
-   "framing": "mcu",
-   "en": "She narrows her focus slightly and lowers her voice as if sharing something important, one slow nod.",
-   "zh": "她稍稍收拢目光、压低一点声音，像在分享一件重要的事，缓慢点头一次。",
-   "tags": {
-    "roles": [
-     "emphasis",
-     "data"
-    ],
-    "energy": 2,
-    "emotion": "serious",
-    "gestures": [
-     {
-      "g": "nod",
-      "t": 4.0
-     }
-    ],
-    "mouth": "talking",
-    "hands": "out_of_frame",
-    "reversible": "good"
-   },
-   "from": "menu"
-  },
-  {
-   "id": "X.30",
-   "framing": "ms",
-   "en": "A small modest shrug of the shoulders with an easy smile, as if saying 'it is simpler than it sounds'.",
-   "zh": "带着轻松的笑容，双肩小幅耸一下，像在说“其实没那么难”。",
-   "tags": {
-    "roles": [
-     "explain",
-     "narrate"
-    ],
-    "energy": 3,
-    "emotion": "playful",
-    "gestures": [
-     {
-      "g": "lean_back",
-      "t": 2.5
-     }
-    ],
-    "mouth": "talking",
-    "hands": "low",
-    "reversible": "no"
-   },
-   "from": "menu"
-  },
-  {
-   "id": "X.31",
-   "framing": "ms",
-   "en": "One hand rises to chest height and makes a slow, small horizontal sweep as if laying out a timeline, then returns to the waist.",
-   "zh": "一只手抬到胸口高度，缓慢地做一个小幅水平划动，像在摆出一条时间线，然后回到腰前。",
-   "tags": {
-    "roles": [
-     "story",
-     "explain"
-    ],
-    "energy": 3,
-    "emotion": "neutral",
-    "gestures": [
-     {
-      "g": "palm_single",
-      "t": 2.5
-     }
-    ],
-    "mouth": "talking",
-    "hands": "chest",
-    "reversible": "no"
-   },
-   "from": "menu"
-  }
- ],
- "frozen_check": {
-  "en:K01": "30-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium close-up from mid-chest up, subject centered, eyes on the upper third line, a little headroom.\nIdentity: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses.\nSetting and light: plain warm light-grey seamless wall behind her, evenly lit, nothing else in frame. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light from behind, neutral 5600K white balance, constant exposure for the whole shot. Photorealistic, true-to-life skin texture, sharp focus on the face, natural color, fine film grain, no flicker. Quiet room tone, no music.\nPerformance: In the first three sections she speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm; in the last section she stops speaking and listens with her lips gently closed. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay out of view below the frame the whole time. Home pose: head centered and facing the lens, shoulders relaxed and level, hands resting together low and out of view below the bottom edge of the frame, lips relaxed. Energy: low to medium — only small, subtle, natural movements, so that every section can be reused many times and even played in reverse without looking odd.\nTimeline:\n0–1s: She holds the home pose, then begins speaking.\n1–7s: Calm, neutral narration with small, slow nods on stressed words; shoulders almost still.\n7–8s: She returns to the home pose and holds it still for one second.\n8–14s: She keeps speaking with a very slight head tilt to the left and one small eyebrow raise on a key word, then straightens.\n14–15s: She returns to the home pose and holds it still for one second.\n15–21s: She looks into the lens with a bright, warm smile and a small welcoming nod, then keeps speaking warmly with a soft smile.\n21–22s: She returns to the home pose and holds it still for one second.\n22–28s: She stops speaking; with her lips gently closed she listens attentively, gives two small slow nods with a soft closed-lip smile, and blinks once naturally.\n28–30s: She relaxes back into the home pose with a calm, faint closed-lip smile and holds it still until the end, the final frame matching the first frame as closely as possible.\nAvoid: hands touching or covering the face or mouth, head turned more than 20 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, hands entering the frame, laughing, opening the mouth in the last section.",
-  "zh:K01": "30 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。胸部以上近景，人物居中，眼睛位于画面上三分之一线，头顶略留空间。\n人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。\n场景与光线：身后是纯净的浅暖灰无缝墙，照明均匀，画面中没有其他物体。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，身后细微的发丝轮廓光，5600K 中性白平衡，整个镜头曝光恒定。写实，真实皮肤纹理，脸部焦点清晰，自然色彩，细腻胶片颗粒，无闪烁。安静的室内环境声，无音乐。\n表演：前三段她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松；最后一段她停止说话，双唇轻轻闭合地倾听。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手全程在画面底边以下不入画。回位姿势：头部居中面向镜头，双肩放松、水平，双手放低并拢在画面底边以下（不入画），嘴唇放松。能量：低到中——只有细小、自然的动作，让每一段都能被反复使用，甚至倒放也不显得奇怪。\n时间线：\n0–1 秒：保持回位姿势，然后开始说话。\n1–7 秒：平静、中性地叙述，在重音处缓慢地小幅点头，肩部几乎不动。\n7–8 秒：回到回位姿势，静止保持一秒。\n8–14 秒：继续说话，头部极轻微地向左倾斜，在关键词处轻扬一次眉毛，然后回正。\n14–15 秒：回到回位姿势，静止保持一秒。\n15–21 秒：她看向镜头，露出明亮温暖的笑容，轻轻点头表示欢迎，然后带着浅笑温暖地继续说。\n21–22 秒：回到回位姿势，静止保持一秒。\n22–28 秒：她停止说话，双唇轻闭，专注倾听，带着闭唇浅笑缓慢地小幅点头两次，自然眨眼一次。\n28–30 秒：放松回到回位姿势，只留一丝平静的闭唇笑意，静止保持到结束，最后一帧尽量与第一帧一致。\n避免：手触碰或遮挡脸和嘴，头部转动超过 20 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，手进入画面，大笑，最后一段张嘴。",
-  "en:K02": "30-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium shot from the waist up, subject centered, eyes on the upper third line, with enough room on both sides that her hands stay fully inside the frame when she gestures.\nIdentity: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses.\nSetting and light: plain warm light-grey seamless wall behind her, evenly lit, nothing else in frame. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light from behind, neutral 5600K white balance, constant exposure for the whole shot. Photorealistic, true-to-life skin texture, sharp focus on the face, natural color, fine film grain, no flicker. Quiet room tone, no music.\nPerformance: She speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay between waist and chest height and never touch or cover the face or mouth. Home pose: head centered and facing the lens, shoulders relaxed and level, hands loosely clasped in front of the waist, lips relaxed. Energy: medium — natural conversational nods and small eyebrow movements; hand movements are small and relaxed, and every gesture starts from and returns to the home pose.\nTimeline:\n0–1s: She holds the home pose, then begins speaking.\n1–7s: Natural conversational talking with her hands loosely clasped at the waist and small nods.\n7–8s: She returns to the home pose and holds it still for one second.\n8–14s: Both palms open outward at chest height in a relaxed explaining gesture, then come back together at the waist.\n14–15s: She returns to the home pose and holds it still for one second.\n15–21s: She keeps talking with a light smile while her right hand makes one small, relaxed open-palm movement at waist height, then rejoins the other hand.\n21–22s: She returns to the home pose and holds it still for one second.\n22–28s: To sum up, both hands come loosely together in front of her chest, then lower back to the waist as she gives one firm, confident nod.\n28–30s: She finishes her sentence, returns to the home pose and holds it still until the end, the final frame matching the first frame as closely as possible.\nAvoid: hands touching or covering the face or mouth, head turned more than 20 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, counting on fingers, pointing, waving, hands rising above chest height, deformed fingers.",
-  "zh:K02": "30 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。腰部以上中景，人物居中，眼睛位于画面上三分之一线，两侧留足空间，做手势时双手完整留在画面内。\n人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。\n场景与光线：身后是纯净的浅暖灰无缝墙，照明均匀，画面中没有其他物体。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，身后细微的发丝轮廓光，5600K 中性白平衡，整个镜头曝光恒定。写实，真实皮肤纹理，脸部焦点清晰，自然色彩，细腻胶片颗粒，无闪烁。安静的室内环境声，无音乐。\n表演：她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手始终在腰部到胸口之间活动，绝不触碰或遮挡脸部和嘴。回位姿势：头部居中面向镜头，双肩放松、水平，双手在腰前轻握，嘴唇放松。能量：中——自然的对话式点头和细微的眉毛动作；手部动作小而放松，每个手势都从回位姿势开始，并回到回位姿势。\n时间线：\n0–1 秒：保持回位姿势，然后开始说话。\n1–7 秒：自然的对话式说话，双手在腰前轻握，小幅点头。\n7–8 秒：回到回位姿势，静止保持一秒。\n8–14 秒：双手在胸口高度向外摊开，做一个放松的讲解手势，然后回到腰前合拢。\n14–15 秒：回到回位姿势，静止保持一秒。\n15–21 秒：带着浅笑继续说话，右手在腰部高度做一个小幅、放松的摊掌动作，然后与另一只手重新合拢。\n21–22 秒：回到回位姿势，静止保持一秒。\n22–28 秒：总结时双手在胸前轻轻合拢，再放回腰前，同时自信有力地点头一次。\n28–30 秒：说完这句话，回到回位姿势，静止保持到结束，最后一帧尽量与第一帧一致。\n避免：手触碰或遮挡脸和嘴，头部转动超过 20 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，数手指，指向，挥手，手抬到胸口以上，手指畸形。",
-  "en:K03": "30-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium close-up from mid-chest up, subject centered, eyes on the upper third line, a little headroom.\nIdentity: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses.\nSetting and light: plain warm light-grey seamless wall behind her, evenly lit, nothing else in frame. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light from behind, neutral 5600K white balance, constant exposure for the whole shot. Photorealistic, true-to-life skin texture, sharp focus on the face, natural color, fine film grain, no flicker. Quiet room tone, no music.\nPerformance: She speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay out of view below the frame the whole time. Home pose: head centered and facing the lens, shoulders relaxed and level, hands resting together low and out of view below the bottom edge of the frame, lips relaxed. Energy: medium — natural conversational nods and small eyebrow movements.\nTimeline:\n0–1s: She holds the home pose, then begins speaking.\n1–7s: Conversational delivery with her head moving slightly side to side in rhythm with the words.\n7–8s: She returns to the home pose and holds it still for one second.\n8–14s: Three quick small nods in a row as if agreeing with her own point.\n14–15s: She returns to the home pose and holds it still for one second.\n15–21s: Calm and focused for a serious point: steady gaze, eyebrows drawn very slightly together in concentration (not frowning), and one slow nod.\n21–22s: She returns to the home pose and holds it still for one second.\n22–28s: A brief warm smile while speaking, then a slight lean back, relaxed and confident, as she finishes the thought.\n28–30s: She finishes her sentence, returns to the home pose and holds it still until the end, the final frame matching the first frame as closely as possible.\nAvoid: hands touching or covering the face or mouth, head turned more than 20 degrees, hair crossing the face, jewelry, glasses, patterned clothing, logos, text, subtitles, camera movement, zoom, cuts, lighting changes, extra people, objects in the background, hands entering the frame, frowning, laughing.",
-  "zh:K03": "30 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。胸部以上近景，人物居中，眼睛位于画面上三分之一线，头顶略留空间。\n人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。\n场景与光线：身后是纯净的浅暖灰无缝墙，照明均匀，画面中没有其他物体。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，身后细微的发丝轮廓光，5600K 中性白平衡，整个镜头曝光恒定。写实，真实皮肤纹理，脸部焦点清晰，自然色彩，细腻胶片颗粒，无闪烁。安静的室内环境声，无音乐。\n表演：她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手全程在画面底边以下不入画。回位姿势：头部居中面向镜头，双肩放松、水平，双手放低并拢在画面底边以下（不入画），嘴唇放松。能量：中——自然的对话式点头和细微的眉毛动作。\n时间线：\n0–1 秒：保持回位姿势，然后开始说话。\n1–7 秒：对话式讲述，头部随着语言节奏轻微地左右摆动。\n7–8 秒：回到回位姿势，静止保持一秒。\n8–14 秒：连续三个快速的小点头，像在肯定自己的观点。\n14–15 秒：回到回位姿势，静止保持一秒。\n15–21 秒：讲严肃观点时平静专注：目光坚定，眉头因专注而极轻微地收拢（不是皱眉），缓慢点头一次。\n21–22 秒：回到回位姿势，静止保持一秒。\n22–28 秒：说话时短暂地温暖一笑，然后身体略微后靠，放松而自信地把话说完。\n28–30 秒：说完这句话，回到回位姿势，静止保持到结束，最后一帧尽量与第一帧一致。\n避免：手触碰或遮挡脸和嘴，头部转动超过 20 度，头发遮挡脸部，首饰，眼镜，有图案的服装，logo，文字，字幕，镜头运动，变焦，剪辑，光线变化，其他人物，背景杂物，手进入画面，皱眉，大笑。"
- }
 }

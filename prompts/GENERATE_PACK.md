@@ -1,6 +1,6 @@
 # 生成包 · GENERATE_PACK — 无遮挡元视频底板
 
-> 由 `python3 -m istream identity set` 生成 · 身份 slug=`default` · 2026-10-30T16:34:05+08:00
+> 由 `python3 -m istream identity set` 生成 · 身份 slug=`gerry` · 2026-11-07T21:14:36+08:00
 > **先生成可无限复用的无遮挡口播元视频，再切片；不要先剪片再找底板。**
 > This pack is the front door for plate generation. Full library: `PROMPT_LIBRARY.md`.
 
@@ -16,8 +16,8 @@
 - [ ] 分辨率 ≥ 1080p（能更高更好，留给推近 / 裁竖）
 - [ ] 帧率统一（优先 **25 fps**）
 - [ ] **每次挂上本参考图作身份参考**（identity reference）
-  - 路径：`(use your own reference image matching the default identity text, or run identity set)`
-  - 称呼：default (shipped persona)
+  - 路径：`/Users/gerry/Proj/github/new/lanshu-infinite-stream-koubo/prompts/identity/gerry/ref.png`
+  - 称呼：gerry
 - [ ] 首帧图：先出 IMG-A（近景）/ IMG-B（中景）/ IMG-A169（横屏），或把参考图按构图裁切后 img2img
 - [ ] **模型自带音频一律静音**（口型与配音另做）
 - [ ] 每条抽 4–5 次，挑最好一条入库
@@ -40,13 +40,13 @@ Avoid 段已写明：hands touching or covering the face or mouth · 手不碰�
 **EN**
 
 ```text
-Identity: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses.
+Identity: exactly the same person as in the attached reference image (same face, hair, skin tone, age appearance). clothing matches the reference image unless an outfit lock is given. No jewelry, no glasses unless visible in the reference.
 ```
 
 **中文**
 
 ```text
-人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。
+人物：与所附参考图中为同一人（脸型、发型、肤色、年龄感一致）。服装与参考图一致（除非另行指定服装锁定）。不戴首饰；除非参考图中可见，否则不戴眼镜。
 ```
 
 > 外貌细节来自你提供的 `--describe` / `--outfit` / `--name`，**不会**自动读图分析脸。
@@ -59,13 +59,13 @@ Identity: the same East Asian woman in her early thirties as in the reference im
 **EN**
 
 ```text
-Photorealistic 9:16 vertical portrait photo, medium close-up from mid-chest up, subject centered, eyes on the upper third line, a little headroom. Subject: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses. She faces the lens directly with a relaxed neutral expression, lips relaxed and gently closed, shoulders relaxed and level, hands out of view below the frame. Background: plain warm light-grey seamless wall. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light, neutral 5600K. True-to-life skin texture, sharp focus on the eyes, natural color. No text, no logo.
+Photorealistic 9:16 vertical portrait photo, medium close-up from mid-chest up, subject centered, eyes on the upper third line, a little headroom. Subject: exactly the same person as in the attached reference image (same face, hair, skin tone, age appearance). clothing matches the reference image unless an outfit lock is given. No jewelry, no glasses unless visible in the reference. She faces the lens directly with a relaxed neutral expression, lips relaxed and gently closed, shoulders relaxed and level, hands out of view below the frame. Background: plain warm light-grey seamless wall. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light, neutral 5600K. True-to-life skin texture, sharp focus on the eyes, natural color. No text, no logo.
 ```
 
 **中文**
 
 ```text
-写实 9:16 竖幅人像照片，胸部以上近景，人物居中，眼睛位于画面上三分之一线，头顶略留空间。人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。她正对镜头，表情放松中性，嘴唇放松、轻轻闭合，双肩放松、水平，双手在画面以下不入画。背景：纯净的浅暖灰无缝墙。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，细微发丝轮廓光，5600K 中性色温。真实皮肤纹理，眼睛焦点清晰，自然色彩。无文字，无 logo。
+写实 9:16 竖幅人像照片，胸部以上近景，人物居中，眼睛位于画面上三分之一线，头顶略留空间。人物：与所附参考图中为同一人（脸型、发型、肤色、年龄感一致）。服装与参考图一致（除非另行指定服装锁定）。不戴首饰；除非参考图中可见，否则不戴眼镜。她正对镜头，表情放松中性，嘴唇放松、轻轻闭合，双肩放松、水平，双手在画面以下不入画。背景：纯净的浅暖灰无缝墙。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，细微发丝轮廓光，5600K 中性色温。真实皮肤纹理，眼睛焦点清晰，自然色彩。无文字，无 logo。
 ```
 
 ### IMG-B
@@ -73,13 +73,13 @@ Photorealistic 9:16 vertical portrait photo, medium close-up from mid-chest up, 
 **EN**
 
 ```text
-Photorealistic 9:16 vertical portrait photo, medium shot from the waist up, subject centered, eyes on the upper third line, room on both sides of the body. Subject: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses. She faces the lens directly with a relaxed neutral expression, lips relaxed and gently closed, shoulders relaxed and level, hands loosely clasped in front of the waist, all fingers natural. Background: plain warm light-grey seamless wall. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light, neutral 5600K. True-to-life skin texture, sharp focus on the eyes, natural color. No text, no logo.
+Photorealistic 9:16 vertical portrait photo, medium shot from the waist up, subject centered, eyes on the upper third line, room on both sides of the body. Subject: exactly the same person as in the attached reference image (same face, hair, skin tone, age appearance). clothing matches the reference image unless an outfit lock is given. No jewelry, no glasses unless visible in the reference. She faces the lens directly with a relaxed neutral expression, lips relaxed and gently closed, shoulders relaxed and level, hands loosely clasped in front of the waist, all fingers natural. Background: plain warm light-grey seamless wall. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light, neutral 5600K. True-to-life skin texture, sharp focus on the eyes, natural color. No text, no logo.
 ```
 
 **中文**
 
 ```text
-写实 9:16 竖幅人像照片，腰部以上中景，人物居中，眼睛位于画面上三分之一线，身体两侧留有空间。人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。她正对镜头，表情放松中性，嘴唇放松、轻轻闭合，双肩放松、水平，双手在腰前轻握，手指自然。背景：纯净的浅暖灰无缝墙。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，细微发丝轮廓光，5600K 中性色温。真实皮肤纹理，眼睛焦点清晰，自然色彩。无文字，无 logo。
+写实 9:16 竖幅人像照片，腰部以上中景，人物居中，眼睛位于画面上三分之一线，身体两侧留有空间。人物：与所附参考图中为同一人（脸型、发型、肤色、年龄感一致）。服装与参考图一致（除非另行指定服装锁定）。不戴首饰；除非参考图中可见，否则不戴眼镜。她正对镜头，表情放松中性，嘴唇放松、轻轻闭合，双肩放松、水平，双手在腰前轻握，手指自然。背景：纯净的浅暖灰无缝墙。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，细微发丝轮廓光，5600K 中性色温。真实皮肤纹理，眼睛焦点清晰，自然色彩。无文字，无 logo。
 ```
 
 ### IMG-A169
@@ -87,13 +87,13 @@ Photorealistic 9:16 vertical portrait photo, medium shot from the waist up, subj
 **EN**
 
 ```text
-Photorealistic 16:9 horizontal photo, medium close-up from mid-chest up, subject on the left third facing the lens, eyes on the upper third line, a little headroom, the right half of the frame clean softly lit wall. Subject: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses. She faces the lens directly with a relaxed neutral expression, lips relaxed and gently closed, shoulders relaxed and level, hands out of view below the frame. Background: plain warm light-grey seamless wall. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light, neutral 5600K. True-to-life skin texture, sharp focus on the eyes, natural color. No text, no logo.
+Photorealistic 16:9 horizontal photo, medium close-up from mid-chest up, subject on the left third facing the lens, eyes on the upper third line, a little headroom, the right half of the frame clean softly lit wall. Subject: exactly the same person as in the attached reference image (same face, hair, skin tone, age appearance). clothing matches the reference image unless an outfit lock is given. No jewelry, no glasses unless visible in the reference. She faces the lens directly with a relaxed neutral expression, lips relaxed and gently closed, shoulders relaxed and level, hands out of view below the frame. Background: plain warm light-grey seamless wall. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light, neutral 5600K. True-to-life skin texture, sharp focus on the eyes, natural color. No text, no logo.
 ```
 
 **中文**
 
 ```text
-写实 16:9 横幅照片，胸部以上近景，人物位于左三分之一处、正对镜头，眼睛位于画面上三分之一线，头顶略留空间，画面右半边是干净、柔和受光的墙面。人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。她正对镜头，表情放松中性，嘴唇放松、轻轻闭合，双肩放松、水平，双手在画面以下不入画。背景：纯净的浅暖灰无缝墙。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，细微发丝轮廓光，5600K 中性色温。真实皮肤纹理，眼睛焦点清晰，自然色彩。无文字，无 logo。
+写实 16:9 横幅照片，胸部以上近景，人物位于左三分之一处、正对镜头，眼睛位于画面上三分之一线，头顶略留空间，画面右半边是干净、柔和受光的墙面。人物：与所附参考图中为同一人（脸型、发型、肤色、年龄感一致）。服装与参考图一致（除非另行指定服装锁定）。不戴首饰；除非参考图中可见，否则不戴眼镜。她正对镜头，表情放松中性，嘴唇放松、轻轻闭合，双肩放松、水平，双手在画面以下不入画。背景：纯净的浅暖灰无缝墙。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，细微发丝轮廓光，5600K 中性色温。真实皮肤纹理，眼睛焦点清晰，自然色彩。无文字，无 logo。
 ```
 
 ## 起步套装提示词 / Starter plate prompts（先生成这三条）
@@ -109,7 +109,7 @@ Photorealistic 16:9 horizontal photo, medium close-up from mid-chest up, subject
 
 ```text
 30-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium close-up from mid-chest up, subject centered, eyes on the upper third line, a little headroom.
-Identity: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses.
+Identity: exactly the same person as in the attached reference image (same face, hair, skin tone, age appearance). clothing matches the reference image unless an outfit lock is given. No jewelry, no glasses unless visible in the reference.
 Setting and light: plain warm light-grey seamless wall behind her, evenly lit, nothing else in frame. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light from behind, neutral 5600K white balance, constant exposure for the whole shot. Photorealistic, true-to-life skin texture, sharp focus on the face, natural color, fine film grain, no flicker. Quiet room tone, no music.
 Performance: In the first three sections she speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm; in the last section she stops speaking and listens with her lips gently closed. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay out of view below the frame the whole time. Home pose: head centered and facing the lens, shoulders relaxed and level, hands resting together low and out of view below the bottom edge of the frame, lips relaxed. Energy: low to medium — only small, subtle, natural movements, so that every section can be reused many times and even played in reverse without looking odd.
 Timeline:
@@ -129,7 +129,7 @@ Avoid: hands touching or covering the face or mouth, head turned more than 20 de
 
 ```text
 30 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。胸部以上近景，人物居中，眼睛位于画面上三分之一线，头顶略留空间。
-人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。
+人物：与所附参考图中为同一人（脸型、发型、肤色、年龄感一致）。服装与参考图一致（除非另行指定服装锁定）。不戴首饰；除非参考图中可见，否则不戴眼镜。
 场景与光线：身后是纯净的浅暖灰无缝墙，照明均匀，画面中没有其他物体。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，身后细微的发丝轮廓光，5600K 中性白平衡，整个镜头曝光恒定。写实，真实皮肤纹理，脸部焦点清晰，自然色彩，细腻胶片颗粒，无闪烁。安静的室内环境声，无音乐。
 表演：前三段她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松；最后一段她停止说话，双唇轻轻闭合地倾听。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手全程在画面底边以下不入画。回位姿势：头部居中面向镜头，双肩放松、水平，双手放低并拢在画面底边以下（不入画），嘴唇放松。能量：低到中——只有细小、自然的动作，让每一段都能被反复使用，甚至倒放也不显得奇怪。
 时间线：
@@ -158,7 +158,7 @@ Avoid: hands touching or covering the face or mouth, head turned more than 20 de
 
 ```text
 30-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium shot from the waist up, subject centered, eyes on the upper third line, with enough room on both sides that her hands stay fully inside the frame when she gestures.
-Identity: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses.
+Identity: exactly the same person as in the attached reference image (same face, hair, skin tone, age appearance). clothing matches the reference image unless an outfit lock is given. No jewelry, no glasses unless visible in the reference.
 Setting and light: plain warm light-grey seamless wall behind her, evenly lit, nothing else in frame. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light from behind, neutral 5600K white balance, constant exposure for the whole shot. Photorealistic, true-to-life skin texture, sharp focus on the face, natural color, fine film grain, no flicker. Quiet room tone, no music.
 Performance: She speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay between waist and chest height and never touch or cover the face or mouth. Home pose: head centered and facing the lens, shoulders relaxed and level, hands loosely clasped in front of the waist, lips relaxed. Energy: medium — natural conversational nods and small eyebrow movements; hand movements are small and relaxed, and every gesture starts from and returns to the home pose.
 Timeline:
@@ -178,7 +178,7 @@ Avoid: hands touching or covering the face or mouth, head turned more than 20 de
 
 ```text
 30 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。腰部以上中景，人物居中，眼睛位于画面上三分之一线，两侧留足空间，做手势时双手完整留在画面内。
-人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。
+人物：与所附参考图中为同一人（脸型、发型、肤色、年龄感一致）。服装与参考图一致（除非另行指定服装锁定）。不戴首饰；除非参考图中可见，否则不戴眼镜。
 场景与光线：身后是纯净的浅暖灰无缝墙，照明均匀，画面中没有其他物体。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，身后细微的发丝轮廓光，5600K 中性白平衡，整个镜头曝光恒定。写实，真实皮肤纹理，脸部焦点清晰，自然色彩，细腻胶片颗粒，无闪烁。安静的室内环境声，无音乐。
 表演：她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手始终在腰部到胸口之间活动，绝不触碰或遮挡脸部和嘴。回位姿势：头部居中面向镜头，双肩放松、水平，双手在腰前轻握，嘴唇放松。能量：中——自然的对话式点头和细微的眉毛动作；手部动作小而放松，每个手势都从回位姿势开始，并回到回位姿势。
 时间线：
@@ -207,7 +207,7 @@ Avoid: hands touching or covering the face or mouth, head turned more than 20 de
 
 ```text
 30-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium close-up from mid-chest up, subject centered, eyes on the upper third line, a little headroom.
-Identity: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses.
+Identity: exactly the same person as in the attached reference image (same face, hair, skin tone, age appearance). clothing matches the reference image unless an outfit lock is given. No jewelry, no glasses unless visible in the reference.
 Setting and light: plain warm light-grey seamless wall behind her, evenly lit, nothing else in frame. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light from behind, neutral 5600K white balance, constant exposure for the whole shot. Photorealistic, true-to-life skin texture, sharp focus on the face, natural color, fine film grain, no flicker. Quiet room tone, no music.
 Performance: This plate holds four different natural ways of starting a video, separated by returns to the home pose. When she speaks, she is calm and natural with natural jaw and lip movement. Her hands stay out of view below the frame the whole time; head turns up to 30 degrees happen only in the short set-up moments before she starts speaking. Home pose: head centered and facing the lens, shoulders relaxed and level, hands resting together low and out of view below the bottom edge of the frame, lips relaxed. Energy: medium — unforced, like a real presenter settling in, never performed or theatrical.
 Timeline:
@@ -230,7 +230,7 @@ Avoid: hands touching or covering the face or mouth, head turned more than 30 de
 
 ```text
 30 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。胸部以上近景，人物居中，眼睛位于画面上三分之一线，头顶略留空间。
-人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。
+人物：与所附参考图中为同一人（脸型、发型、肤色、年龄感一致）。服装与参考图一致（除非另行指定服装锁定）。不戴首饰；除非参考图中可见，否则不戴眼镜。
 场景与光线：身后是纯净的浅暖灰无缝墙，照明均匀，画面中没有其他物体。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，身后细微的发丝轮廓光，5600K 中性白平衡，整个镜头曝光恒定。写实，真实皮肤纹理，脸部焦点清晰，自然色彩，细腻胶片颗粒，无闪烁。安静的室内环境声，无音乐。
 表演：这条底板包含四种不同的自然开场方式，之间都回到回位姿势。她说话时平静自然，下颌与嘴唇自然运动。双手全程在画面底边以下不入画；最多 30 度的转头只出现在开口前的短暂准备动作里。回位姿势：头部居中面向镜头，双肩放松、水平，双手放低并拢在画面底边以下（不入画），嘴唇放松。能量：中——不刻意，像真实主播坐定开讲，绝不表演化、戏剧化。
 时间线：
@@ -504,7 +504,7 @@ pointing at camera, index finger pointing, finger guns, OK sign, peace sign, thu
 
 ```text
 30-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium shot from the waist up, subject centered, eyes on the upper third line, with enough room on both sides that her hands stay fully inside the frame when she gestures.
-Identity: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses.
+Identity: exactly the same person as in the attached reference image (same face, hair, skin tone, age appearance). clothing matches the reference image unless an outfit lock is given. No jewelry, no glasses unless visible in the reference.
 Setting and light: plain warm light-grey seamless wall behind her, evenly lit, nothing else in frame. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light from behind, neutral 5600K white balance, constant exposure for the whole shot. Photorealistic, true-to-life skin texture, sharp focus on the face, natural color, fine film grain, no flicker. Quiet room tone, no music.
 Performance: She speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm. Her eyes stay on the lens, she blinks naturally, head turns stay within 20 degrees, and her hands stay between waist and chest height and never touch or cover the face or mouth. Home pose: head centered and facing the lens, shoulders relaxed and level, hands loosely clasped in front of the waist, lips relaxed. Energy: medium — this plate carries the conversational gestures of a real interview host; every gesture is small, lands on a stressed word, starts from the home pose and returns to it, and no two sections use the same gesture. Gesture grammar: like a real interview host, her hands help her think — every gesture starts from the home pose, lands on a stressed word and settles back to the waist within about two seconds. Gestures stay between the waist and the lower chest, never above the chest and never near the face, chin or hair. Mostly one hand at a time; when both hands move they are slightly out of sync, never mirrored. Fingers stay relaxed and natural, with no posed hand signs. Small and conversational, never stage acting.
 Timeline:
@@ -522,7 +522,7 @@ Avoid: hands touching or covering the face or mouth, head turned more than 20 de
 
 ```text
 30 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。腰部以上中景，人物居中，眼睛位于画面上三分之一线，两侧留足空间，做手势时双手完整留在画面内。
-人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。
+人物：与所附参考图中为同一人（脸型、发型、肤色、年龄感一致）。服装与参考图一致（除非另行指定服装锁定）。不戴首饰；除非参考图中可见，否则不戴眼镜。
 场景与光线：身后是纯净的浅暖灰无缝墙，照明均匀，画面中没有其他物体。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，身后细微的发丝轮廓光，5600K 中性白平衡，整个镜头曝光恒定。写实，真实皮肤纹理，脸部焦点清晰，自然色彩，细腻胶片颗粒，无闪烁。安静的室内环境声，无音乐。
 表演：她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松。视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手始终在腰部到胸口之间活动，绝不触碰或遮挡脸部和嘴。回位姿势：头部居中面向镜头，双肩放松、水平，双手在腰前轻握，嘴唇放松。能量：中——这条底板承载真实访谈主持人的对话手势；每个手势都很小、落在重音词上、从回位姿势出发并回到回位姿势，任意两段不用同一个手势。手势语法：像真实的访谈主持人，手是在帮她思考——每个手势都从回位姿势出发，落在重音词上，约两秒内回到腰前。手势只在腰部到胸口略低处之间，绝不高过胸口，绝不靠近脸、下巴和头发。大多一次只动一只手；两只手同时动时前后略有错开，绝不镜像同步。手指放松自然，不摆任何手势符号。幅度小、像聊天，绝不是舞台表演。
 时间线：
@@ -546,7 +546,7 @@ Negative: hands touching face, hand covering mouth, profile view, head turned aw
 
 ```text
 30-second single continuous shot, locked-off camera on a tripod, no camera movement, no zoom, no cuts. 9:16 vertical. Medium close-up from mid-chest up, subject centered, eyes on the upper third line, a little headroom.
-Identity: the same East Asian woman in her early thirties as in the reference image — shoulder-length black hair neatly tied back in a low ponytail with no loose strands near the face, natural makeup, wearing a solid navy blazer over a plain white crew-neck top, no jewelry, no glasses.
+Identity: exactly the same person as in the attached reference image (same face, hair, skin tone, age appearance). clothing matches the reference image unless an outfit lock is given. No jewelry, no glasses unless visible in the reference.
 Setting and light: plain warm light-grey seamless wall behind her, evenly lit, nothing else in frame. Large soft key light 45 degrees from camera left, soft fill from camera right, subtle hair rim light from behind, neutral 5600K white balance, constant exposure for the whole shot. Photorealistic, true-to-life skin texture, sharp focus on the face, natural color, fine film grain, no flicker. Quiet room tone, no music.
 Performance: In the first three sections she speaks to the camera calmly and naturally as if mid-conversation, with natural jaw and lip movement and a relaxed rhythm; in the last section she stops speaking and listens with her lips gently closed. Her eyes stay on the lens apart from one brief thinking glance, she blinks naturally, head turns stay within 20 degrees, and her hands stay out of view below the frame the whole time. Home pose: head centered and facing the lens, shoulders relaxed and level, hands resting together low and out of view below the bottom edge of the frame, lips relaxed. Energy: low to medium — this plate carries the small facial expressions of a real host; each expression is brief, slightly asymmetric, peaks with the words and returns to a relaxed neutral before the home pose. Expression grammar: her hands never enter the frame — all the life comes from her face, eyes, breath and shoulders. Expressions are small, brief and slightly asymmetric: a soft smile that rises in the eyes and fades, a quick brow lift on a key word, a short thinking glance away and back, a slight concerned furrow on a hard word. Each expression peaks with the words and returns to a relaxed neutral before the next home pose; nothing is held like a mask.
 Timeline:
@@ -564,7 +564,7 @@ Avoid: hands touching or covering the face or mouth, head turned more than 20 de
 
 ```text
 30 秒单个连续镜头，三脚架固定机位，无运镜、无变焦、无剪辑。9:16 竖屏。胸部以上近景，人物居中，眼睛位于画面上三分之一线，头顶略留空间。
-人物：与参考图中同一位三十出头的东亚女性：黑色及肩发整齐地扎成低马尾，脸旁没有碎发，淡妆，身穿纯色藏青西装外套，内搭素白圆领上衣，不戴首饰，不戴眼镜。
+人物：与所附参考图中为同一人（脸型、发型、肤色、年龄感一致）。服装与参考图一致（除非另行指定服装锁定）。不戴首饰；除非参考图中可见，否则不戴眼镜。
 场景与光线：身后是纯净的浅暖灰无缝墙，照明均匀，画面中没有其他物体。镜头左侧 45 度大面积柔光主光，镜头右侧柔和补光，身后细微的发丝轮廓光，5600K 中性白平衡，整个镜头曝光恒定。写实，真实皮肤纹理，脸部焦点清晰，自然色彩，细腻胶片颗粒，无闪烁。安静的室内环境声，无音乐。
 表演：前三段她像正在对话一样，平静自然地对着镜头说话，下颌与嘴唇自然运动，节奏放松；最后一段她停止说话，双唇轻轻闭合地倾听。除了一次短暂的思考式目光，视线始终看镜头，自然眨眼，头部转动不超过 20 度，双手全程在画面底边以下不入画。回位姿势：头部居中面向镜头，双肩放松、水平，双手放低并拢在画面底边以下（不入画），嘴唇放松。能量：低到中——这条底板承载真实主持人的细微表情；每个表情都短、略带不对称，随话语到达峰值，在回位前回到放松的中性脸。表情语法：双手绝不入画——所有生气都来自脸、眼睛、呼吸和肩膀。表情小、短、略带不对称：从眼睛里升起又退去的浅笑，关键词上快速一扬眉，短暂地移开视线思考再回来，说到难点时眉头轻轻一收。每个表情都随着话语到达峰值，在下一个回位前回到放松的中性脸；没有任何表情像面具一样挂着。
 时间线：

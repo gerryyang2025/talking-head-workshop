@@ -12,6 +12,7 @@ token.json
 *.pfx
 dh-library/00_identity/*
 !dh-library/00_identity/.gitkeep
+/prompts/identity/
 
 # Python, editors and render caches
 __pycache__/

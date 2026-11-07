@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#101312" />
+    <title>帧间 · 本地口播工作台</title>
+    <link rel="stylesheet" href="/static/studio.css" />
+    <script defer src="/static/studio.js"></script>
+  </head>
+  <body>
+    <aside class="rail">
+      <a class="brand" href="/" aria-label="帧间工作台"
+        ><span class="mark"><i></i><i></i><i></i></span
+        ><span>帧间<small>FRAME STUDIO</small></span></a
+      >
+      <div class="navlabel">工作空间</div>
+      <nav id="views"></nav>
+      <div class="railrule"></div>
+      <div class="navlabel">制作流程</div>
+      <nav id="steps"></nav>
+      <div class="engine">
+        <span class="chipicon" data-icon="cpu"></span>
+        <div><b>本地推理引擎</b><small id="engineInfo">检查中</small></div>
+        <i id="engineDot"></i>
+      </div>
+    </aside>
+    <main>
+      <header class="topbar">
+        <span class="crumb"
+          ><i data-icon="grid"></i>工作空间 <em>/</em>
+          <b id="crumb">制作工作台</b></span
+        >
+        <div class="local"><i></i> 本机工作区</div>
+      </header>
+      <section class="page">
+        <div class="headline">
+          <div>
+            <h1 id="title">口播工作台</h1>
+            <div class="subtitle" id="subheading"></div>
+          </div>
+          <div class="actions">
+            <button id="new" class="secondary">
+              <i data-icon="plus"></i>新建项目</button
+            ><button id="produce" class="primary">
+              <i data-icon="clap"></i>生成口播
+            </button>
+          </div>
+        </div>
+        <div id="work">
+          <div class="desk">
+            <div class="left">
+              <section class="panel monitor">
+                <div class="panelhead">
+                  <h2><i data-icon="screen"></i>画面监看</h2>
+                  <div class="segmented" id="monitorTabs">
+                    <button data-mode="source" class="chosen">母片</button
+                    ><button data-mode="result">成片</button>
+                  </div>
+                </div>
+                <div class="screen" id="screen">
+                  <video id="video" playsinline preload="metadata"></video
+                  ><img id="still" alt="人物母片" hidden />
+                  <div class="screenempty" id="empty" hidden></div>
+                  <div class="framecorners" hidden id="guides">
+                    <i></i><i></i><i></i><i></i>
+                  </div>
+                  <div class="monitorTag" id="screenTag">SOURCE</div>
+                </div>
+                <div class="transport">
+                  <button class="iconBtn play" id="play" aria-label="播放">
+                    <i data-icon="play"></i></button
+                  ><span class="clock"
+                    ><b id="at">00:00</b> <em>/</em>
+                    <span id="length">00:00</span></span
+                  ><input
+                    id="seek"
+                    aria-label="播放位置"
+                    type="range"
+                    min="0"
+                    max="1000"
+                    value="0"
+                  /><button
+                    class="iconBtn"
+                    id="guideline"
+                    title="构图参考线"
+                    aria-label="构图参考线"
+                  >
+                    <i data-icon="focus"></i></button
+                  ><button
+                    class="iconBtn"
+                    id="expand"
+                    title="全屏"
+                    aria-label="全屏"
+                  >
+                    <i data-icon="expand"></i>
+                  </button>
+                </div>
+              </section>
+              <section class="panel timeline">
+                <div class="panelhead">
+                  <h2><i data-icon="tracks"></i>剪辑时间线</h2>
+                  <span class="mono" id="timelineInfo"></span>
+                </div>
+                <div id="tracks"></div>
+              </section>
+            </div>
+            <section class="panel inspect">
+              <div class="panelhead">
+                <h2><i data-icon="sliders"></i>制作面板</h2>
+                <span class="stepnum" id="stepnum"></span>
+              </div>
+              <div id="inspector"></div>
+            </section>
+          </div>
+        </div>
+        <section class="panel alternative" id="other" hidden></section>
+      </section>
+    </main>
+    <dialog id="dialog">
+      <form method="dialog">
+        <button class="iconBtn closer" aria-label="关闭">×</button>
+      </form>
+      <div id="dialogBody"></div>
+    </dialog>
+    <div role="status" aria-live="polite" id="toast"></div>
+  </body>
+</html>

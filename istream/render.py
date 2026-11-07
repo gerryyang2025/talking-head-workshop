@@ -36,6 +36,10 @@ _LOCK = threading.Lock()
 
 def ff(args, cwd=None):
     p = subprocess.run(["ffmpeg", "-hide_banner", "-v", "error", "-y"] + args, capture_output=True, text=True, cwd=cwd)
+    if p.returncode and "Unrecognized option '/filter_complex'" in p.stderr and "-/filter_complex" in args:
+        # Older FFmpeg releases load filter graphs with a dedicated script option.
+        legacy_args = ["-filter_complex_script" if arg == "-/filter_complex" else arg for arg in args]
+        return ff(legacy_args, cwd=cwd)
     if p.returncode != 0:
         raise RuntimeError("ffmpeg failed: " + " ".join(args[:12]) + " …\n" + p.stderr[-2000:])
 
@@ -458,6 +462,6 @@ class Renderer:
         script = os.path.join(self.wd, "composite.filtergraph")
         with open(script, "w", encoding="utf-8") as f:
             f.write(";\n".join(fc))
-        ff(args + ["-filter_complex_script", script, "-map", "[vout]", "-map", "[aout]", "-t", f"{dur:.3f}", "-r", str(self.fps),
+        ff(args + ["-/filter_complex", script, "-map", "[vout]", "-map", "[aout]", "-t", f"{dur:.3f}", "-r", str(self.fps),
                    "-c:v", "libx264", "-preset", "medium", "-crf", str(self.crf), "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", out_path])
         return out_path
