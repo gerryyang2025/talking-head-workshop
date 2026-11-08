@@ -196,9 +196,8 @@ def voice_info(ident):
     )
 
 
-def job_info(ident):
-    with db() as con:
-        row = con.execute("SELECT info FROM jobs WHERE id=?", (ident,)).fetchone()
+def job_info(ident, con):
+    row = con.execute("SELECT info FROM jobs WHERE id=?", (ident,)).fetchone()
     if not row:
         abort(404)
     return json.loads(row[0])
@@ -271,12 +270,47 @@ def create_job():
 
 @app.get("/api/jobs/<ident>")
 def get_job(ident):
-    return jsonify(job_info(ident))
+    with db() as con:
+        return jsonify(job_info(ident, con))
+
+
+@app.post("/api/jobs/<ident>/review")
+def review_job(ident):
+    payload = request.get_json()
+    items = payload.get("items") if isinstance(payload, dict) else None
+    if not isinstance(items, dict) or not items or items.keys() - {"playback", "mouth", "edit"}:
+        raise ValueError("请选择有效的复核项")
+    with db() as con:
+        # Merge individual decisions under the write lock so tabs can review independently.
+        con.execute("BEGIN IMMEDIATE")
+        job = job_info(ident, con)
+        if job["status"] != "done":
+            abort(409, description="生成完成后才可复核")
+        review = job.setdefault("review", {})
+        for key, item in items.items():
+            status = item.get("status") if isinstance(item, dict) else None
+            if status not in ("pending", "passed", "issue"):
+                raise ValueError("无效的复核状态")
+            if payload.get("onlyMissing") is True and key in review:
+                continue
+            entry = {"status": status}
+            if status == "issue":
+                note = item.get("note")
+                if not isinstance(note, str) or not 1 <= len(note.strip()) <= 300:
+                    raise ValueError("请用 1 至 300 字描述问题")
+                entry["note"] = note.strip()
+                entry["time"] = media.number(
+                    item.get("time"), 0, job["qc"]["duration"], "问题位置超出成片时长"
+                )
+            review[key] = entry
+        con.execute("UPDATE jobs SET info=? WHERE id=?", (json.dumps(job, ensure_ascii=False), ident))
+    return jsonify(job)
 
 
 @app.get("/api/jobs/<ident>/<what>")
 def result(ident, what):
-    info = job_info(ident)
+    with db() as con:
+        info = job_info(ident, con)
     if info["status"] != "done" or what not in ("film", "timeline"):
         abort(404)
     path = STORE / "jobs" / ident / ("film.mp4" if what == "film" else "timeline.json")

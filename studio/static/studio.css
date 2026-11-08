@@ -645,6 +645,38 @@ dialog input {
 .assetrow input {
   accent-color: var(--lime);
 }
+.review-heading,
+.review-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+.review-list {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.review-item select {
+  width: auto;
+  padding: 5px 8px;
+}
+.issue-note {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 5px;
+  color: #e6be94;
+  font-size: 12px;
+}
+.issue-note span {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
 .formatrow > button {
   flex: 1;
 }

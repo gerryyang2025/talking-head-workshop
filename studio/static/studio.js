@@ -72,6 +72,12 @@ const styles = {
   editorial: "编辑混剪",
   lecture: "课程讲解",
 };
+const reviewLabels = {
+  playback: "完整带声播放",
+  mouth: "闭唇与句间停顿",
+  edit: "镜头接缝、字幕与遮挡",
+};
+const savingReviews = new Set();
 const views = {
   work: ["grid", "制作工作台"],
   library: ["library", "素材库"],
@@ -202,7 +208,9 @@ function task(fn) {
   };
 }
 function updateJob(j) {
-  session.jobs = [j, ...session.jobs.filter((a) => a.id !== j.id)];
+  const index = session.jobs.findIndex((item) => item.id === j.id);
+  if (index < 0) session.jobs.unshift(j);
+  else session.jobs[index] = j;
 }
 function nav() {
   $("#views").innerHTML = Object.entries(views)
@@ -276,6 +284,7 @@ function showMaterialMode(next) {
   } else {
     updateMonitorFrame();
   }
+  if (step === 5) inspector();
 }
 function prepMonitor() {
   const v = $("#video"),
@@ -477,8 +486,12 @@ function aspectButtons() {
   );
 }
 async function openFilm(id, playNow = true) {
-  const tl = await api("/api/jobs/" + id + "/timeline");
-  resultVoice = await api("/api/voice/" + tl.voice + "/info");
+  const [job, tl] = await Promise.all([
+    api("/api/jobs/" + id), api("/api/jobs/" + id + "/timeline"),
+  ]);
+  const voice = await api("/api/voice/" + tl.voice + "/info");
+  updateJob(job);
+  resultVoice = voice;
   resultTimeline = tl;
   playingJob = id;
   mode = "result";
@@ -489,6 +502,79 @@ async function openFilm(id, playNow = true) {
     $("#video")
       .play()
       .catch(() => {});
+}
+function reviewSummary(job) {
+  const items = Object.keys(reviewLabels);
+  const passed = items.filter((k) => job.review?.[k]?.status === "passed").length;
+  const issues = items.filter((k) => job.review?.[k]?.status === "issue").length;
+  if (issues) return `待修改 · ${issues} 项有问题 · ${passed}/${items.length} 通过`;
+  if (passed === items.length) return `复核通过 · ${passed}/${items.length}`;
+  return `${passed ? "复核中" : "待复核"} · ${passed}/${items.length} 通过`;
+}
+function reviewPanel(job) {
+  if (job?.status !== "done") return "";
+  const rows = Object.entries(reviewLabels).map(([key, label]) => {
+    const entry = job.review?.[key] || {status: "pending"};
+    const issue = entry.status === "issue" ? `
+      <div class="issue-note">
+        <button class="minor" data-review-seek="${entry.time}" aria-label="跳到问题位置 ${sec(entry.time)}">${sec(entry.time)}</button>
+        <span>${esc(entry.note)}</span>
+        <button class="minor" data-edit-issue="${key}">编辑</button>
+      </div>` : "";
+    return `<div><label class="review-item"><span>${label}</span>
+      <select data-review-item="${key}">
+        ${opt("pending", "待检查", entry.status)}${opt("passed", "通过", entry.status)}${opt("issue", "有问题", entry.status)}
+      </select></label>${issue}</div>`;
+  });
+  return `<section class="stack"><div class="review-heading"><b>人工复核</b><small aria-live="polite">${reviewSummary(job)}</small></div>
+    ${mode === "result" ? `<fieldset class="review-list" data-review-job="${job.id}" ${savingReviews.has(job.id) ? "disabled" : ""}>${rows.join("")}</fieldset>`
+      : '<small>请打开成片后复核。</small>'}</section>`;
+}
+async function saveReview(id, key, entry) {
+  if (savingReviews.has(id)) throw Error("正在保存上一项复核");
+  savingReviews.add(id);
+  const panel = document.querySelector(`fieldset[data-review-job="${id}"]`);
+  if (panel) panel.disabled = true;
+  try {
+    const job = await api("/api/jobs/" + id + "/review", {items: {[key]: entry}});
+    updateJob(job);
+  } finally {
+    savingReviews.delete(id);
+    if (view === "work" && step === 5 && current()?.id === id) inspector();
+    if (view === "history") alternative();
+  }
+}
+function editIssue(id, key) {
+  const video = $("#video"), job = getJob(id);
+  video.pause();
+  const entry = job.review?.[key];
+  const end = Math.floor(job.qc.duration * 100) / 100;
+  const time = Math.min(end, entry?.time ?? video.currentTime).toFixed(2);
+  $("#dialogBody").innerHTML = `<h3>${reviewLabels[key]}</h3>
+    <form class="stack" id="issueForm" data-job="${id}" data-item="${key}">
+      <label class="field"><span>成片位置（秒）</span><input name="time" type="number" min="0" max="${end}" step=".01" value="${time}" required></label>
+      <label class="field"><span>问题说明</span><textarea name="note" required maxlength="300" placeholder="例如：这句说完后嘴仍张着">${esc(entry?.note || "")}</textarea></label>
+      <small role="alert"></small><button class="primary" type="submit">保存问题</button>
+    </form>`;
+  $("#dialog").showModal();
+  $("#issueForm textarea").focus();
+}
+async function importDraftReviews() {
+  const missing = new Map();
+  for (const project of [...Object.values(savedProjects()), draft]) {
+    for (const [id, flags] of Object.entries(project.review || {})) {
+      const job = getJob(id);
+      if (job?.status !== "done") continue;
+      Object.keys(reviewLabels).forEach((key, i) => {
+        if (flags?.[i] !== true || job.review?.[key]) return;
+        if (!missing.has(id)) missing.set(id, {});
+        missing.get(id)[key] = {status: "passed"};
+      });
+    }
+  }
+  for (const [id, items] of missing) {
+    updateJob(await api("/api/jobs/" + id + "/review", {items, onlyMissing: true}));
+  }
 }
 function jobBox(j) {
   if (!j)
@@ -743,22 +829,7 @@ function inspector() {
       '<p class="hint">在「选镜与口型」中将对应句段设为「补充画面」。</p>';
   }
   if (step === 5) {
-    body =
-      jobBox(current()) +
-      '<div class="stack"><span class="fieldLabel">人工复核</span>' +
-      ["完整带声播放", "闭唇与句间停顿", "镜头接缝、字幕与遮挡"]
-        .map(
-          (x, i) =>
-            '<label class="reviewline"><input type="checkbox" data-qc="' +
-            i +
-            '" ' +
-            (draft.review?.[current()?.id]?.[i] ? "checked" : "") +
-            ">" +
-            x +
-            "</label>",
-        )
-        .join("") +
-      "</div>";
+    body = jobBox(current()) + reviewPanel(current());
   }
   $("#stepnum").textContent = "0" + (step + 1) + " / 06";
   $("#inspector").innerHTML =
@@ -798,6 +869,7 @@ function alternative() {
             j.aspect +
             " · " +
             esc(j.message) +
+            (j.status === "done" ? " · " + reviewSummary(j) : "") +
             "</small></div>" +
             (j.status === "done"
               ? '<button class="outline" data-watch="' +
@@ -921,6 +993,10 @@ async function generate() {
   }
 }
 async function switchStep(n) {
+  if (n === 5 && current()?.status === "done" && mode !== "result") {
+    await openFilm(current().id, false);
+    return;
+  }
   if (n === 1) await loadShots(activeAsset);
   if (n === 3) {
     await Promise.all(draft.hosts.map(loadShots));
@@ -1011,6 +1087,16 @@ document.addEventListener(
     }
     if (b.dataset.jump !== undefined) {
       seek(+b.dataset.jump);
+      return;
+    }
+    if (b.dataset.reviewSeek !== undefined) {
+      $("#video").pause();
+      $("#video").currentTime = Number(b.dataset.reviewSeek);
+      updateClock();
+      return;
+    }
+    if (b.dataset.editIssue) {
+      editIssue(b.closest("fieldset").dataset.reviewJob, b.dataset.editIssue);
       return;
     }
     if (b.dataset.use) {
@@ -1196,17 +1282,12 @@ document.addEventListener(
       drawTracks();
       return;
     }
-    if (el.dataset.qc !== undefined) {
-      const id = current()?.id;
-      if (!id) {
-        el.checked = false;
-        message("请先打开成片");
-        return;
-      }
-      draft.review ??= {};
-      draft.review[id] ??= {};
-      draft.review[id][el.dataset.qc] = el.checked;
-      save();
+    if (el.dataset.reviewItem) {
+      const id = el.closest("fieldset").dataset.reviewJob, key = el.dataset.reviewItem;
+      const status = el.value;
+      el.value = getJob(id).review?.[key]?.status || "pending";
+      if (status === "issue") editIssue(id, key);
+      else await saveReview(id, key, {status});
       return;
     }
     switch (el.id) {
@@ -1260,6 +1341,23 @@ document.addEventListener(
     }
   }),
 );
+document.addEventListener("submit", async (event) => {
+  const form = event.target;
+  if (form.id !== "issueForm") return;
+  event.preventDefault();
+  const button = form.querySelector("button");
+  button.disabled = true;
+  try {
+    await saveReview(form.dataset.job, form.dataset.item, {
+      status: "issue", note: form.elements.note.value.trim(), time: Number(form.elements.time.value),
+    });
+    if (form.isConnected && $("#dialog").open) $("#dialog").close();
+  } catch (error) {
+    form.querySelector("[role=alert]").textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+});
 async function start() {
   document
     .querySelectorAll("[data-icon]")
@@ -1269,6 +1367,7 @@ async function start() {
     draft = JSON.parse(localStorage.getItem("frame-studio-draft-v1"));
   } catch (e) {}
   if (!draft) draft = fresh();
+  await importDraftReviews().catch(() => message("旧勾选暂未同步，刷新后会重试"));
   draft.hosts = draft.hosts.filter((id) => findAsset(id));
   activeAsset =
     draft.hosts[0] || session.assets.find((a) => a.role === "host")?.id;

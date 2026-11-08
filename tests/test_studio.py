@@ -90,6 +90,27 @@ class StudioWorkflow(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "出点"):
             self.media.clean_shots(a, [{"start": 2, "end": 1}])
 
+    def test_review_belongs_to_a_finished_film_and_merges_legacy_checks(self):
+        def save(items, **options):
+            return self.client.post(
+                "/api/jobs/a/review", json=dict(items=items, **options), headers=self.headers
+            )
+
+        self.server.put_job(dict(id="a", status="running"))
+        self.assertEqual(save({"mouth": {"status": "passed"}}).status_code, 409)
+        for ident in ("a", "b"):
+            self.server.put_job(dict(id=ident, status="done", qc={"duration": 5}))
+        issue = {"status": "issue", "time": 2.56, "note": "句末没有闭嘴"}
+        self.assertEqual(save({"mouth": issue}).json["review"]["mouth"], issue)
+        saved = save({k: {"status": "passed"} for k in ("playback", "mouth")}, onlyMissing=True)
+        self.assertEqual(saved.json["review"], {"playback": {"status": "passed"}, "mouth": issue})
+        self.assertEqual(save({"mouth": dict(issue, time=6)}).status_code, 400)
+        self.assertEqual(self.client.get("/api/jobs/a").json["review"]["mouth"], issue)
+        self.assertNotIn("review", self.client.get("/api/jobs/b").json)
+        cleared = save({"mouth": {"status": "pending"}}).json["review"]
+        self.assertEqual(cleared["mouth"], {"status": "pending"})
+        self.assertEqual(save({"mouth": {"status": "passed"}}, onlyMissing=True).json["review"], cleared)
+
     def test_paragraph_from_an_existing_voice_is_paged_inside_its_timing(self):
         sentence = "Dr. Wu uses version 1.5 and writes about it on example.com."
         text = " ".join([sentence] * 5)
