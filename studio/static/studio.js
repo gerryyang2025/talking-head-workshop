@@ -131,6 +131,10 @@ async function api(url, body, form = false) {
   if (!r.ok) throw Error(data.error || "请求失败");
   return data;
 }
+function defaultVoice(text) {
+  if (text === session.demoText && findAsset("demo-audio")) return "demo-audio";
+  return session.engine.tts ? "reed" : "";
+}
 function fresh(title) {
   const host =
     findAsset("demo-plate") || session.assets.find((a) => a.role === "host");
@@ -138,13 +142,8 @@ function fresh(title) {
     id: crypto.randomUUID(),
     title: title || "三步制作数字人口播",
     hosts: host ? [host.id] : [],
-    text: title ? "" : session.demoText,
-    voice:
-      !title && findAsset("demo-audio")
-        ? "demo-audio"
-        : session.engine.tts
-          ? "reed"
-          : "",
+    text: session.demoText,
+    voice: defaultVoice(session.demoText),
     aspect: "16:9",
     style: "editorial",
     subtitles: true,
@@ -153,6 +152,15 @@ function fresh(title) {
     voiceData: null,
     lines: [],
     job: null,
+  };
+}
+function scriptSamples() {
+  return {
+    三步制作数字人口播: session.demoText,
+    自我介绍: "大家好，我是 Gerry。\n我平时写程序，也喜欢拍照。\n今天用一张海边的照片，跟你打个招呼。",
+    产品演示: "今天试试帧间的口播工作台。\n选一张照片，写下你想说的话，再点一下试听。\n听到哪里不顺，就改那一句。",
+    口型与停顿: "爸爸把白色的杯子摆在旁边。\n慢一点，抿抿嘴。\n好，我们再说一遍。",
+    英文短句: "Hi, I'm Gerry.\nI took this photo by the sea.\nCan you hear the waves?",
   };
 }
 function savedProjects() {
@@ -176,8 +184,13 @@ function save() {
 function discardVoice() {
   draft.voiceData = null;
   draft.lines = [];
+  if (mode === "result") {
+    mode = "source";
+    prepMonitor();
+  }
   save();
   drawTracks();
+  updateClock();
 }
 function task(fn) {
   return async (...args) => {
@@ -597,11 +610,14 @@ function inspector() {
   }
   if (step === 2) {
     body =
-      '<label class="field"><span>口播文案</span><textarea id="script" maxlength="1500" placeholder="输入文案，按句号或换行分句。">' +
+      '<label class="field"><span>测试文案</span><select id="scriptSample"><option value="" disabled selected>选择一篇填入口播文案</option>' +
+      Object.entries(scriptSamples()).map(([name, text]) => opt(text, name, draft.text)).join("") +
+      '</select></label><label class="field"><span>口播文案</span><textarea id="script" maxlength="1500" placeholder="输入文案，按句号或换行分句。">' +
       esc(draft.text) +
       '</textarea><small class="count" id="count">' +
       draft.text.length +
       ' / 1500</small></label><label class="field"><span>配音来源</span><select id="voiceChoice">' +
+      (!draft.voice ? '<option value="" selected>请选择或导入配音</option>' : "") +
       (session.engine.tts
         ? opt("reed", "系统声音 · Reed 普通话", draft.voice) +
           opt("tingting", "系统声音 · Tingting 普通话", draft.voice)
@@ -1088,14 +1104,15 @@ document.addEventListener("input", (e) => {
   const el = e.target;
   if (el.id === "script") {
     draft.text = el.value;
-    if (
-      draft.voice === "demo-audio" &&
-      draft.text !== session.demoText &&
-      session.engine.tts
-    ) {
-      draft.voice = "reed";
-      $("#voiceChoice").value = "reed";
-      message("文案已修改，将用系统普通话重新配音");
+    const samples = $("#scriptSample");
+    samples.value = draft.text;
+    if (samples.selectedIndex < 0) samples.selectedIndex = 0;
+    if (draft.voice === "demo-audio" && draft.text !== session.demoText) {
+      draft.voice = defaultVoice(draft.text);
+      const voices = $("#voiceChoice");
+      if (!draft.voice) voices.add(new Option("请选择或导入配音", ""), 0);
+      voices.value = draft.voice;
+      message(draft.voice ? "文案已修改，将用系统普通话重新配音" : "请为新文案选择或导入配音");
     }
     discardVoice();
     $("#count").textContent = el.value.length + " / 1500";
@@ -1164,6 +1181,14 @@ document.addEventListener(
       return;
     }
     switch (el.id) {
+      case "scriptSample":
+        if (!el.value || el.value === draft.text) break;
+        draft.text = el.value;
+        if (!["reed", "tingting"].includes(draft.voice))
+          draft.voice = defaultVoice(draft.text);
+        discardVoice();
+        inspector();
+        break;
       case "mobileSteps":
         await switchStep(+el.value);
         break;
