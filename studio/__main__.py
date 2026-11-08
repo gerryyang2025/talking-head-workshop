@@ -6,6 +6,7 @@ import json
 import re
 import shutil
 import threading
+import tempfile
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -25,7 +26,7 @@ from .media import (
     save_asset,
     token,
 )
-from .production import CAPTION_BAND, SIZES, plan, render
+from .production import CAPTION_BAND, SIZES, plan, render, render_card_preview
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.config.update(MAX_CONTENT_LENGTH=160 * 1024 * 1024)
@@ -180,6 +181,13 @@ def voice():
         return jsonify(media.prepare_voice(request.get_json()))
 
 
+@app.post("/api/card-preview")
+def card_preview():
+    with tempfile.TemporaryDirectory() as tmp:
+        path = render_card_preview(request.get_json(), Path(tmp))
+        return app.response_class(path.read_bytes(), mimetype="video/mp4")
+
+
 @app.get("/api/voice/<ident>")
 def hear(ident):
     if not re.fullmatch("[0-9a-f]{64}", ident):
@@ -232,12 +240,14 @@ def worker(info, timeline):
         used = collections.Counter(
             r["shot"]["id"] for r in timeline["rows"] if r["shot"]
         )
+        materials = used.copy()
+        materials.update(r["insert"] for r in timeline["rows"] if r.get("insert"))
         info.update(
             status="done",
             progress=100,
             message="成片可播放",
             qc=summary,
-            usage=dict(used),
+            usage=dict(materials),
         )
         put_job(info, used)
     except Exception as exc:

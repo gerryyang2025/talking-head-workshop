@@ -33,14 +33,18 @@ CAPTION_BAND = 104  # pixels at both supported export resolutions
 SPLIT_FRACTION = 0.54
 
 
-def plan(config):
-    vid = config.get("voiceId", "")
-    if not re.fullmatch("[a-f0-9]{64}", vid):
+def load_voice(vid):
+    if not isinstance(vid, str) or not re.fullmatch("[a-f0-9]{64}", vid):
         raise ValueError("请先生成或载入配音")
     path = STORE / "voices" / vid / "voice.json"
     if not path.is_file():
         raise ValueError("配音已失效，请重新生成")
-    voice = json.loads(path.read_text())
+    return json.loads(path.read_text())
+
+
+def plan(config):
+    vid = config.get("voiceId", "")
+    voice = load_voice(vid)
     inputs = config.get("lines")
     if not isinstance(inputs, list) or len(inputs) != len(voice["lines"]):
         raise ValueError("文案已变更，请先更新配音")
@@ -117,6 +121,7 @@ def plan(config):
                 end=end,
                 layout=layout,
                 shot=shot,
+                insert=insert if layout in ("card", "insert") else None,
                 risk=zh_mouth_risk(line["text"], end - start)["level"],
             )
         )
@@ -243,10 +248,13 @@ def fit(frame, w, h, cover=True, vertical_anchor=0.12):
     return image
 
 
-def compose(frame, layout, size, subtitles=False, framing="cover"):
+def compose(frame, layout, size, subtitles=False, framing="cover", progress=0):
     w, h = size
     canvas = np.full((h, w, 3), (33, 33, 28), np.uint8)
-    if layout == "card" or frame is None:
+    if layout == "card":
+        draw_card(canvas, frame, progress)
+        return canvas
+    if frame is None:
         return canvas
     if layout in ("full", "insert"):
         picture_h = h - CAPTION_BAND if subtitles else h
@@ -281,7 +289,11 @@ def ass_time(frame):
     return f"{cs // 360000}:{cs // 6000 % 60:02}:{cs // 100 % 60:02}.{cs % 100:02}"
 
 
-def caption_box(layout, w, h):
+def card_visual_size(w, h):
+    return (round(w * 0.54), h) if w > h else (w, round(h * 0.62))
+
+
+def caption_box(layout, w, h, card_image=False):
     pad = round(w * 0.05)
     if layout in ("full", "insert"):
         return pad, h - CAPTION_BAND, w - pad, h
@@ -292,7 +304,49 @@ def caption_box(layout, w, h):
     if layout == "pip":
         circle_bottom = round(h * 0.34) + round(min(w, h) * 0.20)
         return pad, circle_bottom + 12, w - pad, h - 24
+    if layout == "card" and card_image:
+        box_w, box_h = card_visual_size(w, h)
+        if w > h:
+            return box_w + pad, 0, w - pad, h
+        return pad, box_h, w - pad, h
     return pad, 0, w - pad, h
+
+
+def draw_card(canvas, frame, progress):
+    h, w = canvas.shape[:2]
+    left, top, right, bottom = caption_box("card", w, h, frame is not None)
+    if frame is not None:
+        # Fit the whole visual as it slowly grows inside its reserved area.
+        box_w, box_h = card_visual_size(w, h)
+        margin = round(min(w, h) * 0.05)
+        zoom = 0.94 + 0.06 * progress
+        image = fit(
+            frame, round((box_w - 2 * margin) * zoom),
+            round((box_h - 2 * margin) * zoom), cover=False,
+        )
+        ih, iw = image.shape[:2]
+        ix, iy = (box_w - iw) // 2, (box_h - ih) // 2
+        canvas[iy : iy + ih, ix : ix + iw] = image
+    rule_w = round((right - left) * 0.36)
+    x = (left + right - rule_w) // 2
+    y = (top + bottom) // 2 + round(min(w, h) * 0.14)
+    cv.line(canvas, (x, y), (x + rule_w, y), (75, 83, 74), 2, cv.LINE_AA)
+    cv.line(canvas, (x, y), (x + round(rule_w * progress), y), (144, 222, 188), 3, cv.LINE_AA)
+
+
+def write_card_frames(sink, row, size, start, stop):
+    source = Frames(asset(row["insert"])) if row.get("insert") else None
+    span = max(1, row["stop"] - row["first"] - 1)
+    frame = None
+    try:
+        for index in range(start, stop):
+            progress = min(1, max(0, (index - row["first"]) / span))
+            if source and (frame is None or row["first"] < index < row["stop"]):
+                frame = source.next()
+            sink.write(compose(frame, "card", size, progress=progress).tobytes())
+    finally:
+        if source:
+            source.close()
 
 
 def caption_cues(row, columns):
@@ -335,7 +389,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         caption = layout in ("full", "insert")
         if caption and not tl["subtitles"]:
             continue
-        left, top, right, bottom = caption_box(layout, w, h)
+        left, top, right, bottom = caption_box(layout, w, h, bool(row.get("insert")))
         font = 32 if caption else 40
         # Budget one em per character so CJK and mixed-script lines also fit.
         columns = min(48, (right - left - 16) // font)
@@ -356,6 +410,37 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                 f"Dialogue: 0,{ass_time(start)},{ass_time(stop)},Main,,0,0,0,,{{{position}{fade}}}{text}"
             )
     path.write_text(header + "\n".join(events) + "\n")
+
+
+def render_card_preview(config, folder):
+    from istream.render import _esc
+
+    voice_id, aspect = config.get("voiceId"), config.get("aspect")
+    voice = load_voice(voice_id)
+    line = config.get("line")
+    if aspect not in SIZES or type(line) is not int or not 0 <= line < len(voice["lines"]):
+        raise ValueError("请选择有效的图文句段和画幅")
+    start = number(config.get("start"), 0, voice["duration"] + 0.001, "句段入点越界")
+    end = number(config.get("end"), start, voice["duration"] + 0.001, "句段出点越界")
+    first = round(start * FPS)
+    count = round(end * FPS) - first
+    if count < 1:
+        raise ValueError("每句话至少需要一帧")
+    insert = config.get("insert")
+    if insert and asset(insert)["role"] != "insert":
+        raise ValueError("请选择补充画面素材")
+    row = dict(layout="card", first=0, stop=count, text=voice["lines"][line]["text"], insert=insert)
+    ass = folder / "card.ass"
+    write_ass(dict(aspect=aspect, rows=[row], subtitles=True), ass)
+    size = tuple(n // 2 for n in SIZES[aspect])
+    output = folder / "card.mp4"
+    with encoder(
+        output, size, "-ss", first / FPS, "-t", count / FPS,
+        "-i", STORE / "voices" / voice_id / "voice.wav", "-map", "0:v:0", "-map", "1:a:0",
+        "-vf", "subtitles='" + _esc(str(ass)) + "'", "-c:a", "aac",
+    ) as sink:
+        write_card_frames(sink, row, size, 0, count)
+    return output
 
 
 def render(tl, folder, notify):
@@ -473,7 +558,12 @@ def render(tl, folder, notify):
                     source.close()
 
         cursor = 0
-        for row, part in zip(rows, parts):
+        for i, (row, part) in enumerate(zip(rows, parts)):
+            if row["layout"] == "card":
+                stop = total if i == len(rows) - 1 else row["stop"]
+                write_card_frames(sink, row, size, cursor, stop)
+                cursor = stop
+                continue
             section(row, None, row["first"] - cursor, False)
             section(row, part, row["stop"] - row["first"], True)
             cursor = row["stop"]

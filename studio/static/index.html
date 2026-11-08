@@ -127,6 +127,12 @@
       </form>
       <div id="dialogBody"></div>
     </dialog>
+    <dialog id="cardPreview" aria-labelledby="cardPreviewTitle">
+      <form method="dialog"><button class="iconBtn closer" aria-label="关闭图文预览">×</button></form>
+      <h3 id="cardPreviewTitle">动态图文预览</h3>
+      <small role="status"></small>
+      <video controls playsinline hidden></video>
+    </dialog>
     <div role="status" aria-live="polite" id="toast"></div>
   </body>
 </html>

@@ -401,15 +401,20 @@ function drawTracks() {
         l.layout && l.layout !== "auto"
           ? l.layout
           : pattern[i % pattern.length];
-      const thumb = actual && l.shot ? mediaURL(l.shot.asset, "poster") : pic;
+      const insert = actual ? (l.insert || (layout === "insert" && resultTimeline.insert)) : draft.insert;
+      const isGraphic = layout === "card" || layout === "insert";
+      const thumb = isGraphic ? (insert && mediaURL(insert, "poster"))
+        : actual && l.shot ? mediaURL(l.shot.asset, "poster") : pic;
       const bg =
-        thumb && kind === "video" && !["card", "insert"].includes(layout)
+        thumb && kind === "video"
           ? "background-image:linear-gradient(#15201075,#15201089),url(" +
             thumb +
             ");"
           : "";
       result +=
-        '<button title="' +
+        '<button ' +
+        (!actual && layout === "card" && kind === "video" ? `data-card-line="${i}" ` : "") +
+        'title="' +
         esc(l.text) +
         '" data-jump="' +
         s +
@@ -451,6 +456,45 @@ function drawTracks() {
     ) +
     tr("captions", "字幕", '<div class="lane">' + lane("subs") + "</div>") +
     "</div>";
+}
+async function previewCard(index) {
+  const line = draft.lines[index], dialog = $("#cardPreview");
+  const video = dialog.querySelector("video"), status = dialog.querySelector("[role=status]");
+  const controller = new AbortController();
+  let url;
+  $("#video").pause();
+  stopStill();
+  updateClock();
+  status.textContent = "正在生成本句预览…";
+  video.hidden = true;
+  dialog.showModal();
+  dialog.addEventListener("close", () => {
+    controller.abort();
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+    if (url) URL.revokeObjectURL(url);
+  }, {once: true});
+  try {
+    const response = await fetch("/api/card-preview", {
+      method: "POST", signal: controller.signal,
+      headers: {"Content-Type": "application/json", "X-Studio-Request": "1"},
+      body: JSON.stringify({
+        voiceId: draft.voiceData.id, aspect: draft.aspect, insert: draft.insert,
+        line: index, start: line.start, end: line.end,
+      }),
+    });
+    if (!response.ok) throw Error((await response.json()).error || "图文预览失败");
+    const clip = await response.blob();
+    if (controller.signal.aborted) return;
+    url = URL.createObjectURL(clip);
+    video.src = url;
+    video.hidden = false;
+    status.textContent = "";
+    await video.play().catch(() => {});
+  } catch (error) {
+    if (!controller.signal.aborted) status.textContent = error.message;
+  }
 }
 const upload = (role, label) =>
   '<label class="uploadBtn">' +
@@ -604,7 +648,7 @@ function jobBox(j) {
         " 帧</p><small>素材使用：" +
         esc(
           Object.entries(j.usage || {})
-            .map(([id, n]) => id + " × " + n)
+            .map(([id, n]) => (findAsset(id)?.name || id) + " × " + n)
             .join("、") || "纯图文",
         ) +
         '</small><div class="btnrow"><button class="minor" data-watch="' +
@@ -826,7 +870,7 @@ function inspector() {
         .join("") +
       "</select></label>" +
       upload("insert", "导入补充画面") +
-      '<p class="hint">在「选镜与口型」中将对应句段设为「补充画面」。</p>';
+      '<p class="hint">「动态图文」会将所选素材和台词排在一起，点击时间线上的图文镜头可预览。要让素材单独出镜，可在「选镜与口型」选「补充画面」。</p>';
   }
   if (step === 5) {
     body = jobBox(current()) + reviewPanel(current());
@@ -1085,6 +1129,10 @@ document.addEventListener(
       }
       return;
     }
+    if (b.dataset.cardLine !== undefined) {
+      await previewCard(Number(b.dataset.cardLine));
+      return;
+    }
     if (b.dataset.jump !== undefined) {
       seek(+b.dataset.jump);
       return;
@@ -1323,6 +1371,7 @@ document.addEventListener(
       case "inserts":
         draft.insert = el.value;
         save();
+        drawTracks();
         break;
       case "subs":
         draft.subtitles = el.checked;

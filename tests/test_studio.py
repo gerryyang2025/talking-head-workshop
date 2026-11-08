@@ -76,6 +76,33 @@ class StudioWorkflow(unittest.TestCase):
         self.assertEqual(
             (result["frames"], result["inferred"], result["skipped"]), (25, 0, 25)
         )
+        # The selected visual must reach the encoded card even when ordinary captions are off.
+        import cv2 as cv
+        import numpy as np
+
+        photo = np.full((96, 72, 3), (220, 30, 200), np.uint8)
+        uploaded = self.client.post(
+            "/api/assets", data={"file": (io.BytesIO(cv.imencode(".png", photo)[1]), "card.png"),
+                                 "role": "insert"}, headers=self.headers,
+        )
+        self.assertEqual(uploaded.status_code, 201)
+        for aspect, size in self.production.SIZES.items():
+            cfg.update(insert=uploaded.json["id"], aspect=aspect, subtitles=False)
+            tl = self.production.plan(cfg)
+            self.assertEqual(tl["rows"][0]["insert"], uploaded.json["id"])
+            with patch.dict("sys.modules", {"studio.engine": None}):
+                self.production.render(tl, folder, lambda *_: None)
+            video = cv.VideoCapture(str(folder / "film.mp4"))
+            try:
+                video.set(cv.CAP_PROP_POS_FRAMES, 6)
+                ok, frame = video.read()
+            finally:
+                video.release()
+            self.assertTrue(ok)
+            w, h = self.production.card_visual_size(*size)
+            self.assertGreater(int(frame[h // 2, w // 2, 0]), 180)
+            x1, y1, x2, y2 = self.production.caption_box("card", *size, card_image=True)
+            self.assertGreater(np.count_nonzero(np.all(frame[y1:y2, x1:x2] > 215, axis=2)), 10)
         lines[1]["start"] = 0
         with self.assertRaisesRegex(ValueError, "重叠"):
             self.production.plan(cfg)
