@@ -117,6 +117,7 @@ class StudioWorkflow(unittest.TestCase):
             request = json.loads(kwargs["input"])
             self.assertEqual(request["transcript"], "参考句。")
             self.assertEqual(request["lines"], ["今天下雨。", "明天放晴。"])
+            self.assertEqual(request["maxSeconds"], self.media.MAX_NARRATION_SECONDS)
             for i in range(2):
                 media.write_wav(args[-1] / f"{i}.wav", np.ones(4800, dtype="<i2"))
             return types.SimpleNamespace(returncode=0)
@@ -151,6 +152,41 @@ class StudioWorkflow(unittest.TestCase):
                 media.prepare_voice(cfg)  # A correction must not replay cached audio from the old transcript.
         self.assertEqual(edit("参考句。").status_code, 200)
         self.assertEqual(media.prepare_voice(cfg), generated.json)
+
+    def test_long_narration_keeps_the_last_sentence_on_the_export_timeline(self):
+        media = self.media
+        text = "前面的句子。" * 16 + "最后一句要读完。"
+        cfg = {"voice": "reed", "text": text}
+        with patch.object(media, "RATE", 1000):
+            clips = [media.np.ones(7330, dtype="<i2")] * 16 + [media.np.ones(5000, dtype="<i2")]
+            with patch.object(media, "synthesized_lines", return_value=clips):
+                voice = media.prepare_voice(cfg)
+            self.assertAlmostEqual(voice["lines"][-1]["start"], 119.52)
+            self.assertAlmostEqual(voice["lines"][-1]["end"], 124.52)
+            self.assertAlmostEqual(voice["duration"], 124.66)
+            with wave.open(str(media.STORE / "voices" / voice["id"] / "voice.wav")) as wav:
+                self.assertEqual(wav.getnframes(), 124660)
+            plan = self.production.plan(dict(voiceId=voice["id"], style="editorial", aspect="16:9",
+                                             lines=[dict(line, layout="card") for line in voice["lines"]]))
+            self.assertEqual(len(plan["rows"]), 17)
+            self.assertEqual(plan["frames"], 3117)
+            self.assertEqual(plan["rows"][-1]["text"], "最后一句要读完。")
+            with patch.object(media, "MAX_NARRATION_SECONDS", 120), patch.object(
+                media, "synthesized_lines", return_value=clips
+            ), self.assertRaisesRegex(ValueError, "第 17 句.*120 秒"):
+                media.prepare_voice(dict(cfg, text=text + "再加一句。"))
+
+    def test_long_recording_has_a_separate_limit_from_source_clips(self):
+        media = self.media
+        info = {"format": {"duration": "125"}, "streams": [{"codec_type": "audio"}]}
+        with patch.object(media, "inspect_file", return_value=info):
+            asset = media.build_asset(Path("long.wav"), "audio", "audio", "整篇录音", "long")
+            self.assertEqual(asset["duration"], 125)
+            with self.assertRaisesRegex(ValueError, "120 秒"):
+                media.build_asset(Path("ref.wav"), "audio", "personal_voice", "参考音色", "ref")
+            info["format"]["duration"] = "600.01"
+            with self.assertRaisesRegex(ValueError, "600 秒"):
+                media.build_asset(Path("long.wav"), "audio", "audio", "整篇录音", "long")
 
     def test_model_list_reports_missing_components_separately(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(self.server, "MODELS", Path(tmp)), patch.object(

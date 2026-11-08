@@ -23,9 +23,10 @@ def synthesize(request, folder):
         reference = mx.array(np.frombuffer(wav.readframes(wav.getnframes()), "<i2").astype("float32") / 32768)
     remaining = request["maxSeconds"]
     for index, line in enumerate(request["lines"]):
-        # This codec generates one frame per 1,920 samples. Keep one second of
-        # headroom so an overlength utterance is rejected instead of cut short.
-        limit = max(1, math.ceil((remaining + 1) * model.sample_rate / 1920))
+        # Keep short lines bounded if the model repeats. Allow longer lines more
+        # room, up to the remaining project budget plus one second to detect overflow.
+        line_seconds = max(120, len(line))
+        limit = max(1, math.ceil((min(remaining, line_seconds) + 1) * model.sample_rate / 1920))
         segments = list(model.generate(text=line, ref_audio=reference, ref_text=request["transcript"],
                                        max_tokens=limit))
         if not segments:
@@ -34,11 +35,12 @@ def synthesize(request, folder):
         pcm = np.asarray(audio.audio, dtype="float32").reshape(-1)
         if not pcm.size or not np.isfinite(pcm).all() or np.max(np.abs(pcm)) < 0.0001:
             raise ValueError(f"第 {index + 1} 句未合成有效声音")
+        duration = pcm.size / audio.sample_rate + request["pause"]
+        if duration > remaining + 1e-6 or (audio.token_count >= limit and remaining <= line_seconds):
+            raise ValueError(f"第 {index + 1} 句无法在整篇配音的 {request['maxSeconds']} 秒上限内读完，请拆分文案后分别生成。")
         if audio.token_count >= limit:
-            raise ValueError(f"第 {index + 1} 句在剩余 {remaining:.1f} 秒的配音时长内未能读完。请核对参考录音与逐字稿，或将文案分段。")
-        remaining -= pcm.size / audio.sample_rate + request["pause"]
-        if remaining < -1e-6:
-            raise ValueError(f"读到第 {index + 1} 句时，实际配音已超过 {request['maxSeconds']} 秒，请分段制作")
+            raise ValueError(f"第 {index + 1} 句合成达到单句生成上限，请将这句话拆成两个短句后重新生成。")
+        remaining -= duration
         with wave.open(str(folder / f"{index}.wav"), "wb") as wav:
             wav.setparams((1, 2, audio.sample_rate, 0, "NONE", "not compressed"))
             wav.writeframes(np.rint(np.clip(pcm, -1, 1) * 32767).astype("<i2").tobytes())

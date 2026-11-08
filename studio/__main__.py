@@ -134,6 +134,7 @@ def session():
                     models=catalog, tools=tools),
         systemVoices=list(voices.values()),
         demoText=media.DEMO_TEXT,
+        maxNarrationSeconds=media.MAX_NARRATION_SECONDS,
         exportSizes=SIZES,
         captionBand=CAPTION_BAND,
     )

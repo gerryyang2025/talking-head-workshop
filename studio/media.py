@@ -21,7 +21,8 @@ STORE = Path(os.environ.get("KOUBO_STUDIO_DATA", ROOT / "build/studio")).resolve
 MODELS = ROOT / "build/models"
 FPS = 25
 RATE = 48000
-MAX_SECONDS = 120
+MAX_SOURCE_SECONDS = 120
+MAX_NARRATION_SECONDS = 600
 os.environ["PATH"] = str(ROOT / ".venv/bin") + os.pathsep + os.environ.get("PATH", "")
 DEMO_TEXT = "把一张照片做成口播视频，要经过三步。\n先确定人物形象，再为文案配音。\n最后，让人物的口型跟上每一个字。"
 LEGACY_VOICE_IDS = {"Reed": "reed", "Tingting": "tingting"}
@@ -129,8 +130,9 @@ def build_asset(path, kind, role, name, ident):
     if not stream:
         raise ValueError("文件内容与所选素材类型不符")
     duration = float(data["format"].get("duration", 0)) if kind != "photo" else 0
-    if kind != "photo" and not 0.08 <= duration <= MAX_SECONDS:
-        raise ValueError(f"请使用 0.08 至 {MAX_SECONDS} 秒的素材")
+    max_seconds = MAX_NARRATION_SECONDS if role == "audio" else MAX_SOURCE_SECONDS
+    if kind != "photo" and not 0.08 <= duration <= max_seconds:
+        raise ValueError(f"请使用 0.08 至 {max_seconds} 秒的素材")
     a = dict(
         id=ident,
         name=name,
@@ -381,7 +383,7 @@ def synthesized_lines(mode, lines, folder, profile):
             raise ValueError("本机缺少个人音色引擎或模型，请按 README 的个人音色步骤安装")
         request = dict(lines=lines, model=str(VOICE_MODEL), transcript=profile["transcript"],
                        reference=str(Path(profile["path"]).with_name("reference.wav")),
-                       maxSeconds=MAX_SECONDS, pause=SPEECH_PAUSE)
+                       maxSeconds=MAX_NARRATION_SECONDS, pause=SPEECH_PAUSE)
         try:
             worker = subprocess.run([VOICE_PYTHON, Path(__file__).with_name("personal_voice.py"), folder],
                                     input=json.dumps(request).encode(), capture_output=True, timeout=1800)
@@ -435,8 +437,8 @@ def prepare_voice(cfg, *, cached_only=False):
                 spans.append((samples / RATE, (samples + len(pcm)) / RATE))
                 parts.extend([pcm, pause])
                 samples += len(pcm) + len(pause)
-                if samples > MAX_SECONDS * RATE:
-                    raise ValueError("本工作台单条配音上限为 120 秒，请分段制作")
+                if samples > MAX_NARRATION_SECONDS * RATE:
+                    raise ValueError(f"读到第 {len(spans)} 句时，整篇配音已超过 {MAX_NARRATION_SECONDS} 秒，请拆分文案后分别生成。")
         pcm = np.concatenate(parts)
         method = "个人音色逐句合成" if mode.startswith("personal-") else "逐句合成"
     else:
@@ -454,8 +456,8 @@ def prepare_voice(cfg, *, cached_only=False):
             spans = list(zip(boundaries[:-1], boundaries[1:]))
             method = "按字数初排，请试听校时"
     duration = len(pcm) / RATE
-    if duration > MAX_SECONDS:
-        raise ValueError("配音超过 120 秒")
+    if duration > MAX_NARRATION_SECONDS:
+        raise ValueError(f"配音超过 {MAX_NARRATION_SECONDS} 秒，请拆分后分别制作。")
     write_wav(store / "voice.wav", pcm)
     blocks = pcm[: len(pcm) // 160 * 160].astype(float).reshape(-1, 160)
     rms = np.sqrt(np.mean(blocks**2, axis=1))
