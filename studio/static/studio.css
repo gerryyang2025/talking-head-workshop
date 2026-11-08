@@ -200,6 +200,9 @@ p {
   margin: 21px 9px 15px;
 }
 .engine {
+  background: transparent;
+  border: 0;
+  text-align: left;
   margin-top: auto;
   padding: 14px 8px 0;
   display: flex;
@@ -207,6 +210,31 @@ p {
   gap: 9px;
   border-top: 1px solid var(--line);
 }
+.engine:hover b {
+  color: var(--lime);
+}
+.model-list {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+}
+.model-list li {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+.model-list li > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.model-list small {
+  display: block;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.model-list .status { color: #84cf81; white-space: nowrap; }
+.model-list .missing { color: #e2ad73; }
+.local .mobile-engines { display: none; }
 .engine b,
 .engine small {
   display: block;
@@ -1081,6 +1109,7 @@ dialog h3 {
   }
 }
 @media (max-width: 900px) {
+  .local .mobile-engines { display: inline-block; }
   .rail {
     position: static;
     width: 100%;

@@ -94,7 +94,8 @@ class StudioWorkflow(unittest.TestCase):
                 "transcript": transcript,
             })
 
-        for response in (upload_reference(" "), upload_reference("参考句。", silent=True)):
+        for response in (upload_reference(" "), upload_reference("参考句。", silent=True),
+                         upload_reference("参考录音只读了一句话。" * 12)):
             self.assertEqual(response.status_code, 400)
         self.assertFalse(list((media.STORE / "assets").glob("personal-*")))
         src = upload_reference("参考句。")
@@ -121,6 +122,9 @@ class StudioWorkflow(unittest.TestCase):
             return types.SimpleNamespace(returncode=0)
 
         with patch.object(media, "personal_voice_ready", return_value=False):
+            lookup = self.client.post("/api/voice?cached=1", headers=self.headers, json=cfg)
+            self.assertEqual(lookup.status_code, 200)
+            self.assertIsNone(lookup.json)
             unavailable = self.client.post("/api/voice", headers=self.headers, json=cfg)
             self.assertEqual(unavailable.status_code, 400)
             self.assertIn("缺少", unavailable.json["error"])
@@ -131,8 +135,37 @@ class StudioWorkflow(unittest.TestCase):
         self.assertEqual(generated.status_code, 200, generated.json)
         self.assertEqual(generated.json["method"], "个人音色逐句合成")
         self.assertAlmostEqual(generated.json["duration"], 0.48)
+        with patch.object(self.server.executor, "submit", side_effect=AssertionError("cached voice queued for synthesis")):
+            self.assertEqual(self.client.post("/api/voice", headers=self.headers, json=cfg).json, generated.json)
+            self.assertEqual(self.client.post("/api/voice?cached=1", headers=self.headers, json=cfg).json, generated.json)
         with patch.object(media, "personal_voice_ready", return_value=False):
             self.assertEqual(media.prepare_voice(cfg), generated.json)
+        edit_url = f"/api/assets/{profile['id']}/transcript"
+        def edit(text):
+            return self.client.post(edit_url, headers=self.headers, json={"transcript": text})
+        self.assertEqual(edit("过长" * 80).status_code, 400)
+        self.assertEqual(media.asset(profile["id"])["transcript"], "参考句。")
+        self.assertEqual(edit("真实参考句。").status_code, 200)
+        with patch.object(media, "personal_voice_ready", return_value=False):
+            with self.assertRaisesRegex(ValueError, "缺少"):
+                media.prepare_voice(cfg)  # A correction must not replay cached audio from the old transcript.
+        self.assertEqual(edit("参考句。").status_code, 200)
+        self.assertEqual(media.prepare_voice(cfg), generated.json)
+
+    def test_model_list_reports_missing_components_separately(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(self.server, "MODELS", Path(tmp)), patch.object(
+            self.media, "personal_voice_missing", return_value=[]
+        ):
+            (Path(tmp) / "studio").mkdir()
+            (Path(tmp) / "studio/yunet.onnx").touch()
+            engine = self.client.get("/api/session").json["engine"]
+        models = {m["name"]: m["missing"] for m in engine["models"]}
+        self.assertTrue(engine["personalVoice"])
+        self.assertFalse(engine["ready"])
+        self.assertFalse(models["YuNet"])
+        self.assertFalse(models["Qwen3-TTS 0.6B Base · 4-bit"])
+        self.assertIn("studio/2dfan4.onnx", models["2DFAN4"])
+        self.assertIn("musetalk-1.5-fp16/whisper_encoder.safetensors", models["Whisper 音频编码器"])
 
     def test_hidden_clip_and_alignment(self):
         if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):

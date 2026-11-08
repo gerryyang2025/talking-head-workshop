@@ -335,10 +335,22 @@ def system_voices():
     return voices
 
 
+def reference_text(transcript, duration):
+    if not isinstance(transcript, str) or not 1 <= len(transcript.strip()) <= 1500:
+        raise ValueError("请填写录音逐字稿（最多 1500 字）")
+    transcript = transcript.strip()
+    # Reject only a large mismatch. Ignore punctuation, whitespace and Latin spelling.
+    han = len(re.findall(r"[\u3400-\u9fff]", transcript))
+    if han > max(30, 12 * duration):
+        raise ValueError(f"参考录音仅 {duration:.1f} 秒，逐字稿含 {han} 个汉字。请试听录音，将逐字稿改为录音实际说出的内容。")
+    return transcript
+
+
 def register_reference(a, name, transcript):
-    name, transcript = name.strip(), transcript.strip()
-    if not 1 <= len(name) <= 60 or not 1 <= len(transcript) <= 1500:
-        raise ValueError("请填写音色名称（最多 60 字）和录音逐字稿（最多 1500 字）")
+    name = name.strip()
+    if not 1 <= len(name) <= 60:
+        raise ValueError("请填写音色名称（最多 60 字）")
+    transcript = reference_text(transcript, a["duration"])
     path = Path(a["path"])
     reference = path.with_name("reference.wav")
     ff("-protocol_whitelist", "file,pipe", "-i", path, "-vn", "-ar", "24000",
@@ -350,18 +362,21 @@ def register_reference(a, name, transcript):
     a.update(name=name, transcript=transcript)
 
 
-def personal_voice_ready():
+def personal_voice_missing():
     required = ("config.json", "model.safetensors", "merges.txt", "vocab.json", "tokenizer_config.json",
                 "speech_tokenizer/config.json", "speech_tokenizer/model.safetensors")
-    return (VOICE_PYTHON.is_file() and VOICE_PYTHON.with_name("mlx_audio.tts.generate").is_file()
-            and all((VOICE_MODEL / name).is_file() for name in required))
+    missing = [name for name in required if not (VOICE_MODEL / name).is_file()]
+    if not VOICE_PYTHON.is_file() or not VOICE_PYTHON.with_name("mlx_audio.tts.generate").is_file():
+        missing.append("MLX-Audio 独立环境")
+    return missing
 
 
-def synthesized_lines(mode, lines, folder):
-    if mode.startswith("personal-"):
-        profile = asset(mode)
-        if profile["role"] != "personal_voice":
-            raise ValueError("请选择素材库中的个人音色")
+def personal_voice_ready():
+    return not personal_voice_missing()
+
+
+def synthesized_lines(mode, lines, folder, profile):
+    if profile is not None:
         if not personal_voice_ready():
             raise ValueError("本机缺少个人音色引擎或模型，请按 README 的个人音色步骤安装")
         request = dict(lines=lines, model=str(VOICE_MODEL), transcript=profile["transcript"],
@@ -374,7 +389,7 @@ def synthesized_lines(mode, lines, folder):
             raise ValueError("个人音色合成超时，请将文案分段后再试") from None
         if worker.returncode:
             detail = worker.stderr.decode(errors="replace").strip().splitlines()
-            raise ValueError("个人音色合成失败：" + (detail[-1][:300] if detail else "本机推理进程已退出"))
+            raise ValueError(detail[-1].removeprefix("ValueError: ")[:300] if detail else "个人音色推理进程已退出")
         for index in range(len(lines)):
             yield read_pcm(folder / f"{index}.wav")
     else:
@@ -387,17 +402,26 @@ def synthesized_lines(mode, lines, folder):
             yield read_pcm(folder / "line.aiff")
 
 
-def prepare_voice(cfg):
+def prepare_voice(cfg, *, cached_only=False):
     lines = sentences(cfg.get("text"))
     mode = cfg.get("voice", "reed")
     if not isinstance(mode, str) or not mode:
         raise ValueError("请选择配音来源")
-    version = "personal-voice-v1:" + VOICE_REVISION if mode.startswith("personal-") else "voice-v1"
+    profile = None
+    version = "voice-v1"
+    if mode.startswith("personal-"):
+        profile = asset(mode)
+        if profile["role"] != "personal_voice":
+            raise ValueError("请选择素材库中的个人音色")
+        reference_text(profile["transcript"], profile["duration"])
+        version = ["personal-voice-v2", VOICE_REVISION, profile["transcript"]]
     key = signature(version, lines, mode)
     store = STORE / "voices" / key
     result = store / "voice.json"
-    if result.exists():
+    if result.is_file() and (store / "voice.wav").is_file():
         return json.loads(result.read_text())
+    if cached_only:
+        return None
     store.mkdir(exist_ok=True, parents=True)
     spans = []
     if mode in LEGACY_VOICE_IDS.values() or mode.startswith(("system:", "personal-")):
@@ -405,7 +429,7 @@ def prepare_voice(cfg):
         samples = 0
         pause = np.zeros(round(SPEECH_PAUSE * RATE), dtype="<i2")
         with tempfile.TemporaryDirectory(dir=store) as tmp:
-            for pcm in synthesized_lines(mode, lines, Path(tmp)):
+            for pcm in synthesized_lines(mode, lines, Path(tmp), profile):
                 if len(pcm) < RATE * 0.04 or not np.any(pcm):
                     raise ValueError("未产出有效音频，请检查所选音色")
                 spans.append((samples / RATE, (samples + len(pcm)) / RATE))
@@ -447,6 +471,8 @@ def prepare_voice(cfg):
             for t, (s, e) in zip(lines, spans)
         ],
     )
+    if profile:
+        info["referenceVersion"] = signature(profile["transcript"])
     tmp = result.with_suffix(".tmp")
     tmp.write_text(json.dumps(info, ensure_ascii=False))
     tmp.replace(result)

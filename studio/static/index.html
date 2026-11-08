@@ -19,11 +19,11 @@
       <div class="railrule"></div>
       <div class="navlabel">制作流程</div>
       <nav id="steps"></nav>
-      <div class="engine">
+      <button class="engine" type="button" data-engines aria-haspopup="dialog">
         <span class="chipicon" data-icon="cpu"></span>
-        <div><b>本地推理引擎</b><small id="engineInfo">检查中</small></div>
+        <span><b>本地模型与引擎</b><small id="engineInfo">检查中</small></span>
         <i id="engineDot"></i>
-      </div>
+      </button>
     </aside>
     <main>
       <header class="topbar">
@@ -31,7 +31,7 @@
           ><i data-icon="grid"></i>工作空间 <em>/</em>
           <b id="crumb">制作工作台</b></span
         >
-        <div class="local"><i></i> 本机工作区</div>
+        <div class="local"><button class="minor mobile-engines" type="button" data-engines aria-haspopup="dialog">本地模型与引擎</button><i></i> 本机工作区</div>
       </header>
       <section class="page">
         <p class="creator-credit">Gerry · 无限流数字人口播</p>

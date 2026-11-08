@@ -33,25 +33,28 @@ app.config.update(MAX_CONTENT_LENGTH=160 * 1024 * 1024)
 executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="studio-render")
 asset_lock = threading.RLock()
 voice_lock = threading.Lock()
-WEIGHTS = [
-    "musetalk-1.5-fp16/" + v
-    for v in (
-        "config.json",
-        "unet.safetensors",
-        "vae.safetensors",
-        "whisper_encoder.safetensors",
-    )
-]
-WEIGHTS += ["studio/yunet.onnx", "studio/2dfan4.onnx"]
 
 
-def dependencies():
-    missing = [name for name in WEIGHTS if not (MODELS / name).is_file()]
-    missing.extend(
-        pkg
-        for pkg in ("mlx", "musetalk_mlx", "onnxruntime")
-        if not importlib.util.find_spec(pkg)
+def lipsync_models():
+    folder = "musetalk-1.5-fp16/"
+    components = (
+        ("MuseTalk 1.5", "根据配音生成口型 · UNet、VAE", ("mlx", "musetalk_mlx"),
+         (folder + "config.json", folder + "unet.safetensors", folder + "vae.safetensors")),
+        ("Whisper 音频编码器", "为 MuseTalk 提取语音特征", ("mlx", "musetalk_mlx"), (folder + "whisper_encoder.safetensors",)),
+        ("YuNet", "检测画面中的人脸", ("cv2",), ("studio/yunet.onnx",)),
+        ("2DFAN4", "定位面部关键点和嘴部区域", ("onnxruntime",), ("studio/2dfan4.onnx",)),
     )
+    models = []
+    for name, purpose, packages, files in components:
+        missing = [pkg for pkg in packages if not importlib.util.find_spec(pkg)]
+        missing.extend(path for path in files if not (MODELS / path).is_file())
+        models.append(dict(name=name, purpose=purpose, missing=missing))
+    return models
+
+
+def dependencies(models=None):
+    models = lipsync_models() if models is None else models
+    missing = list(dict.fromkeys(item for model in models for item in model["missing"]))
     return dict(
         ready=not missing,
         missing=missing,
@@ -107,6 +110,18 @@ def all_jobs():
 @app.get("/api/session")
 def session():
     voices = media.system_voices()
+    models = lipsync_models()
+    voice_missing = media.personal_voice_missing()
+    catalog = [
+        dict(name="Qwen3-TTS 0.6B Base · 4-bit", purpose="用参考录音和逐字稿合成个人音色 · MLX-Audio、语音分词器", missing=voice_missing),
+        *models,
+    ]
+    tools = [
+        dict(name="macOS 系统语音", purpose=f"系统音色配音 · {len(voices)} 个可选声音",
+             missing=[] if voices else ["未找到可用的系统音色"]),
+        dict(name="FFmpeg / FFprobe", purpose="读取、转码和导出音视频",
+             missing=[cmd for cmd in ("ffmpeg", "ffprobe") if not shutil.which(cmd)]),
+    ]
     with db() as con:
         assets = [
             public_asset(json.loads(r[0]))
@@ -115,7 +130,8 @@ def session():
     return jsonify(
         assets=assets,
         jobs=all_jobs(),
-        engine=dict(dependencies(), tts=bool(voices), personalVoice=media.personal_voice_ready()),
+        engine=dict(dependencies(models), tts=bool(voices), personalVoice=not voice_missing,
+                    models=catalog, tools=tools),
         systemVoices=list(voices.values()),
         demoText=media.DEMO_TEXT,
         exportSizes=SIZES,
@@ -163,6 +179,19 @@ def upload():
     return jsonify(public_asset(a)), 201
 
 
+@app.post("/api/assets/<ident>/transcript")
+def edit_reference(ident):
+    with asset_lock:
+        profile = asset(ident)
+        if profile["role"] != "personal_voice":
+            raise ValueError("请选择个人音色")
+        transcript = media.reference_text(request.get_json().get("transcript"), profile["duration"])
+        if transcript != profile["transcript"]:
+            profile.update(transcript=transcript, referenceVersion=media.signature(transcript))
+            save_asset(profile)
+    return jsonify(public_asset(profile))
+
+
 @app.get("/api/assets/<ident>/<variant>")
 def media_file(ident, variant):
     a = asset(ident)
@@ -189,7 +218,13 @@ def shots(ident):
 @app.post("/api/voice")
 def voice():
     cfg = request.get_json()
-    if isinstance(cfg.get("voice"), str) and cfg["voice"].startswith("personal-"):
+    cached_only = request.args.get("cached") == "1"
+    personal = isinstance(cfg.get("voice"), str) and cfg["voice"].startswith("personal-")
+    if cached_only or personal:
+        cached = media.prepare_voice(cfg, cached_only=True)
+        if cached_only or cached is not None:
+            return jsonify(cached)
+    if personal:
         # Serialize Metal inference with lip sync and other personal-voice requests.
         return jsonify(executor.submit(media.prepare_voice, cfg).result())
     with voice_lock:

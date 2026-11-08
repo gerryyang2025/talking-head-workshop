@@ -166,6 +166,7 @@ let session,
 let shotMap = {},
   resultTimeline = null,
   resultVoice = null;
+let voiceRequest = null, voiceError = "", voiceLookupTimer;
 const mediaURL = (id, type) =>
   "/api/assets/" + encodeURIComponent(id) + "/" + type;
 const findAsset = (id) => session.assets.find((a) => a.id === id);
@@ -178,7 +179,15 @@ function setPrimaryHost(id) {
   }
 }
 async function restoreDraft() {
+  clearTimeout(voiceLookupTimer);
+  voiceError = "";
+  voiceRequest = null;
   draft.cutaways ||= [];
+  const referenceVersion = findAsset(draft.voice)?.referenceVersion;
+  if (referenceVersion && draft.voiceData && draft.voiceData.referenceVersion !== referenceVersion) {
+    Object.assign(draft, {voiceData: null, lines: [], job: null});
+    save();
+  }
   const first = findAsset(draft.hosts?.[0]);
   if (!Array.isArray(draft.inserts)) {
     const ids = [draft.insert, ...(draft.hosts || []).slice(1)].filter(Boolean);
@@ -360,6 +369,10 @@ function save() {
   }
 }
 function discardVoice() {
+  clearTimeout(voiceLookupTimer);
+  voiceRequest = null;
+  voiceError = "";
+  delete draft.voicePending;
   draft.voiceData = null;
   draft.lines = [];
   draft.job = null;
@@ -379,7 +392,7 @@ function task(fn) {
     try {
       await fn(...args);
     } catch (e) {
-      message(e.message);
+      if (e.name !== "AbortError") message(e.message);
     }
   };
 }
@@ -677,8 +690,20 @@ function drawTracks() {
     if (audio.getAttribute("src") !== src) audio.src = src;
   }
   if (!time) {
-    root.innerHTML =
-      '<p class="timelineNote">准备配音后，这里会显示按声音对齐的镜头和字幕。</p>';
+    const recorded = findAsset(draft.voice)?.role === "audio";
+    let tip, action = "";
+    if (!draft.text.trim() || !draft.voice) {
+      tip = "填写口播文案并选择配音来源，即可准备时间线。";
+      if (step !== 2) action = '<button class="minor" data-step="2">前往文案配音</button>';
+    } else if (voiceRequest?.project === draft) {
+      tip = voiceRequest.cachedOnly ? "正在查找这篇文案已有的配音…" :
+        recorded ? "正在载入录音并排列字幕…" : "正在生成整篇配音，完成后会显示镜头、波形和字幕。";
+    } else {
+      tip = voiceError || (recorded ? "可以用这份录音为当前文案排列镜头和字幕。" : "当前文案和音色尚未准备好整篇配音。");
+      action = '<button class="minor" data-prepare-voice>' +
+        (voiceError ? "重试" : recorded ? "载入录音" : "生成整篇配音") + '</button>';
+    }
+    root.innerHTML = '<div class="timelineNote" role="status">' + esc(tip) + ' ' + action + '</div>';
     return;
   }
   const p = primaryHost();
@@ -1090,11 +1115,13 @@ function inspector() {
       (narrationVoice(draft.voice) ? '' : ' hidden') + '>短句试听音色</button>' +
       '<button class="minor" data-view="library">从素材库选配音</button></div>' +
       (findAsset(draft.voice)?.role === "personal_voice" ? '<p class="hint">' +
-        (session.engine.personalVoice ? '在本机逐句合成，长文案需要一些时间。'
+        (session.engine.personalVoice ? 'Qwen3-TTS 在本机逐句合成，单条配音最长 120 秒。'
           : '个人音色引擎尚未就绪，请按 README 的个人音色安装步骤配置。') + '</p>' : '') +
+      (findAsset(draft.voice)?.role === "personal_voice" ? '<button class="minor" data-edit-reference="' +
+        esc(draft.voice) + '">核对参考录音与逐字稿</button>' : '') +
       '<button class="outline wide" id="voiceBtn">' +
       icon("voice") +
-      (draft.voiceData ? "试听配音" : busy ? "正在准备配音…" : "生成并试听") +
+      (draft.voiceData ? "试听配音" : "生成并试听") +
       '</button><div id="audioPreview" class="stack"></div><hr class="splitline">' +
       aspectButtons();
   }
@@ -1192,7 +1219,7 @@ function inspector() {
         icon("arrow") +
         "</button>"
       : "");
-  $("#voiceBtn")?.toggleAttribute("disabled", busy);
+  updateVoiceButton();
   $("#toneBtn")?.toggleAttribute("disabled", busy);
   $("#produce").disabled = busy || !!progressJob;
 }
@@ -1245,7 +1272,8 @@ function alternative() {
         (a.duration ? sec(a.duration) : a.width + ' × ' + a.height) +
         '</small>' + (personal ? '<details class="voice-reference"><summary>参考录音与逐字稿</summary>' +
           '<audio controls preload="none" aria-label="参考录音" src="' + mediaURL(a.id, "reference") +
-          '"></audio><p>' + esc(a.transcript) + '</p></details>' : '') +
+          '"></audio><p>' + esc(a.transcript) + '</p><button class="minor" data-edit-reference="' +
+          esc(a.id) + '">修改逐字稿</button></details>' : '') +
         '<div class="btnrow topgap"><button class="minor" data-use="' + esc(a.id) + '"' +
         (primary || (audio && draft.voice === a.id) ? ' disabled' : '') + '>' + useLabel + '</button>' +
         (audio ? '' : '<button class="minor" aria-pressed="' + selected + '" data-toggle-insert="' + esc(a.id) + '">' +
@@ -1256,19 +1284,67 @@ function alternative() {
 async function loadShots(id) {
   if (id && !shotMap[id]) shotMap[id] = (await api("/api/shots/" + id)).shots;
 }
-async function ensureVoice() {
-  if (draft.voiceData) return;
-  const {id, text, voice} = draft;
+function updateVoiceButton() {
+  const button = $("#voiceBtn");
+  if (!button) return;
+  const pending = voiceRequest?.project === draft && !voiceRequest.cachedOnly;
+  button.disabled = busy || pending;
+  if (step === 2) button.innerHTML = icon("voice") + (draft.voiceData ? "试听配音" :
+    pending ? "正在准备配音…" : findAsset(draft.voice)?.role === "audio" ? "载入并试听" : "生成并试听");
+}
+async function ensureVoice(cachedOnly = false) {
+  if (draft.voiceData) return draft.voiceData;
+  const {text, voice} = draft;
   if (!text.trim()) throw Error("请先填写口播文案");
   if (!voice) throw Error("请先选择或导入声音");
-  const v = await api("/api/voice", { text, voice });
-  if (draft.id !== id || draft.text !== text || draft.voice !== voice)
-    throw Error("项目、文案或声音已更改，请重新准备配音");
-  draft.voiceData = v;
-  draft.lines = v.lines.map((l) => ({ ...l, layout: "auto", shot: "" }));
-  save();
+  if (voiceRequest?.project === draft && (cachedOnly || !voiceRequest.cachedOnly)) return voiceRequest.promise;
+  const request = {project: draft, cachedOnly};
+  voiceRequest = request;
+  voiceError = "";
+  if (!cachedOnly) {
+    draft.voicePending = true;
+    save();
+  }
   drawTracks();
-  updateClock();
+  updateVoiceButton();
+  const isCurrent = () => voiceRequest === request && request.project === draft;
+  request.promise = api("/api/voice" + (cachedOnly ? "?cached=1" : ""), {text, voice}).then(v => {
+    if (!isCurrent()) throw new DOMException("配音选择已更改", "AbortError");
+    if (v) {
+      draft.voiceData = v;
+      draft.lines = v.lines.map(l => ({...l, layout: "auto", shot: ""}));
+    }
+    return v;
+  }).catch(error => {
+    if (!isCurrent()) throw new DOMException("配音选择已更改", "AbortError");
+    voiceError = error.message;
+    throw error;
+  }).finally(() => {
+    if (!isCurrent()) return;
+    voiceRequest = null;
+    delete draft.voicePending;
+    if (draft.voiceData || !cachedOnly) save();
+    if (view === "work" && step === 3 && draft.voiceData) inspector();
+    updateVoiceButton();
+    drawTracks();
+    updateClock();
+  });
+  return request.promise;
+}
+function restoreTimeline() {
+  if (!draft.voiceData && draft.voice && draft.text.trim()) {
+    const cachedOnly = !draft.voicePending && findAsset(draft.voice)?.role !== "audio";
+    // Background lookup errors are displayed in the timeline alongside a retry action.
+    ensureVoice(cachedOnly).catch(() => {});
+  }
+}
+async function selectVoice(id) {
+  if (draft.voice !== id) {
+    draft.voice = id;
+    discardVoice();
+  }
+  inspector();
+  if (id && draft.text.trim()) await ensureVoice();
 }
 function playVoice(audio, label) {
   const el = $("#audioPreview");
@@ -1294,15 +1370,8 @@ async function previewTone(button) {
   }
 }
 async function toggleVoice() {
-  busy = true;
-  inspector();
-  try {
-    await ensureVoice();
-  } finally {
-    busy = false;
-    inspector();
-  }
-  if (step === 2 && view === "work") playVoice(draft.voiceData, draft.voiceData.method);
+  const audio = await ensureVoice();
+  if (step === 2 && view === "work" && audio === draft.voiceData) playVoice(audio, audio.method);
 }
 async function poll(id) {
   clearTimeout(pollTimer);
@@ -1378,8 +1447,9 @@ async function switchStep(n) {
 }
 async function use(a) {
   if (a.kind === "audio") {
-    draft.voice = a.id;
-    discardVoice();
+    setStep(2);
+    await selectVoice(a.id);
+    return;
   } else {
     await loadShots(a.id);
     setPrimaryHost(a.id);
@@ -1440,6 +1510,31 @@ document.addEventListener(
           Math.max(0, Math.min(1, (e.clientX - bounds.left) / bounds.width));
         updateCutHead();
       }
+      return;
+    }
+    if (b.hasAttribute("data-engines")) {
+      const list = items => '<ul class="model-list">' + items.map(item => {
+        const ok = !item.missing.length;
+        return '<li><div><b>' + esc(item.name) + '</b><small class="status ' + (ok ? '' : 'missing') +
+          '">' + (ok ? '已就绪' : '缺依赖') + '</small></div><small>' + esc(item.purpose) + '</small>' +
+          (ok ? '' : '<small class="missing">缺少 ' + esc(item.missing.join('、')) + '</small>') + '</li>';
+      }).join('') + '</ul>';
+      $("#dialogBody").innerHTML = '<h3>本地模型与引擎</h3><p class="hint">按本机安装的模型文件和运行依赖检查。</p>' +
+        list(session.engine.models) + '<h4>系统语音与媒体工具</h4>' + list(session.engine.tools);
+      $("#dialog").showModal();
+      return;
+    }
+    if (b.hasAttribute("data-prepare-voice")) {
+      await ensureVoice();
+      return;
+    }
+    if (b.dataset.editReference) {
+      const a = findAsset(b.dataset.editReference);
+      $("#dialogBody").innerHTML = '<h3>核对参考录音与逐字稿</h3><form id="editTranscript" class="stack" data-profile="' + esc(a.id) + '">' +
+        '<b>' + esc(a.name) + ' · ' + sec(a.duration) + '</b><audio controls aria-label="参考录音" src="' + mediaURL(a.id, 'reference') + '"></audio>' +
+        '<label class="field"><span>录音中实际说出的内容</span><textarea name="transcript" maxlength="1500" required>' + esc(a.transcript) +
+        '</textarea></label><small role="alert"></small><button class="primary" type="submit">保存逐字稿</button></form>';
+      $("#dialog").showModal();
       return;
     }
     if (b.dataset.view) {
@@ -1528,6 +1623,7 @@ document.addEventListener(
       setStep(2);
       prepMonitor();
       drawTracks();
+      restoreTimeline();
       return;
     }
     switch (b.id) {
@@ -1596,6 +1692,9 @@ document.addEventListener(
         if (!t) throw Error("请输入项目名称");
         save();
         draft = fresh(t);
+        clearTimeout(voiceLookupTimer);
+        voiceRequest = null;
+        voiceError = "";
         playingJob = null;
         resultTimeline = null;
         resultVoice = null;
@@ -1605,6 +1704,7 @@ document.addEventListener(
         setStep(0);
         prepMonitor();
         drawTracks();
+        restoreTimeline();
         break;
       }
       case "addshot": {
@@ -1659,7 +1759,8 @@ document.addEventListener("input", (e) => {
     discardVoice();
     $("#count").textContent = el.value.length + " / 1500";
     $("#audioPreview").innerHTML = "";
-    if ($("#voiceBtn")) $("#voiceBtn").innerHTML = icon("voice") + "生成并试听";
+    updateVoiceButton();
+    voiceLookupTimer = setTimeout(restoreTimeline, 500);
   }
   if (el.id === "seek") seek((el.value / 1000) * duration());
 });
@@ -1714,18 +1815,17 @@ document.addEventListener(
       case "scriptSample":
         if (!el.value || el.value === draft.text) break;
         draft.text = el.value;
-        if (!narrationVoice(draft.voice))
+        if (!draft.voice || draft.voice === "demo-audio")
           draft.voice = defaultVoice(draft.text);
         discardVoice();
         inspector();
+        restoreTimeline();
         break;
       case "mobileSteps":
         await switchStep(+el.value);
         break;
       case "voiceChoice":
-        draft.voice = el.value;
-        discardVoice();
-        inspector();
+        await selectVoice(el.value);
         break;
       case "transcriptFile": {
         const file = el.files[0];
@@ -1777,6 +1877,28 @@ document.addEventListener(
 );
 document.addEventListener("submit", async (event) => {
   const form = event.target;
+  if (form.id === "editTranscript") {
+    event.preventDefault();
+    const button = form.querySelector("button");
+    if (button.disabled) return;
+    button.disabled = true;
+    try {
+      const a = findAsset(form.dataset.profile);
+      const updated = await api("/api/assets/" + a.id + "/transcript", {transcript: form.elements.transcript.value});
+      const changed = a.transcript !== updated.transcript;
+      Object.assign(a, updated);
+      if (changed && draft.voice === a.id) discardVoice();
+      if (view === "library") alternative();
+      if (view === "work") inspector();
+      if (form.isConnected && $("#dialog").open) $("#dialog").close();
+      message("参考录音逐字稿已保存");
+    } catch (error) {
+      form.querySelector("[role=alert]").textContent = error.message;
+    } finally {
+      button.disabled = false;
+    }
+    return;
+  }
   if (form.id === "voiceProfileForm") {
     event.preventDefault();
     const button = form.querySelector("button");
@@ -1837,11 +1959,10 @@ async function start() {
   if (!draft) draft = fresh();
   await importDraftReviews().catch(() => message("旧勾选暂未同步，刷新后会重试"));
   await restoreDraft();
-  $("#engineInfo").textContent = session.engine.ready
-    ? session.engine.engine
-    : "依赖待安装";
-  $("#engineDot").classList.toggle("off", !session.engine.ready);
-  $("#engineInfo").title = session.engine.missing.join(", ");
+  const engines = [...session.engine.models, ...session.engine.tools];
+  const ready = engines.filter(item => !item.missing.length).length;
+  $("#engineInfo").textContent = ready + " / " + engines.length + " 项就绪 · 查看";
+  $("#engineDot").classList.toggle("off", ready !== engines.length);
   nav();
   inspector();
   prepMonitor();
@@ -1855,14 +1976,6 @@ async function start() {
     setStep(5);
     poll(draft.job);
   }
-  if (
-    !draft.voiceData &&
-    draft.voice === "demo-audio" &&
-    draft.text === session.demoText
-  ) {
-    await ensureVoice();
-    if (step === 2) inspector();
-    updateClock();
-  }
+  restoreTimeline();
 }
 start().catch((e) => message(e.message));
