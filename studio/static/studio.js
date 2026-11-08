@@ -177,7 +177,7 @@ function setPrimaryHost(id) {
     if (line.shot && line.shot.slice(0, line.shot.lastIndexOf("-")) !== id) line.shot = "";
   }
 }
-function restoreMaterials() {
+async function restoreDraft() {
   draft.cutaways ||= [];
   const first = findAsset(draft.hosts?.[0]);
   if (!Array.isArray(draft.inserts)) {
@@ -198,6 +198,18 @@ function restoreMaterials() {
     }
   }
   setPrimaryHost(first && first.kind !== "audio" ? first.id : null);
+  const job = getJob(draft.job);
+  if (job?.status === "done") {
+    // Older exports record the audio ID only in their timeline.
+    const project = draft;
+    const voiceId = job.voiceId || await api("/api/jobs/" + job.id + "/timeline")
+      .then(timeline => timeline.voice).catch(() => null);
+    if (project === draft && project.job === job.id &&
+        (!project.voiceData || (voiceId && project.voiceData.id !== voiceId))) {
+      project.job = null;
+      save();
+    }
+  }
 }
 const getJob = (id) => session.jobs.find((j) => j.id === id);
 const current = () => getJob(playingJob || draft.job);
@@ -227,7 +239,43 @@ async function api(url, body, form = false) {
 }
 function defaultVoice(text) {
   if (text === session.demoText && findAsset("demo-audio")) return "demo-audio";
-  return session.engine.tts ? "reed" : "";
+  const voices = session.systemVoices;
+  return (systemVoice("reed") || voices.find(v => v.locale === "zh-CN") || voices[0])?.id || "";
+}
+function systemVoice(id) {
+  return session.systemVoices.find(v => v.id === id);
+}
+function narrationVoice(id) {
+  const profile = findAsset(id);
+  return profile?.role === "personal_voice" ? profile : systemVoice(id);
+}
+function voiceOptions() {
+  const choices = session.systemVoices;
+  const recordings = session.assets.filter(a => a.role === "audio");
+  const profiles = session.assets.filter(a => a.role === "personal_voice");
+  const groups = new Map();
+  const localeNames = new Intl.DisplayNames(["zh-CN"], {type: "language"});
+  const chinese = {"zh-CN": "普通话", "zh-TW": "台湾华语", "zh-HK": "粤语（香港）"};
+  for (const voice of choices) {
+    if (!groups.has(voice.locale)) groups.set(voice.locale, []);
+    groups.get(voice.locale).push(voice);
+  }
+  const group = (label, options) => '<optgroup label="' + esc(label) + '">' + options + '</optgroup>';
+  const locales = Object.keys(chinese).filter(locale => groups.has(locale));
+  const others = [...groups.keys()].filter(locale => !locales.includes(locale)).sort();
+  let html = "";
+  if (!draft.voice) html = '<option value="" selected disabled>请选择或导入配音</option>';
+  else if (!narrationVoice(draft.voice) && !recordings.some(a => a.id === draft.voice))
+    html = '<option value="' + esc(draft.voice) + '" selected disabled>原配音来源在本机不可用</option>';
+  if (profiles.length)
+    html += group("个人音色", profiles.map(a => opt(a.id, a.name, draft.voice)).join(""));
+  if (recordings.length)
+    html += group("素材库录音", recordings.map(a => opt(a.id, a.name, draft.voice)).join(""));
+  for (const locale of [...locales, ...others]) {
+    const label = chinese[locale] || localeNames.of(locale);
+    html += group(label, groups.get(locale).map(v => opt(v.id, v.name + " · " + label, draft.voice)).join(""));
+  }
+  return html;
 }
 const longScripts = [
   {
@@ -314,10 +362,14 @@ function save() {
 function discardVoice() {
   draft.voiceData = null;
   draft.lines = [];
+  draft.job = null;
+  playingJob = null;
+  resultTimeline = null;
+  resultVoice = null;
   if (mode === "result") {
     mode = "source";
     prepMonitor();
-  }
+  } else updateMonitorFrame();
   save();
   drawTracks();
   updateClock();
@@ -814,6 +866,7 @@ async function openFilm(id, playNow = true) {
     api("/api/jobs/" + id), api("/api/jobs/" + id + "/timeline"),
   ]);
   const voice = await api("/api/voice/" + tl.voice + "/info");
+  if (!playNow && current()?.id !== id) return;
   updateJob(job);
   resultVoice = voice;
   resultTimeline = tl;
@@ -902,7 +955,7 @@ async function importDraftReviews() {
 }
 function jobBox(j) {
   if (!j)
-    return '<p class="hint">生成完成后，可在监看区播放整条成片并下载。</p>';
+    return '<p class="hint">点击「生成口播」，即可用当前文案和配音生成成片。已生成的版本可在「导出记录」查看。</p>';
   return (
     '<div class="jobstatus stack"><b>' +
     esc(j.title) +
@@ -1032,21 +1085,17 @@ function inspector() {
       '</textarea><small class="count" id="count">' +
       draft.text.length +
       ' / 1500</small></label><label class="field"><span>配音来源</span><select id="voiceChoice">' +
-      (!draft.voice ? '<option value="" selected>请选择或导入配音</option>' : "") +
-      (session.engine.tts
-        ? opt("reed", "系统声音 · Reed 普通话", draft.voice) +
-          opt("tingting", "系统声音 · Tingting 普通话", draft.voice)
-        : "") +
-      session.assets
-        .filter((a) => a.role === "audio")
-        .map((a) => opt(a.id, a.name, draft.voice))
-        .join("") +
-      '</select></label><div class="pair"><button class="outline" id="voiceBtn">' +
+      voiceOptions() +
+      '</select></label><div class="btnrow"><button class="minor" id="toneBtn"' +
+      (narrationVoice(draft.voice) ? '' : ' hidden') + '>短句试听音色</button>' +
+      '<button class="minor" data-view="library">从素材库选配音</button></div>' +
+      (findAsset(draft.voice)?.role === "personal_voice" ? '<p class="hint">' +
+        (session.engine.personalVoice ? '在本机逐句合成，长文案需要一些时间。'
+          : '个人音色引擎尚未就绪，请按 README 的个人音色安装步骤配置。') + '</p>' : '') +
+      '<button class="outline wide" id="voiceBtn">' +
       icon("voice") +
-      (draft.voiceData ? "试听配音" : "生成并试听") +
-      "</button>" +
-      '<button class="outline" data-view="library">从素材库选配音</button>' +
-      '</div><div id="audioPreview" class="stack"></div><hr class="splitline">' +
+      (draft.voiceData ? "试听配音" : busy ? "正在准备配音…" : "生成并试听") +
+      '</button><div id="audioPreview" class="stack"></div><hr class="splitline">' +
       aspectButtons();
   }
   if (step === 3) {
@@ -1144,6 +1193,7 @@ function inspector() {
         "</button>"
       : "");
   $("#voiceBtn")?.toggleAttribute("disabled", busy);
+  $("#toneBtn")?.toggleAttribute("disabled", busy);
   $("#produce").disabled = busy || !!progressJob;
 }
 function alternative() {
@@ -1180,18 +1230,23 @@ function alternative() {
     '<div class="subline library-tools"><span>当前项目 · ' + esc(draft.title) +
     ' · 已选 ' + draft.inserts.length + ' 份补充素材</span><div class="btnrow">' +
     upload("host", "导入照片或视频") + upload("audio", "导入配音") +
+    '<button class="outline" id="addVoiceProfile">添加个人音色</button>' +
     '<button class="outline" data-view="work">返回工作台</button></div></div><div class="altgrid">' +
     session.assets.map(a => {
       const audio = a.kind === "audio", primary = draft.hosts[0] === a.id;
       const selected = draft.inserts.some(item => item.id === a.id);
-      const useLabel = audio ? (draft.voice === a.id ? "当前配音" : "用作配音") : (primary ? "当前主讲" : "设为主讲");
+      const personal = a.role === "personal_voice";
+      const useLabel = audio ? (draft.voice === a.id ? "当前配音" : personal ? "用此音色配音" : "用作配音") : (primary ? "当前主讲" : "设为主讲");
       return '<article class="assetcard">' +
         (audio ? '<div class="audioart">' + icon("music") + '</div>'
           : '<img loading="lazy" alt="" src="' + mediaURL(a.id, "poster") + '">') +
         '<div><b>' + esc(a.name) + '</b><small>' +
-        ({photo: "照片", video: "视频", audio: "配音"}[a.kind]) + ' · ' +
+        (personal ? "个人音色 · 参考录音" : {photo: "照片", video: "视频", audio: "配音"}[a.kind]) + ' · ' +
         (a.duration ? sec(a.duration) : a.width + ' × ' + a.height) +
-        '</small><div class="btnrow topgap"><button class="minor" data-use="' + esc(a.id) + '"' +
+        '</small>' + (personal ? '<details class="voice-reference"><summary>参考录音与逐字稿</summary>' +
+          '<audio controls preload="none" aria-label="参考录音" src="' + mediaURL(a.id, "reference") +
+          '"></audio><p>' + esc(a.transcript) + '</p></details>' : '') +
+        '<div class="btnrow topgap"><button class="minor" data-use="' + esc(a.id) + '"' +
         (primary || (audio && draft.voice === a.id) ? ' disabled' : '') + '>' + useLabel + '</button>' +
         (audio ? '' : '<button class="minor" aria-pressed="' + selected + '" data-toggle-insert="' + esc(a.id) + '">' +
           (selected ? '已选为补充' : '选为补充') + '</button>') +
@@ -1203,45 +1258,51 @@ async function loadShots(id) {
 }
 async function ensureVoice() {
   if (draft.voiceData) return;
-  const text = draft.text,
-    voice = draft.voice;
+  const {id, text, voice} = draft;
   if (!text.trim()) throw Error("请先填写口播文案");
   if (!voice) throw Error("请先选择或导入声音");
   const v = await api("/api/voice", { text, voice });
-  if (draft.text !== text || draft.voice !== voice)
-    throw Error("文案或声音已更改，请重新准备配音");
+  if (draft.id !== id || draft.text !== text || draft.voice !== voice)
+    throw Error("项目、文案或声音已更改，请重新准备配音");
   draft.voiceData = v;
   draft.lines = v.lines.map((l) => ({ ...l, layout: "auto", shot: "" }));
   save();
   drawTracks();
   updateClock();
 }
+function playVoice(audio, label) {
+  const el = $("#audioPreview");
+  if (!el) return;
+  el.innerHTML = '<audio controls style="width:100%" src="/api/voice/' + esc(audio.id) +
+    '"></audio><small>' + esc(label) + " · " + sec(audio.duration) + "</small>";
+  el.querySelector("audio").play().catch(() => {});
+}
+async function previewTone(button) {
+  const voice = narrationVoice(draft.voice);
+  if (!voice) return;
+  const text = voice.role === "personal_voice" || voice.locale.startsWith("zh") ? "你好，欢迎来到帧间。听听这句话的语气和停顿。"
+    : voice.sample || "Welcome to Frame Studio.";
+  button.disabled = true;
+  button.textContent = "正在准备试听…";
+  try {
+    const sample = await api("/api/voice", {text, voice: voice.id});
+    if (button.isConnected && view === "work" && draft.voice === voice.id)
+      playVoice(sample, "音色试听 · " + voice.name);
+  } finally {
+    button.disabled = false;
+    button.textContent = "短句试听音色";
+  }
+}
 async function toggleVoice() {
   busy = true;
   inspector();
   try {
     await ensureVoice();
-    inspector();
-    if (step === 3) return;
-    const el = $("#audioPreview");
-    if (el) {
-      el.innerHTML =
-        '<audio controls style="width:100%" src="/api/voice/' +
-        draft.voiceData.id +
-        '"></audio><small>' +
-        esc(draft.voiceData.method) +
-        " · " +
-        sec(draft.voiceData.duration) +
-        "</small>";
-      el.querySelector("audio")
-        .play()
-        .catch(() => {});
-    }
   } finally {
     busy = false;
-    $("#produce").disabled = !!progressJob;
-    $("#voiceBtn")?.removeAttribute("disabled");
+    inspector();
   }
+  if (step === 2 && view === "work") playVoice(draft.voiceData, draft.voiceData.method);
 }
 async function poll(id) {
   clearTimeout(pollTimer);
@@ -1253,6 +1314,7 @@ async function poll(id) {
     if (["done", "failed"].includes(j.status)) {
       progressJob = null;
       $("#produce").disabled = false;
+      if (draft.job !== id) return;
       if (j.status === "done") {
         await openFilm(id, false);
         message("成片已生成，可播放并下载");
@@ -1288,12 +1350,14 @@ async function generate() {
     }
     const cfg = { ...draft, voiceId: draft.voiceData.id };
     const j = await api("/api/jobs", cfg);
-    draft.job = j.id;
-    playingJob = j.id;
-    save();
     updateJob(j);
     progressJob = j.id;
-    setStep(5);
+    if (draft.id === cfg.id && draft.voiceData?.id === cfg.voiceId) {
+      draft.job = j.id;
+      playingJob = j.id;
+      save();
+      setStep(5);
+    }
     poll(j.id);
   } finally {
     busy = false;
@@ -1454,11 +1518,11 @@ document.addEventListener(
     if (b.dataset.project) {
       save();
       draft = savedProjects()[b.dataset.project];
-      restoreMaterials();
       mode = "source";
       playingJob = null;
       resultTimeline = null;
       resultVoice = null;
+      await restoreDraft();
       save();
       $("#dialog").close();
       setStep(2);
@@ -1467,11 +1531,24 @@ document.addEventListener(
       return;
     }
     switch (b.id) {
+      case "addVoiceProfile":
+        $("#dialogBody").innerHTML = `<h3>添加个人音色</h3><form id="voiceProfileForm" class="stack">
+          <label class="field"><span>音色名称</span><input name="name" maxlength="60" required placeholder="例如 Gerry"></label>
+          <label class="field"><span>参考录音</span><input name="file" type="file" accept=".wav,.mp3,.m4a,.aiff,.aac" required>
+          <small>建议使用 10～20 秒清晰的单人讲话，避开背景音乐。</small></label>
+          <label class="field"><span>录音逐字稿</span><textarea name="transcript" maxlength="1500" required placeholder="填写参考录音中实际说出的内容。"></textarea></label>
+          <label class="field"><span>从文本文件填入逐字稿（可选）</span><input type="file" id="transcriptFile" accept=".txt,text/plain"></label>
+          <small role="alert"></small><button class="primary" type="submit">保存音色</button></form>`;
+        $("#dialog").showModal();
+        break;
       case "produce":
         await generate();
         break;
       case "voiceBtn":
         await toggleVoice();
+        break;
+      case "toneBtn":
+        await previewTone(b);
         break;
       case "next":
         await switchStep(step + 1);
@@ -1560,6 +1637,12 @@ document.addEventListener(
 );
 document.addEventListener("input", (e) => {
   const el = e.target;
+  if (el.matches("#voiceProfileForm [name=transcript]")) {
+    const file = el.form.querySelector("#transcriptFile");
+    file.value = "";
+    file.setCustomValidity("");
+    el.form.querySelector("[role=alert]").textContent = "";
+  }
   if (el.id === "script") {
     draft.text = el.value;
     const samples = $("#scriptSample");
@@ -1570,7 +1653,8 @@ document.addEventListener("input", (e) => {
       const voices = $("#voiceChoice");
       if (!draft.voice) voices.add(new Option("请选择或导入配音", ""), 0);
       voices.value = draft.voice;
-      message(draft.voice ? "文案已修改，将用系统普通话重新配音" : "请为新文案选择或导入配音");
+      $("#toneBtn").hidden = !narrationVoice(draft.voice);
+      message(draft.voice ? "文案已修改，将用所选系统声音重新配音" : "请为新文案选择或导入配音");
     }
     discardVoice();
     $("#count").textContent = el.value.length + " / 1500";
@@ -1630,7 +1714,7 @@ document.addEventListener(
       case "scriptSample":
         if (!el.value || el.value === draft.text) break;
         draft.text = el.value;
-        if (!["reed", "tingting"].includes(draft.voice))
+        if (!narrationVoice(draft.voice))
           draft.voice = defaultVoice(draft.text);
         discardVoice();
         inspector();
@@ -1643,6 +1727,31 @@ document.addEventListener(
         discardVoice();
         inspector();
         break;
+      case "transcriptFile": {
+        const file = el.files[0];
+        const form = el.form;
+        const status = form.querySelector("[role=alert]");
+        status.textContent = "";
+        el.setCustomValidity("");
+        if (!file) break;
+        el.setCustomValidity("正在读取逐字稿");
+        try {
+          if (file.size > 10000) throw Error("逐字稿最多 1500 字");
+          const bytes = await file.arrayBuffer();
+          if (el.files[0] !== file || !form.isConnected) break;
+          const text = new TextDecoder("utf-8", {fatal: true}).decode(bytes).trim();
+          if (!text || text.includes("\0")) throw Error("请选择包含逐字稿的 UTF-8 文本文件");
+          if (text.length > 1500) throw Error("逐字稿最多 1500 字");
+          form.elements.transcript.value = text;
+          el.setCustomValidity("");
+        } catch (error) {
+          if (el.files[0] !== file || !form.isConnected) break;
+          const hint = error instanceof TypeError ? "无法按 UTF-8 读取逐字稿" : error.message;
+          status.textContent = hint + "，请重新选文件或直接填写。";
+          el.setCustomValidity(status.textContent);
+        }
+        break;
+      }
       case "styleChoice":
         draft.style = el.value;
         save();
@@ -1668,6 +1777,28 @@ document.addEventListener(
 );
 document.addEventListener("submit", async (event) => {
   const form = event.target;
+  if (form.id === "voiceProfileForm") {
+    event.preventDefault();
+    const button = form.querySelector("button");
+    if (button.disabled) return;
+    button.disabled = true;
+    button.textContent = "正在保存…";
+    const data = new FormData(form);
+    data.set("role", "personal_voice");
+    try {
+      const profile = await api("/api/assets", data, true);
+      session.assets.push(profile);
+      if (form.isConnected && $("#dialog").open) $("#dialog").close();
+      if (view === "library") alternative();
+      message("个人音色已保存，可在「文案配音」中选择 " + profile.name);
+    } catch (error) {
+      form.querySelector("[role=alert]").textContent = error.message;
+    } finally {
+      button.textContent = "保存音色";
+      button.disabled = false;
+    }
+    return;
+  }
   if (form.id === "cutForm") {
     event.preventDefault();
     try { saveCut(form); }
@@ -1705,7 +1836,7 @@ async function start() {
   } catch (e) {}
   if (!draft) draft = fresh();
   await importDraftReviews().catch(() => message("旧勾选暂未同步，刷新后会重试"));
-  restoreMaterials();
+  await restoreDraft();
   $("#engineInfo").textContent = session.engine.ready
     ? session.engine.engine
     : "依赖待安装";

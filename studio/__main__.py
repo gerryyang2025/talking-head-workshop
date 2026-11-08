@@ -55,7 +55,6 @@ def dependencies():
     return dict(
         ready=not missing,
         missing=missing,
-        tts=bool(shutil.which("say")),
         engine="MuseTalk 1.5",
     )
 
@@ -107,6 +106,7 @@ def all_jobs():
 
 @app.get("/api/session")
 def session():
+    voices = media.system_voices()
     with db() as con:
         assets = [
             public_asset(json.loads(r[0]))
@@ -115,7 +115,8 @@ def session():
     return jsonify(
         assets=assets,
         jobs=all_jobs(),
-        engine=dependencies(),
+        engine=dict(dependencies(), tts=bool(voices), personalVoice=media.personal_voice_ready()),
+        systemVoices=list(voices.values()),
         demoText=media.DEMO_TEXT,
         exportSizes=SIZES,
         captionBand=CAPTION_BAND,
@@ -126,7 +127,7 @@ def session():
 def upload():
     file = request.files.get("file")
     role = request.form.get("role", "host")
-    if not file or not file.filename or role not in ("host", "audio", "insert"):
+    if not file or not file.filename or role not in ("host", "audio", "insert", "personal_voice"):
         raise ValueError("请选择素材文件及用途")
     ext = Path(file.filename).suffix.lower()
     kinds = {
@@ -144,15 +145,17 @@ def upload():
         ".aac": "audio",
     }
     kind = kinds.get(ext)
-    if not kind or (kind == "audio") != (role == "audio"):
+    if not kind or (kind == "audio") != (role in ("audio", "personal_voice")):
         raise ValueError("文件类型与用途不符。支持常用图片、MP4/MOV 和 WAV/MP3/M4A。")
-    ident = token()
+    ident = ("personal-" if role == "personal_voice" else "") + token()
     folder = STORE / "assets" / ident
     folder.mkdir(parents=True)
     try:
         path = folder / ("source" + ext)
         file.save(path)
         a = build_asset(path, kind, role, Path(file.filename).stem[:90], ident)
+        if role == "personal_voice":
+            media.register_reference(a, request.form.get("name", ""), request.form.get("transcript", ""))
         save_asset(a)
     except Exception:
         shutil.rmtree(folder)
@@ -163,6 +166,8 @@ def upload():
 @app.get("/api/assets/<ident>/<variant>")
 def media_file(ident, variant):
     a = asset(ident)
+    if variant == "reference" and a["role"] == "personal_voice":
+        return send_file(Path(a["path"]).with_name("reference.wav"), conditional=True)
     key = {"source": "path", "poster": "poster_file"}.get(variant)
     if not key or not a.get(key):
         abort(404)
@@ -183,8 +188,12 @@ def shots(ident):
 
 @app.post("/api/voice")
 def voice():
+    cfg = request.get_json()
+    if isinstance(cfg.get("voice"), str) and cfg["voice"].startswith("personal-"):
+        # Serialize Metal inference with lip sync and other personal-voice requests.
+        return jsonify(executor.submit(media.prepare_voice, cfg).result())
     with voice_lock:
-        return jsonify(media.prepare_voice(request.get_json()))
+        return jsonify(media.prepare_voice(cfg))
 
 
 @app.post("/api/card-preview")
@@ -300,6 +309,7 @@ def create_job():
         require_lipsync()
     info = dict(
         id=token(),
+        voiceId=tl["voice"],
         title=tl["title"],
         aspect=tl["aspect"],
         status="queued",

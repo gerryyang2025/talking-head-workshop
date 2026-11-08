@@ -6,6 +6,7 @@ import re
 import shutil
 import sqlite3
 import subprocess
+import tempfile
 import uuid
 import wave
 from contextlib import contextmanager
@@ -23,7 +24,11 @@ RATE = 48000
 MAX_SECONDS = 120
 os.environ["PATH"] = str(ROOT / ".venv/bin") + os.pathsep + os.environ.get("PATH", "")
 DEMO_TEXT = "把一张照片做成口播视频，要经过三步。\n先确定人物形象，再为文案配音。\n最后，让人物的口型跟上每一个字。"
-VOICES = {"reed": "Reed (中文（中国大陆）)", "tingting": "Tingting"}
+LEGACY_VOICE_IDS = {"Reed": "reed", "Tingting": "tingting"}
+VOICE_PYTHON = ROOT / "build/voice-env/bin/python"
+VOICE_MODEL = MODELS / "qwen3-tts-0.6b-base-4bit"
+VOICE_REVISION = "0d6bb6fe33f92d47a507e23b9148940e8366ab5b"
+SPEECH_PAUSE = 0.14
 LAYOUTS = {
     "full": "全屏人物",
     "split": "分屏讲解",
@@ -304,35 +309,112 @@ def write_wav(path, pcm):
         w.writeframes(pcm.astype("<i2", copy=False).tobytes())
 
 
+def system_voices():
+    """Map saved voice IDs to the exact names accepted by this Mac's say command."""
+    say = shutil.which("say")
+    if not say:
+        return {}
+    try:
+        listing = subprocess.run([say, "-v", "?"], capture_output=True, text=True,
+                                 encoding="utf-8", timeout=5, check=True).stdout
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    voices = {}
+    for line in listing.splitlines():
+        match = re.fullmatch(r"(.+?)\s+([a-z]{2,3}(?:[_-][A-Za-z0-9]+)*)\s+#\s*(.*)", line)
+        if not match:
+            continue
+        name, locale, sample = match.groups()
+        locale = locale.replace("_", "-")
+        ident = f"system:{locale}:{name}"
+        # Existing projects and generated audio use these two language-specific IDs.
+        base = name.partition(" (")[0]
+        if locale == "zh-CN" and base in LEGACY_VOICE_IDS and LEGACY_VOICE_IDS[base] not in voices:
+            ident = LEGACY_VOICE_IDS[base]
+        voices[ident] = dict(id=ident, name=name, locale=locale, sample=sample)
+    return voices
+
+
+def register_reference(a, name, transcript):
+    name, transcript = name.strip(), transcript.strip()
+    if not 1 <= len(name) <= 60 or not 1 <= len(transcript) <= 1500:
+        raise ValueError("请填写音色名称（最多 60 字）和录音逐字稿（最多 1500 字）")
+    path = Path(a["path"])
+    reference = path.with_name("reference.wav")
+    ff("-protocol_whitelist", "file,pipe", "-i", path, "-vn", "-ar", "24000",
+       "-ac", "1", "-c:a", "pcm_s16le", reference)
+    with wave.open(str(reference), "rb") as wav:
+        pcm = np.frombuffer(wav.readframes(wav.getnframes()), "<i2")
+    if not pcm.size or not np.any(pcm):
+        raise ValueError("参考录音没有可用声音，请选择清晰的单人录音")
+    a.update(name=name, transcript=transcript)
+
+
+def personal_voice_ready():
+    required = ("config.json", "model.safetensors", "merges.txt", "vocab.json", "tokenizer_config.json",
+                "speech_tokenizer/config.json", "speech_tokenizer/model.safetensors")
+    return (VOICE_PYTHON.is_file() and VOICE_PYTHON.with_name("mlx_audio.tts.generate").is_file()
+            and all((VOICE_MODEL / name).is_file() for name in required))
+
+
+def synthesized_lines(mode, lines, folder):
+    if mode.startswith("personal-"):
+        profile = asset(mode)
+        if profile["role"] != "personal_voice":
+            raise ValueError("请选择素材库中的个人音色")
+        if not personal_voice_ready():
+            raise ValueError("本机缺少个人音色引擎或模型，请按 README 的个人音色步骤安装")
+        request = dict(lines=lines, model=str(VOICE_MODEL), transcript=profile["transcript"],
+                       reference=str(Path(profile["path"]).with_name("reference.wav")),
+                       maxSeconds=MAX_SECONDS, pause=SPEECH_PAUSE)
+        try:
+            worker = subprocess.run([VOICE_PYTHON, Path(__file__).with_name("personal_voice.py"), folder],
+                                    input=json.dumps(request).encode(), capture_output=True, timeout=1800)
+        except subprocess.TimeoutExpired:
+            raise ValueError("个人音色合成超时，请将文案分段后再试") from None
+        if worker.returncode:
+            detail = worker.stderr.decode(errors="replace").strip().splitlines()
+            raise ValueError("个人音色合成失败：" + (detail[-1][:300] if detail else "本机推理进程已退出"))
+        for index in range(len(lines)):
+            yield read_pcm(folder / f"{index}.wav")
+    else:
+        voice = system_voices().get(mode)
+        if not voice:
+            raise ValueError("本机找不到所选系统音色，请刷新页面后重新选择或使用素材库录音")
+        for line in lines:
+            # Read speech from stdin to preserve punctuation and leading hyphens.
+            run(["say", "-v", voice["name"], "-o", folder / "line.aiff"], line.encode())
+            yield read_pcm(folder / "line.aiff")
+
+
 def prepare_voice(cfg):
     lines = sentences(cfg.get("text"))
     mode = cfg.get("voice", "reed")
-    key = signature("voice-v1", lines, mode)
+    if not isinstance(mode, str) or not mode:
+        raise ValueError("请选择配音来源")
+    version = "personal-voice-v1:" + VOICE_REVISION if mode.startswith("personal-") else "voice-v1"
+    key = signature(version, lines, mode)
     store = STORE / "voices" / key
     result = store / "voice.json"
     if result.exists():
         return json.loads(result.read_text())
     store.mkdir(exist_ok=True, parents=True)
     spans = []
-    if mode in VOICES:
-        if not shutil.which("say"):
-            raise ValueError("此系统没有 macOS say，请上传配音")
+    if mode in LEGACY_VOICE_IDS.values() or mode.startswith(("system:", "personal-")):
         parts = []
         samples = 0
-        for line in lines:
-            # Read speech from stdin to preserve punctuation and leading hyphens.
-            run(["say", "-v", VOICES[mode], "-o", store / "line.aiff"], line.encode())
-            pcm = read_pcm(store / "line.aiff")
-            if len(pcm) < RATE * 0.04 or not np.any(pcm):
-                raise ValueError("系统语音未产出有效音频，请检查声音或上传配音")
-            spans.append((samples / RATE, (samples + len(pcm)) / RATE))
-            pause = np.zeros(round(0.14 * RATE), dtype="<i2")
-            parts.extend([pcm, pause])
-            samples += len(pcm) + len(pause)
-            if samples > MAX_SECONDS * RATE:
-                raise ValueError("本工作台单条配音上限为 120 秒，请分段制作")
+        pause = np.zeros(round(SPEECH_PAUSE * RATE), dtype="<i2")
+        with tempfile.TemporaryDirectory(dir=store) as tmp:
+            for pcm in synthesized_lines(mode, lines, Path(tmp)):
+                if len(pcm) < RATE * 0.04 or not np.any(pcm):
+                    raise ValueError("未产出有效音频，请检查所选音色")
+                spans.append((samples / RATE, (samples + len(pcm)) / RATE))
+                parts.extend([pcm, pause])
+                samples += len(pcm) + len(pause)
+                if samples > MAX_SECONDS * RATE:
+                    raise ValueError("本工作台单条配音上限为 120 秒，请分段制作")
         pcm = np.concatenate(parts)
-        method = "逐句合成"
+        method = "个人音色逐句合成" if mode.startswith("personal-") else "逐句合成"
     else:
         a = asset(mode)
         if a["kind"] != "audio":

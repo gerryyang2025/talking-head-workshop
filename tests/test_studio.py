@@ -45,6 +45,95 @@ class StudioWorkflow(unittest.TestCase):
         self.client = server.app.test_client()
         self.headers = {"X-Studio-Request": "1"}
 
+    def test_system_voice_catalog_and_synthesis_keep_locale_and_saved_ids(self):
+        listing = "\n".join((
+            "Reed (中文（中国大陆）)    zh_CN    # 你好。",
+            "Tingting    zh_CN    # 你好。",
+            "Reed (中文（台湾）)    zh_TW    # 你好。",
+            "Bad News    en_US    # Hello!",
+        ))
+        media = self.media
+        with patch.object(media.shutil, "which", return_value="/usr/bin/say"), patch.object(
+            media.subprocess, "run", return_value=types.SimpleNamespace(stdout=listing)
+        ):
+            session = self.client.get("/api/session").json
+            self.assertTrue(session["engine"]["tts"])
+            voices = {v["id"]: v for v in session["systemVoices"]}
+            self.assertEqual(set(voices), {"reed", "tingting", "system:zh-TW:Reed (中文（台湾）)", "system:en-US:Bad News"})
+            taiwan = next(v for v in voices.values() if v["locale"] == "zh-TW")
+            with patch.object(media, "run") as say, patch.object(
+                media, "read_pcm", return_value=media.np.ones(4800, dtype="<i2")
+            ):
+                def synth(voice):
+                    return media.prepare_voice({"voice": voice, "text": "这是第一句。这是第二句。"})
+                result = synth(taiwan["id"])
+                self.assertEqual([c.args[0][2] for c in say.call_args_list], [taiwan["name"]] * 2)
+                self.assertEqual(len(result["lines"]), 2)
+                self.assertNotEqual(synth("reed")["id"], result["id"])
+        with patch.object(media.shutil, "which", return_value=None):
+            session = self.client.get("/api/session").json
+            self.assertFalse(session["engine"]["tts"])
+            self.assertEqual(session["systemVoices"], [])
+            self.assertEqual(synth(taiwan["id"]), result)
+            with self.assertRaisesRegex(ValueError, "本机找不到"):
+                media.prepare_voice({"voice": taiwan["id"], "text": "新的台词。"})
+
+    @unittest.skipUnless(shutil.which("ffmpeg") and shutil.which("ffprobe"), "FFmpeg required")
+    def test_reference_upload_is_a_reusable_voice_and_never_replays_the_sample(self):
+        import numpy as np
+        media = self.media
+        def upload_reference(transcript, silent=False):
+            file = io.BytesIO()
+            with wave.open(file, "wb") as wav:
+                wav.setparams((1, 2, 16000, 0, "NONE", "not compressed"))
+                pcm = np.sin(np.arange(32000) * .2) * (0 if silent else 5000)
+                wav.writeframes(pcm.astype("<i2").tobytes())
+            file.seek(0)
+            return self.client.post("/api/assets", headers=self.headers, data={
+                "file": (file, "sample.wav"), "name": " 我的音色 ", "role": "personal_voice",
+                "transcript": transcript,
+            })
+
+        for response in (upload_reference(" "), upload_reference("参考句。", silent=True)):
+            self.assertEqual(response.status_code, 400)
+        self.assertFalse(list((media.STORE / "assets").glob("personal-*")))
+        src = upload_reference("参考句。")
+        self.assertEqual(src.status_code, 201, src.json)
+        profile = src.json
+        self.assertEqual(profile["name"], "我的音色")
+        self.assertEqual(profile["role"], "personal_voice")
+        self.assertEqual(profile["transcript"], "参考句。")
+        self.assertIn(profile, self.client.get("/api/session").json["assets"])
+        ref = self.client.get(f"/api/assets/{profile['id']}/reference")
+        with ref, wave.open(io.BytesIO(ref.data), "rb") as wav:
+            self.assertEqual((wav.getframerate(), wav.getnframes()), (24000, 48000))
+
+        cfg = {"voice": profile["id"], "text": "今天下雨。明天放晴。"}
+        original_run = media.subprocess.run
+        def fake_worker(args, **kwargs):
+            if args[0] != media.VOICE_PYTHON:
+                return original_run(args, **kwargs)
+            request = json.loads(kwargs["input"])
+            self.assertEqual(request["transcript"], "参考句。")
+            self.assertEqual(request["lines"], ["今天下雨。", "明天放晴。"])
+            for i in range(2):
+                media.write_wav(args[-1] / f"{i}.wav", np.ones(4800, dtype="<i2"))
+            return types.SimpleNamespace(returncode=0)
+
+        with patch.object(media, "personal_voice_ready", return_value=False):
+            unavailable = self.client.post("/api/voice", headers=self.headers, json=cfg)
+            self.assertEqual(unavailable.status_code, 400)
+            self.assertIn("缺少", unavailable.json["error"])
+        with patch.object(media, "personal_voice_ready", return_value=True), patch.object(
+            media.subprocess, "run", side_effect=fake_worker
+        ):
+            generated = self.client.post("/api/voice", headers=self.headers, json=cfg)
+        self.assertEqual(generated.status_code, 200, generated.json)
+        self.assertEqual(generated.json["method"], "个人音色逐句合成")
+        self.assertAlmostEqual(generated.json["duration"], 0.48)
+        with patch.object(media, "personal_voice_ready", return_value=False):
+            self.assertEqual(media.prepare_voice(cfg), generated.json)
+
     def test_hidden_clip_and_alignment(self):
         if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
             self.skipTest("ffmpeg + ffprobe required")

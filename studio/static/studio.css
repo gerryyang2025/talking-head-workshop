@@ -1020,6 +1020,21 @@ dialog h3 {
 .topgap {
   margin-top: 14px;
 }
+.voice-reference {
+  margin-top: 8px;
+  font-size: 13px;
+}
+.voice-reference summary {
+  cursor: pointer;
+}
+.voice-reference audio {
+  width: 100%;
+  margin-top: 8px;
+}
+.voice-reference p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .engine .off {
   background: #e2ad73;
 }
