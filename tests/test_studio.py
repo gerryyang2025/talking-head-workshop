@@ -220,6 +220,60 @@ class StudioWorkflow(unittest.TestCase):
         self.assertGreater(pixel(film, 20, 640, 320)[1], 200)  # And the full-screen insert.
         self.assertGreater(pixel(film, 24, 640, 320)[0], 150)
 
+        # A speaking cut crosses a pause. Only its two voiced ranges reach the model.
+        calls.clear()
+        config.update(insertSpeaking=False, cutaways=[dict(first=10, stop=21, insert="photo", insertSpeaking=True)])
+        tl = self.production.plan(config)
+        with patch.dict("sys.modules", {"studio.engine": types.SimpleNamespace(MouthEngine=MarkMouth)}):
+            preview = self.production.render(tl, folder, lambda *_: None, window=(12, 21))
+            self.assertGreater(pixel(preview, 0, 160, 160)[1], 200)
+            self.assertGreater(pixel(preview, 4, 160, 160)[0], 150)
+            self.assertGreater(pixel(preview, 7, 160, 160)[1], 200)
+            result = self.production.render(tl, folder, lambda *_: None)
+        self.assertEqual(calls, list(range(10, 15)) + list(range(18, 21)))
+        self.assertEqual((result["cached"], result["skipped"]), (8, 17))
+
+    def test_timed_cutaways_resume_source_and_keep_speech_and_captions_on_the_master_clock(self):
+        p = self.production
+        options = {"shot-a": False, "shot-b": False}
+        placements = [
+            dict(first=4, stop=8, insert="shot-a"),
+            dict(first=8, stop=17, insert="shot-b", insertSpeaking=True),
+            dict(first=18, stop=19, insert="shot-a"),
+        ]
+        cuts = p.timed_cutaways({"cutaways": list(reversed(placements))}, options, 25)
+        for invalid in ([dict(placements[0], first=-1)], [dict(placements[0], stop=26)],
+                        [dict(placements[0], first=8)], [dict(placements[0], insert="audio")],
+                        [placements[0], dict(placements[1], first=7)]):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                p.timed_cutaways({"cutaways": invalid}, options, 25)
+        one_frame = [dict(first=i, stop=i + 1, insert="shot-a") for i in range(250)]
+        self.assertEqual(len(p.timed_cutaways({"cutaways": one_frame}, options, 250)), 250)
+        self.assertFalse(p.base_visible(cuts, 4, 17))
+        self.assertTrue(p.base_visible(cuts, 4, 18))
+        host = dict(layout="split", shot=dict(asset="lead", id="lead-1", start=0, end=1),
+                    insert=None, insertSpeaking=False)
+        tl = dict(frames=25, cutaways=cuts, aspect="16:9", subtitles=True, rows=[
+            dict(host, first=1, stop=12, text="第一句。"), dict(host, first=15, stop=24, text="第二句。")
+        ])
+        spans = p.visual_spans(tl)
+        self.assertEqual([(s["first"], s["stop"], s["voiced"], s["offset"])
+                          for s in spans if s["insert"] == "shot-b"],
+                         [(8, 12, True, 0), (12, 15, False, 4), (15, 17, True, 7)])
+        self.assertEqual([(s["first"], s["offset"]) for s in spans if s["shot"] and s["voiced"]],
+                         [(1, 0), (17, 2), (19, 4)])
+        self.assertEqual(sum(s["stop"]-s["first"] for s in spans), 25)
+        ass = self.media.STORE / "cutaways.ass"
+        p.write_ass(tl, ass)
+        events = [line for line in ass.read_text().splitlines() if line.startswith("Dialogue:")]
+        self.assertTrue(any("0:00:00.04,0:00:00.16" in e and "第一句。" in e and r"\fs40" in e for e in events))
+        self.assertTrue(any("0:00:00.16,0:00:00.32" in e and "第一句。" in e and r"\fs32" in e for e in events))
+        self.assertTrue(any("0:00:00.76,0:00:00.96" in e and "第二句。" in e and r"\fs40" in e for e in events))
+        tl["subtitles"] = False
+        p.write_ass(tl, ass)
+        self.assertNotIn(r"\fs32", ass.read_text())
+        self.assertIn("第二句。", ass.read_text())
+
     def test_normalized_trim_and_review(self):
         a = {"kind": "video", "duration": 3.0, "id": "plate"}
         clean = self.media.clean_shots(

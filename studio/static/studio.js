@@ -108,6 +108,9 @@ function materialRow(a, removable = false) {
 }
 function toggleInsert(id) {
   if (draft.inserts.some(item => item.id === id)) {
+    for (const cut of draft.cutaways) {
+      if (cut.insert === id) cut.insert = "";
+    }
     for (const line of draft.lines) {
       if (lineInsert(line).id === id) {
         line.insert = "";
@@ -175,6 +178,7 @@ function setPrimaryHost(id) {
   }
 }
 function restoreMaterials() {
+  draft.cutaways ||= [];
   const first = findAsset(draft.hosts?.[0]);
   if (!Array.isArray(draft.inserts)) {
     const ids = [draft.insert, ...(draft.hosts || []).slice(1)].filter(Boolean);
@@ -239,6 +243,7 @@ function fresh(title) {
     subtitles: true,
     shift: 0,
     inserts: [],
+    cutaways: [],
     voiceData: null,
     lines: [],
     job: null,
@@ -450,9 +455,124 @@ function showView(k) {
     drawTracks();
   } else {
     $("#video").pause();
+    $("#cutAudio").pause();
     stopStill();
     alternative();
   }
+}
+const timelineFPS = 25;
+const timelineFrames = () => Math.ceil(draft.voiceData.duration * timelineFPS - 1e-8);
+// Match Python's nearest-even rounding of existing voice cue boundaries.
+function cueFrame(seconds) {
+  const frames = seconds * timelineFPS;
+  const lower = Math.floor(frames);
+  return frames - lower === 0.5 ? lower + lower % 2 : Math.round(frames);
+}
+const cutSeconds = frame => (frame / timelineFPS).toFixed(2);
+const cutRange = cut => cutSeconds(cut.first) + "–" + cutSeconds(cut.stop) + " 秒";
+const cutName = cut => findAsset(cut.insert)?.name || "待选素材";
+
+function baseVisible(index) {
+  let cursor = index ? cueFrame(draft.lines[index - 1].end) : 0;
+  const stop = index + 1 === draft.lines.length ? timelineFrames() : cueFrame(draft.lines[index].end);
+  for (const cut of draft.cutaways) {
+    if (cut.first > cursor) break;
+    cursor = Math.max(cursor, cut.stop);
+    if (cursor >= stop) return false;
+  }
+  return cursor < stop;
+}
+
+function cutEditorList() {
+  return '<div class="cut-list"><b>时间线补充镜头</b>' +
+    '<small>在剪辑时间线播放或拖动配音，定位后插入。镜头结束时回到原画面。</small>' +
+    draft.cutaways.map((cut, i) =>
+      '<div class="cut-item"><div><b>' + esc(cutName(cut)) + '</b><small>' + cutRange(cut) +
+      ' · ' + (cut.insertSpeaking ? "人物口播" : "配图") + '</small></div>' +
+      '<button class="minor" data-edit-cut="' + i + '">编辑</button>' +
+      '<button class="minor" data-preview-cut="' + i + '">预览</button></div>').join("") +
+    '<button class="outline" data-add-cut>在配音当前位置插入</button></div>';
+}
+function editCut(index) {
+  const audio = $("#cutAudio");
+  audio.pause();
+  $("#video").pause();
+  stopStill();
+  updateClock();
+  const total = timelineFrames();
+  let cut = draft.cutaways[index];
+  if (!cut) {
+    let first = Math.min(total - 1, Math.round(audio.currentTime * timelineFPS));
+    // Repeated insertions at the same playhead append after existing adjacent shots.
+    for (const item of draft.cutaways) {
+      if (item.first <= first && item.stop > first) first = item.stop;
+    }
+    const next = draft.cutaways.find(item => item.first > first);
+    const stop = Math.min(first + 2 * timelineFPS, next?.first ?? total, total);
+    if (first >= stop) throw Error("当前位置之后没有空白，请移动配音播放位置或调整已有镜头");
+    cut = {first, stop, insert: "", insertSpeaking: false};
+  }
+  const options = session.assets.filter(a => a.kind === "photo" || a.kind === "video");
+  if (!options.length && index < 0) {
+    showView("library");
+    message("请先在素材库导入照片或视频");
+    return;
+  }
+  const timing = (name, title, frame) => '<label class="field"><span>' + title +
+    '（秒）</span><input required type="number" name="' + name + '" min="0" step="0.01" max="' +
+    cutSeconds(total) + '" value="' + cutSeconds(frame) + '"></label>';
+  $("#dialogBody").innerHTML = '<h3>' + (index < 0 ? '插入补充画面' : '编辑补充镜头') + '</h3>' +
+    '<form id="cutForm" class="stack" data-index="' + index + '">' +
+    '<label class="field"><span>素材库</span><select name="asset" required>' +
+    opt("", "选择照片或视频", cut.insert || "") +
+    options.map(a => opt(a.id, a.name + (a.kind === "video" ? " · 视频" : " · 照片"), cut.insert)).join("") +
+    '</select></label><img id="cutPoster" alt="所选素材预览" hidden>' +
+    '<div class="pair">' + timing("start", "开始", cut.first) + timing("end", "结束", cut.stop) + '</div><small>时间按 25 FPS 对齐，每帧 0.04 秒。</small>' +
+    '<label class="field"><span>镜头用途</span><select name="usage">' +
+    opt("visual", "配图 · 沿用原配音", cut.insertSpeaking ? "speaker" : "visual") +
+    opt("speaker", "人物口播 · 按原配音做口型", cut.insertSpeaking ? "speaker" : "visual") +
+    '</select></label><span role="alert"></span><div class="btnrow">' +
+    '<button class="primary" type="submit">保存镜头</button>' +
+    (index >= 0 ? '<button class="minor" type="button" id="deleteCut">删除镜头</button>' : '') +
+    '</div></form>';
+  showCutPoster(cut.insert);
+  $("#dialog").showModal();
+}
+function showCutPoster(id) {
+  const img = $("#cutPoster");
+  img.hidden = !findAsset(id);
+  if (!img.hidden) img.src = mediaURL(id, "poster");
+}
+function finishCutEdit() {
+  draft.cutaways.sort((a, b) => a.first - b.first);
+  save();
+  $("#dialog").close();
+  inspector();
+  drawTracks();
+}
+function saveCut(form) {
+  const index = Number(form.dataset.index);
+  const cut = {
+    first: Math.round(form.elements.start.valueAsNumber * timelineFPS),
+    stop: Math.round(form.elements.end.valueAsNumber * timelineFPS),
+    insert: form.elements.asset.value,
+    insertSpeaking: form.elements.usage.value === "speaker",
+  };
+  if (!Number.isInteger(cut.first) || !Number.isInteger(cut.stop) ||
+      cut.first < 0 || cut.first >= cut.stop || cut.stop > timelineFrames())
+    throw Error("结束时间须晚于开始时间，且在配音范围内");
+  if (draft.cutaways.some((c, i) => i !== index && c.first < cut.stop && cut.first < c.stop))
+    throw Error("与已有补充镜头重叠，请调整开始或结束时间");
+  if (!draft.inserts.some(item => item.id === cut.insert)) {
+    // Adding a library item on this track must preserve existing automatic cards.
+    if (draft.inserts.length <= 1) {
+      for (const line of draft.lines) line.insert ??= draft.inserts[0]?.id || "";
+    }
+    draft.inserts.push({id: cut.insert, speaking: false});
+  }
+  if (index < 0) draft.cutaways.push(cut);
+  else draft.cutaways[index] = cut;
+  finishCutEdit();
 }
 function drawTracks() {
   const actual = mode === "result" && resultTimeline;
@@ -461,6 +581,14 @@ function drawTracks() {
     time = vv?.duration || 0,
     root = $("#tracks");
   $("#timelineInfo").textContent = "25 FPS" + (time ? "  ·  " + sec(time) : "");
+  const cuts = actual ? resultTimeline.cutaways || [] : draft.cutaways;
+  const toolbar = $("#cutTransport"), audio = $("#cutAudio");
+  toolbar.hidden = !time || !!actual || step !== 3 || view !== "work";
+  if (toolbar.hidden) audio.pause();
+  else {
+    const src = "/api/voice/" + vv.id;
+    if (audio.getAttribute("src") !== src) audio.src = src;
+  }
   if (!time) {
     root.innerHTML =
       '<p class="timelineNote">准备配音后，这里会显示按声音对齐的镜头和字幕。</p>';
@@ -493,7 +621,7 @@ function drawTracks() {
           : "";
       result +=
         '<button ' +
-        (!actual && isGraphic && kind === "video" ? `data-card-line="${i}" ` : "") +
+        (!actual && (isGraphic || cuts.length) && kind === "video" ? `data-card-line="${i}" ` : "") +
         'title="' +
         esc(l.text) +
         '" data-jump="' +
@@ -526,6 +654,13 @@ function drawTracks() {
         "</div>",
     ) +
     tr("video", "镜头", '<div class="lane">' + lane("video") + "</div>") +
+    ((cuts.length || !toolbar.hidden) ? tr("library", "补充", '<div class="lane cut-lane">' + cuts.map((cut, i) => {
+      const title = cutName(cut) + " · " + cutRange(cut);
+      const action = actual ? 'data-jump="' + cut.first / timelineFPS : 'data-edit-cut="' + i;
+      return '<button ' + action + '" title="' + esc(title) + '" aria-label="' + esc(title) +
+        '" style="left:' + (100 * cut.first / timelineFPS / time) + '%;width:' +
+        (100 * (cut.stop - cut.first) / timelineFPS / time) + '%">' + esc(cutName(cut)) + '</button>';
+    }).join("") + (!toolbar.hidden ? '<i id="cutHead" aria-hidden="true"></i>' : "") + '</div>') : "") +
     tr(
       "voice",
       "配音",
@@ -537,10 +672,17 @@ function drawTracks() {
     ) +
     tr("captions", "字幕", '<div class="lane">' + lane("subs") + "</div>") +
     "</div>";
+  updateCutHead();
+}
+function updateCutHead() {
+  const head = $("#cutHead");
+  if (head) head.style.left = Math.min(100, $("#cutAudio").currentTime * 100 / draft.voiceData.duration) + "%";
 }
 async function previewCard(index) {
-  const line = draft.lines[index], dialog = $("#cardPreview");
-  const video = dialog.querySelector("video"), status = dialog.querySelector("[role=status]");
+  const line = draft.lines[index];
+  if (draft.cutaways.length) {
+    return previewTimeline(cueFrame(line.start), cueFrame(line.end));
+  }
   const layout = lineLayout(line, index);
   const visual = lineInsert(line);
   if (needsInsert(line, layout)) {
@@ -549,13 +691,29 @@ async function previewCard(index) {
     message("请先为这句选择补充素材");
     return;
   }
+  return playPreview("/api/card-preview", layouts[layout] + "预览", {
+    voiceId: draft.voiceData.id, aspect: draft.aspect, insert: visual.id,
+    layout, insertSpeaking: visual.speaking, shift: draft.shift,
+    subtitles: draft.subtitles, framing: draft.framing || "cover",
+    line: index, start: line.start, end: line.end,
+  });
+}
+function previewTimeline(first, stop) {
+  return playPreview("/api/timeline-preview", "剪辑预览 · " + cutRange({first, stop}), {
+    ...draft, voiceId: draft.voiceData.id, previewFirst: first, previewStop: stop,
+  });
+}
+async function playPreview(endpoint, title, config) {
+  const dialog = $("#cardPreview");
+  const video = dialog.querySelector("video"), status = dialog.querySelector("[role=status]");
   const controller = new AbortController();
   let url;
+  $("#cutAudio").pause();
   $("#video").pause();
   stopStill();
   updateClock();
-  $("#cardPreviewTitle").textContent = layouts[layout] + "预览";
-  status.textContent = visual.speaking ? "正在准备本句口型预览…" : "正在生成本句预览…";
+  $("#cardPreviewTitle").textContent = title;
+  status.textContent = "正在生成带声预览…";
   video.hidden = true;
   dialog.showModal();
   dialog.addEventListener("close", () => {
@@ -566,15 +724,10 @@ async function previewCard(index) {
     if (url) URL.revokeObjectURL(url);
   }, {once: true});
   try {
-    const response = await fetch("/api/card-preview", {
+    const response = await fetch(endpoint, {
       method: "POST", signal: controller.signal,
       headers: {"Content-Type": "application/json", "X-Studio-Request": "1"},
-      body: JSON.stringify({
-        voiceId: draft.voiceData.id, aspect: draft.aspect, insert: visual.id,
-        layout, insertSpeaking: visual.speaking, shift: draft.shift,
-        subtitles: draft.subtitles, framing: draft.framing || "cover",
-        line: index, start: line.start, end: line.end,
-      }),
+      body: JSON.stringify(config),
     });
     if (!response.ok) throw Error((await response.json()).error || "图文预览失败");
     const clip = await response.blob();
@@ -862,6 +1015,7 @@ function inspector() {
   }
   if (step === 3) {
     body =
+      (draft.lines.length ? cutEditorList() : "") +
       (draft.lines.length
         ? '<p class="hint">' +
           esc(draft.voiceData.method) +
@@ -1080,7 +1234,17 @@ async function generate() {
   $("#produce").disabled = true;
   try {
     await ensureVoice();
-    const missing = draft.lines.findIndex((line, i) => needsInsert(line, lineLayout(line, i)));
+    const invalidCut = draft.cutaways.findIndex(cut =>
+      !findAsset(cut.insert) || cut.stop > timelineFrames());
+    if (invalidCut !== -1) {
+      await switchStep(3);
+      editCut(invalidCut);
+      const alert = $("#cutForm [role=alert]");
+      if (alert) alert.textContent = "请重新选择素材，并确认镜头在当前配音范围内";
+      return;
+    }
+    const missing = draft.lines.findIndex((line, i) =>
+      needsInsert(line, lineLayout(line, i)) && baseVisible(i));
     if (missing !== -1) {
       await switchStep(3);
       document.querySelector(`[data-line="${missing}"] [data-lineprop="insert"]`)?.focus();
@@ -1143,6 +1307,7 @@ async function uploadFile(el) {
     (errors.length ? "。" + errors.join("；") : ""));
 }
 function play() {
+  $("#cutAudio").pause();
   const v = $("#video");
   if (!v.hidden) {
     if (v.paused) v.play().catch((e) => message(e.message));
@@ -1167,7 +1332,16 @@ document.addEventListener(
   "click",
   task(async (e) => {
     const b = e.target.closest("button,a[data-use]");
-    if (!b) return;
+    if (!b) {
+      const lane = e.target.closest("#tracks .wave, #tracks .cut-lane, #tracks .ruler");
+      if (lane && !$("#cutTransport").hidden) {
+        const bounds = lane.getBoundingClientRect();
+        $("#cutAudio").currentTime = draft.voiceData.duration *
+          Math.max(0, Math.min(1, (e.clientX - bounds.left) / bounds.width));
+        updateCutHead();
+      }
+      return;
+    }
     if (b.dataset.view) {
       showView(b.dataset.view);
       return;
@@ -1193,12 +1367,29 @@ document.addEventListener(
       }
       return;
     }
+    if (b.hasAttribute("data-add-cut") || b.dataset.editCut !== undefined) {
+      editCut(b.hasAttribute("data-add-cut") ? -1 : Number(b.dataset.editCut));
+      return;
+    }
+    if (b.id === "deleteCut") {
+      draft.cutaways.splice(Number($("#cutForm").dataset.index), 1);
+      finishCutEdit();
+      return;
+    }
+    if (b.dataset.previewCut !== undefined || b.id === "previewEdit") {
+      const cut = draft.cutaways[Number(b.dataset.previewCut)];
+      const first = cut ? Math.max(0, cut.first - timelineFPS) : 0;
+      const stop = cut ? Math.min(timelineFrames(), cut.stop + timelineFPS) : timelineFrames();
+      await previewTimeline(first, stop);
+      return;
+    }
     if (b.dataset.cardLine !== undefined) {
       await previewCard(Number(b.dataset.cardLine));
       return;
     }
     if (b.dataset.jump !== undefined) {
       seek(+b.dataset.jump);
+      if (!$("#cutTransport").hidden) $("#cutAudio").currentTime = Number(b.dataset.jump);
       return;
     }
     if (b.dataset.reviewSeek !== undefined) {
@@ -1356,6 +1547,10 @@ document.addEventListener(
   "change",
   task(async (e) => {
     const el = e.target;
+    if (el.matches("#cutForm [name=asset]")) {
+      showCutPoster(el.value);
+      return;
+    }
     if (el.dataset.upload) {
       await uploadFile(el);
       return;
@@ -1437,6 +1632,12 @@ document.addEventListener(
 );
 document.addEventListener("submit", async (event) => {
   const form = event.target;
+  if (form.id === "cutForm") {
+    event.preventDefault();
+    try { saveCut(form); }
+    catch (error) { form.querySelector("[role=alert]").textContent = error.message; }
+    return;
+  }
   if (form.id !== "issueForm") return;
   event.preventDefault();
   const button = form.querySelector("button");
@@ -1453,6 +1654,12 @@ document.addEventListener("submit", async (event) => {
   }
 });
 async function start() {
+  $("#cutAudio").addEventListener("timeupdate", updateCutHead);
+  $("#cutAudio").addEventListener("play", () => {
+    $("#video").pause();
+    stopStill();
+    updateClock();
+  });
   document
     .querySelectorAll("[data-icon]")
     .forEach((el) => (el.innerHTML = icon(el.dataset.icon)));

@@ -107,6 +107,12 @@
                   <span class="mono" id="timelineInfo"></span>
                 </div>
                 <div id="tracks"></div>
+                <div class="cut-transport" id="cutTransport" hidden>
+                  <label for="cutAudio">配音定位</label>
+                  <audio id="cutAudio" controls preload="metadata" aria-label="配音定位"></audio>
+                  <button class="outline" data-add-cut>插入补充画面</button>
+                  <button class="minor" id="previewEdit">预览剪辑</button>
+                </div>
               </section>
             </div>
             <section class="panel inspect">

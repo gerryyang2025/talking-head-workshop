@@ -26,7 +26,7 @@ from .media import (
     save_asset,
     token,
 )
-from .production import CAPTION_BAND, SIZES, plan, render, render_card_preview
+from .production import CAPTION_BAND, SIZES, plan, render, render_card_preview, visual_spans
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.config.update(MAX_CONTENT_LENGTH=160 * 1024 * 1024)
@@ -207,6 +207,29 @@ def hear(ident):
     return send_file(STORE / "voices" / ident / "voice.wav", conditional=True)
 
 
+def visible_speech(spans):
+    return any(s["voiced"] and (s["shot"] or s["insertSpeaking"]) for s in spans)
+
+
+@app.post("/api/timeline-preview")
+def timeline_preview():
+    config = request.get_json()
+    with asset_lock:
+        tl = plan(config)
+    first, stop = config.get("previewFirst"), config.get("previewStop")
+    if type(first) is not int or type(stop) is not int or not 0 <= first < stop <= tl["frames"]:
+        raise ValueError("预览范围超出时间线")
+    spans = (s for s in visual_spans(tl) if s["first"] < stop and s["stop"] > first)
+    with tempfile.TemporaryDirectory(dir=STORE) as tmp:
+        args = (tl, Path(tmp), lambda *_: None, (first, stop))
+        if visible_speech(spans):
+            require_lipsync()
+            path = executor.submit(render, *args).result()
+        else:
+            path = render(*args)
+        return app.response_class(path.read_bytes(), mimetype="video/mp4")
+
+
 @app.get("/api/voice/<ident>/info")
 def voice_info(ident):
     if not re.fullmatch("[0-9a-f]{64}", ident):
@@ -249,11 +272,11 @@ def worker(info, timeline):
             json.dumps(timeline, ensure_ascii=False, indent=2)
         )
         summary = render(timeline, folder, notify)
-        used = collections.Counter(
-            r["shot"]["id"] for r in timeline["rows"] if r["shot"]
-        )
+        # A cut can interrupt a shot several times. Count each placement once.
+        placements = {s["owner"]: s for s in visual_spans(timeline)}.values()
+        used = collections.Counter(s["shot"]["id"] for s in placements if s["shot"])
         materials = used.copy()
-        materials.update(r["insert"] for r in timeline["rows"] if r.get("insert"))
+        materials.update(s["insert"] for s in placements if s["insert"])
         info.update(
             status="done",
             progress=100,
@@ -273,7 +296,7 @@ def create_job():
     config = request.get_json()
     with asset_lock:
         tl = plan(config)
-    if any(row["shot"] or row["insertSpeaking"] for row in tl["rows"]):
+    if visible_speech(visual_spans(tl)):
         require_lipsync()
     info = dict(
         id=token(),

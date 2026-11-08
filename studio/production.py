@@ -90,6 +90,38 @@ def line_insert(line, options, layout, index):
     return ident, speaking
 
 
+def timed_cutaways(config, options, frames):
+    entries = config.get("cutaways", [])
+    if not isinstance(entries, list):
+        raise ValueError("补充镜头列表无效")
+    cuts = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError("补充镜头无效")
+        first, stop = entry.get("first"), entry.get("stop")
+        if type(first) is not int or type(stop) is not int or not 0 <= first < stop <= frames:
+            raise ValueError("补充镜头须位于配音范围内，且至少持续一帧")
+        ident, speaking = entry.get("insert"), entry.get("insertSpeaking", False)
+        if not ident or ident not in options or type(speaking) is not bool:
+            raise ValueError("请为补充镜头选择项目素材和有效的用途")
+        cuts.append(dict(first=first, stop=stop, insert=ident, insertSpeaking=speaking))
+    cuts.sort(key=lambda cut: cut["first"])
+    if any(left["stop"] > right["first"] for left, right in zip(cuts, cuts[1:])):
+        raise ValueError("补充镜头不能重叠，可以首尾相接")
+    return cuts
+
+
+def base_visible(cuts, first, stop):
+    cursor = first
+    for cut in cuts:
+        if cut["first"] > cursor:
+            break
+        cursor = max(cursor, cut["stop"])
+        if cursor >= stop:
+            return False
+    return cursor < stop
+
+
 def plan(config):
     vid = config.get("voiceId", "")
     voice = load_voice(vid)
@@ -114,6 +146,8 @@ def plan(config):
             raise ValueError("所选素材不能用作人物母片")
         pool = [s for s in shots_for(a) if s["enabled"]]
     inserts = project_inserts(config)
+    frames = math.ceil(voice["duration"] * FPS - 1e-8)
+    cutaways = timed_cutaways(config, inserts, frames)
     with db() as con:
         uses = collections.Counter(
             dict(
@@ -143,9 +177,13 @@ def plan(config):
             layout = pattern[i % len(pattern)]
         if layout not in LAYOUTS:
             raise ValueError("无效的镜头版式")
-        insert, insert_speaking = line_insert(line, inserts, layout, i)
+        # The following line supplies the picture in the pause before it.
+        picture_first = rows[-1]["stop"] if rows else 0
+        picture_stop = frames if i == len(inputs) - 1 else stop
+        visible = base_visible(cutaways, picture_first, picture_stop)
+        insert, insert_speaking = line_insert(line, inserts, layout, i) if visible else (None, False)
         shot = None
-        if layout not in ("card", "insert"):
+        if visible and layout not in ("card", "insert"):
             if not pool:
                 raise ValueError("出镜句需要主讲母片和可用切片，请在「准备母片」选择主讲，再到「切片打标」启用镜头")
             candidates = (
@@ -184,7 +222,8 @@ def plan(config):
         style=style,
         primaryHost=primary,
         voice=vid,
-        frames=math.ceil(voice["duration"] * FPS - 1e-8),
+        frames=frames,
+        cutaways=cutaways,
         duration=voice["duration"],
         rows=rows,
         inserts=[{"id": ident, "speaking": mode} for ident, mode in inserts.items()],
@@ -385,27 +424,64 @@ def synced_frames(path, count):
     return Frames(dict(kind="video", path=str(path), duration=count / FPS))
 
 
-def write_insert_frames(sink, row, size, start, stop, part=None, *, subtitles=True, framing="cover"):
-    source = Frames(asset(row["insert"])) if row.get("insert") else None
-    count = row["stop"] - row["first"]
-    synced = synced_frames(part, count) if part else None
-    span = max(1, count - 1)
-    frame = None
+def visual_spans(tl):
+    """Resolve the visible source at each audio or cut boundary, in master frames."""
+    rows, cuts = tl["rows"], tl.get("cutaways", [])
+    boundaries = {0, tl["frames"]}
+    for item in [*rows, *cuts]:
+        boundaries.update((item["first"], item["stop"]))
+    ordered = sorted(boundaries)
+    spans = []
+    ri = ci = 0
+    for first, stop in zip(ordered, ordered[1:]):
+        while ri + 1 < len(rows) and first >= rows[ri]["stop"]:
+            ri += 1
+        while ci < len(cuts) and first >= cuts[ci]["stop"]:
+            ci += 1
+        row = rows[ri]
+        voiced = row["first"] <= first < row["stop"]
+        covered = ci < len(cuts) and cuts[ci]["first"] <= first
+        source = cuts[ci] if covered else row
+        layout = "insert" if covered else row["layout"]
+        hold = not covered and not voiced and (layout == "card" or row["insertSpeaking"])
+        offset = max(0, first - source["first"])
+        if hold:
+            offset = min(offset, source["stop"] - source["first"] - 1)
+        elif not covered and not voiced:
+            pause_start = rows[ri - 1]["stop"] if ri else 0
+            if first >= row["stop"]:
+                pause_start = row["stop"]
+            offset = first - pause_start
+        spans.append(dict(
+            first=first, stop=stop, layout=layout, shot=source.get("shot"),
+            insert=source["insert"], insertSpeaking=source["insertSpeaking"],
+            voiced=voiced, offset=offset, hold=hold, origin=source["first"],
+            length=source["stop"] - source["first"], owner=("cut", ci) if covered else ("line", ri),
+        ))
+    return spans
+
+
+def draw_span(sink, span, part, size, start, stop, subtitles, framing):
+    source = None
+    if part:
+        source = synced_frames(part, span["stop"] - span["first"])
+        source.pos = start - span["first"]
+    else:
+        shot = span["shot"]
+        if shot:
+            source = Frames(asset(shot["asset"]), shot["start"], shot["end"])
+        elif span["insert"]:
+            source = Frames(asset(span["insert"]))
+        if source:
+            source.pos = span["offset"] + (0 if span["hold"] else start - span["first"])
     try:
+        frame = None
         for index in range(start, stop):
-            progress = min(1, max(0, (index - row["first"]) / span))
-            if synced and row["first"] <= index < row["stop"]:
-                frame = synced.next()
-            elif synced and index == row["stop"]:
-                # Return to the corresponding original frame during the trailing pause.
-                source.pos = count - 1
+            if source and (frame is None or not span["hold"]):
                 frame = source.next()
-            elif source and (frame is None or row["first"] < index < row["stop"]):
-                frame = source.next()
-            sink.write(compose(frame, row["layout"], size, subtitles, framing, progress).tobytes())
+            progress = min(1, max(0, (index - span["origin"]) / max(1, span["length"] - 1)))
+            sink.write(compose(frame, span["layout"], size, subtitles, framing, progress).tobytes())
     finally:
-        if synced:
-            synced.close()
         if source:
             source.close()
 
@@ -431,7 +507,7 @@ def caption_cues(row, columns):
         cursor = end
 
 
-def write_ass(tl, path):
+def write_ass(tl, path, origin=0):
     w, h = SIZES[tl["aspect"]]
     header = f"""[Script Info]
 ScriptType: v4.00+
@@ -454,28 +530,52 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         font = 32 if caption else 40
         # Budget one em per character so CJK and mixed-script lines also fit.
         columns = min(48, (right - left - 16) // font)
-        x, y = (left + right) // 2, (top + bottom) // 2
-        position = rf"\an5\fs{font}\pos({x},{y})\clip({left},{top},{right},{bottom})"
+        # Paginate the spoken sentence once. Only the caption position changes on a cut.
+        areas = []
+        cursor = row["first"]
+        if not caption:
+            for cut in tl.get("cutaways", []):
+                enter, leave = max(cut["first"], row["first"]), min(cut["stop"], row["stop"])
+                if enter >= leave:
+                    continue
+                if cursor < enter:
+                    areas.append((cursor, enter, layout))
+                areas.append((enter, leave, "insert"))
+                cursor = leave
+        if cursor < row["stop"]:
+            areas.append((cursor, row["stop"], layout))
+        area_index = 0
         for start, stop, lines in caption_cues(row, columns):
-            fade = ""
-            if not caption:
-                half_ms = (stop - start) * 500 // FPS
-                fade_in = min(160, half_ms) if start == row["first"] else 0
-                fade_out = min(110, half_ms) if stop == row["stop"] else 0
-                fade = rf"\fad({fade_in},{fade_out})"
             text = r"\N".join(
                 line.replace("\\", "＼").replace("{", "｛").replace("}", "｝")
                 for line in lines
             )
-            events.append(
-                f"Dialogue: 0,{ass_time(start)},{ass_time(stop)},Main,,0,0,0,,{{{position}{fade}}}{text}"
-            )
+            while area_index < len(areas):
+                enter, leave, visible = areas[area_index]
+                begin, end = max(start, enter, origin), min(stop, leave)
+                is_caption = visible in ("full", "insert")
+                if begin < end and (tl["subtitles"] or not is_caption):
+                    x1, y1, x2, y2 = caption_box(visible, w, h, bool(row.get("insert")))
+                    x, y = (x1 + x2) // 2, (y1 + y2) // 2
+                    position = rf"\an5\fs{32 if is_caption else 40}\pos({x},{y})\clip({x1},{y1},{x2},{y2})"
+                    fade = ""
+                    if not is_caption:
+                        half_ms = (end - begin) * 500 // FPS
+                        fade_in = min(160, half_ms) if begin == row["first"] else 0
+                        fade_out = min(110, half_ms) if end == row["stop"] else 0
+                        fade = rf"\fad({fade_in},{fade_out})"
+                    events.append(
+                        f"Dialogue: 0,{ass_time(begin-origin)},{ass_time(end-origin)},Main,,0,0,0,,{{{position}{fade}}}{text}"
+                    )
+                if leave > stop:
+                    break
+                area_index += 1
+                if leave == stop:
+                    break
     path.write_text(header + "\n".join(events) + "\n")
 
 
 def render_card_preview(config, folder):
-    from istream.render import _esc
-
     voice_id, aspect = config.get("voiceId"), config.get("aspect")
     voice = load_voice(voice_id)
     line = config.get("line")
@@ -494,25 +594,12 @@ def render_card_preview(config, folder):
     subtitles, framing = config.get("subtitles", True) is True, config.get("framing", "cover")
     if framing not in ("contain", "cover"):
         raise ValueError("无效的全屏镜头取景方式")
-    row = dict(layout=layout, first=0, stop=count, text=voice["lines"][line]["text"], insert=insert)
-    part = None
-    if speaking:
-        shift = int(number(config.get("shift", 0), -8, 8, "口型时移限于正负 8 帧"))
-        timed = dict(row, first=first, stop=first + count, insertSpeaking=True, shot=None)
-        total = math.ceil(voice["duration"] * FPS - 1e-8)
-        parts, _, _ = sync_parts([timed], voice_id, shift, total, folder, lambda *_: None)
-        part = parts[0]
-    ass = folder / "card.ass"
-    write_ass(dict(aspect=aspect, rows=[row], subtitles=subtitles), ass)
-    size = SIZES[aspect]
-    output = folder / "card.mp4"
-    with encoder(
-        output, size, "-ss", first / FPS, "-t", count / FPS,
-        "-i", STORE / "voices" / voice_id / "voice.wav", "-map", "0:v:0", "-map", "1:a:0",
-        "-vf", "subtitles='" + _esc(str(ass)) + "',scale=iw/2:ih/2", "-c:a", "aac",
-    ) as sink:
-        write_insert_frames(sink, row, size, 0, count, part, subtitles=subtitles, framing=framing)
-    return output
+    row = dict(layout=layout, first=first, stop=first + count, text=voice["lines"][line]["text"],
+               insert=insert, insertSpeaking=speaking, shot=None)
+    tl = dict(rows=[row], aspect=aspect, subtitles=subtitles, framing=framing, voice=voice_id,
+              shift=int(number(config.get("shift", 0), -8, 8, "口型时移限于正负 8 帧")),
+              frames=math.ceil(voice["duration"] * FPS - 1e-8))
+    return render(tl, folder, lambda *_: None, window=(first, first + count))
 
 
 def sync_parts(rows, voice_id, shift, total, folder, notify):
@@ -525,6 +612,9 @@ def sync_parts(rows, voice_id, shift, total, folder, notify):
     for index, row in enumerate(rows):
         count = row["stop"] - row["first"]
         shot = row["shot"]
+        if not row.get("voiced", True):
+            parts.append(None)
+            continue
         if shot:
             ident, start, end = shot["asset"], shot["start"], shot["end"]
         elif row.get("insertSpeaking"):
@@ -532,6 +622,7 @@ def sync_parts(rows, voice_id, shift, total, folder, notify):
         else:
             parts.append(None)
             continue
+        offset_key = (row["offset"],) if row.get("offset") else ()
         key = signature(
             "musetalk-v1",
             voice_id,
@@ -541,6 +632,7 @@ def sync_parts(rows, voice_id, shift, total, folder, notify):
             ident,
             start,
             end,
+            *offset_key,
         )
         path = cache / (key + ".mp4")
         if path.exists():
@@ -557,6 +649,7 @@ def sync_parts(rows, voice_id, shift, total, folder, notify):
             samples = np.pad(samples, (0, max(0, total * 640 - len(samples))))
             engine = MouthEngine(samples)
         src = Frames(asset(ident), start, end)
+        src.pos = row.get("offset", 0)
         tmp = folder / (key + ".mp4")
         state = {}
         try:
@@ -576,7 +669,7 @@ def sync_parts(rows, voice_id, shift, total, folder, notify):
                         sink.write(f.tobytes())
                     notify(
                         10 + int(62 * (row["first"] + ix[-1]) / total),
-                        f"口型推理 · 第 {index + 1} 句",
+                        f"口型推理 · 第 {index + 1} 段",
                     )
         except ValueError as exc:
             if row.get("insertSpeaking"):
@@ -590,68 +683,33 @@ def sync_parts(rows, voice_id, shift, total, folder, notify):
     return parts, inferred, cached
 
 
-def render(tl, folder, notify):
-    size = SIZES[tl["aspect"]]
-    voice = STORE / "voices" / tl["voice"] / "voice.wav"
-    ass = folder / "captions.ass"
-    write_ass(tl, ass)
-    rows, total = tl["rows"], tl["frames"]
-    parts, inferred, cached = sync_parts(rows, tl["voice"], tl["shift"], total, folder, notify)
-    notify(76, "正在组合镜头、动态图文和字幕")
-    output = folder / "film.mp4"
+def render(tl, folder, notify, window=None):
     from istream.render import _esc
 
+    size = SIZES[tl["aspect"]]
+    total = tl["frames"]
+    first, stop = window or (0, total)
+    voice = STORE / "voices" / tl["voice"] / "voice.wav"
+    ass = folder / "captions.ass"
+    write_ass(tl, ass, origin=first)
+    spans = [s for s in visual_spans(tl) if s["first"] < stop and s["stop"] > first]
+    parts, inferred, cached = sync_parts(spans, tl["voice"], tl["shift"], total, folder, notify)
+    notify(76, "正在组合镜头、动态图文和字幕")
+    output = folder / "film.mp4"
+    filters = "subtitles='" + _esc(str(ass)) + "'"
+    audio_trim = []
+    if window:
+        audio_trim = ["-ss", first / FPS, "-t", (stop - first) / FPS]
+        filters += ",scale=iw/2:ih/2"
     with encoder(
-        output,
-        size,
-        "-i",
-        voice,
-        "-map",
-        "0:v:0",
-        "-map",
-        "1:a:0",
-        "-vf",
-        "subtitles='" + _esc(str(ass)) + "'",
-        "-c:a",
-        "aac",
-        "-b:a",
-        "160k",
+        output, size, *audio_trim, "-i", voice, "-map", "0:v:0", "-map", "1:a:0",
+        "-vf", filters, "-c:a", "aac", "-b:a", "160k",
     ) as sink:
-
-        def section(row, part, n, talking):
-            if n <= 0:
-                return
-            source = None
-            try:
-                if talking and part:
-                    source = synced_frames(part, n)
-                elif row["layout"] == "insert":
-                    source = Frames(asset(row.get("insert") or tl["insert"]))
-                elif row["shot"]:
-                    s = row["shot"]
-                    source = Frames(asset(s["asset"]), s["start"], s["end"])
-                for _ in range(n):
-                    f = source.next() if source else None
-                    frame = compose(
-                        f, row["layout"], size, tl["subtitles"], tl.get("framing", "cover")
-                    )
-                    sink.write(frame.tobytes())
-            finally:
-                if source:
-                    source.close()
-
-        cursor = 0
-        for i, (row, part) in enumerate(zip(rows, parts)):
-            if row["layout"] == "card" or row.get("insertSpeaking"):
-                stop = total if i == len(rows) - 1 else row["stop"]
-                write_insert_frames(sink, row, size, cursor, stop, part,
-                                    subtitles=tl["subtitles"], framing=tl.get("framing", "cover"))
-                cursor = stop
-                continue
-            section(row, None, row["first"] - cursor, False)
-            section(row, part, row["stop"] - row["first"], True)
-            cursor = row["stop"]
-        section(rows[-1], None, total - cursor, False)
+        for span, part in zip(spans, parts):
+            draw_span(sink, span, part, size, max(span["first"], first), min(span["stop"], stop),
+                      tl["subtitles"], tl.get("framing", "cover"))
+    if window:
+        return output
     notify(95, "正在逐帧解码并核对音画时长")
     ff("-xerror", "-i", output, "-map", "0:v:0", "-map", "0:a:0", "-f", "null", "-")
     info = inspect_file(output)

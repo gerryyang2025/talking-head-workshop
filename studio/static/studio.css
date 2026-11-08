@@ -924,6 +924,49 @@ dialog input {
   opacity: 0.88;
   border-radius: 1px;
 }
+.cut-transport, .cut-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cut-transport {
+  border-top: 1px solid var(--line);
+  padding: 10px 14px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+.cut-transport audio {
+  flex: 1 1 210px;
+  min-width: 0;
+  height: 32px;
+}
+.cut-list {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.cut-list small { color: var(--muted); }
+.cut-item > div { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.cut-item small { display: block; }
+.cut-lane button {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  padding: 0;
+  text-indent: 4px;
+  border: 0;
+  box-shadow: inset 1px 0 var(--teal);
+  background: #365651;
+}
+#cutHead {
+  position: absolute;
+  height: 100%;
+  border-left: 2px solid var(--lime);
+  pointer-events: none;
+}
+#cutPoster { width: 100%; height: 100px; object-fit: contain; }
+#cutForm [role=alert] { color: #f1aa9c; }
 .timelineNote {
   padding: 14px;
   color: var(--muted);
