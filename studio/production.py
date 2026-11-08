@@ -42,6 +42,54 @@ def load_voice(vid):
     return json.loads(path.read_text())
 
 
+def insert_options(config):
+    ident = config.get("insert")
+    speaking = config.get("insertSpeaking", False)
+    if type(speaking) is not bool:
+        raise ValueError("无效的补充素材口播设置")
+    if speaking and not ident:
+        raise ValueError("请先选择用于口播的补充素材")
+    if ident and asset(ident)["role"] not in ("host", "insert"):
+        raise ValueError("补充画面需要照片或视频")
+    return ident, speaking
+
+
+def project_inserts(config):
+    if "inserts" not in config:
+        ident, speaking = insert_options(config)
+        return {ident: speaking} if ident else {}
+    entries = config["inserts"]
+    if not isinstance(entries, list):
+        raise ValueError("项目补充素材列表无效")
+    options = {}
+    for entry in entries:
+        if not isinstance(entry, dict) or not isinstance(entry.get("id"), str) or not entry["id"]:
+            raise ValueError("项目补充素材无效")
+        ident, speaking = insert_options({"insert": entry["id"], "insertSpeaking": entry.get("speaking", False)})
+        options[ident] = speaking
+    return options
+
+
+def line_insert(line, options, layout, index):
+    if layout not in ("card", "insert"):
+        return None, False
+    ident = line.get("insert")
+    if ident is None:
+        if len(options) > 1:
+            raise ValueError(f"请在「选镜与口型」为第 {index + 1} 句选择补充素材")
+        ident = next(iter(options), None)
+    if not ident:
+        if layout == "insert":
+            raise ValueError(f"第 {index + 1} 句需要补充素材，请先从素材库选取，再到「选镜与口型」指定")
+        return None, False
+    if ident not in options:
+        raise ValueError(f"第 {index + 1} 句引用的素材未加入当前项目")
+    speaking = line.get("insertSpeaking", options[ident])
+    if type(speaking) is not bool:
+        raise ValueError("无效的补充素材口播设置")
+    return ident, speaking
+
+
 def plan(config):
     vid = config.get("voiceId", "")
     voice = load_voice(vid)
@@ -57,15 +105,15 @@ def plan(config):
     ids = config.get("hosts", [])
     if not isinstance(ids, list) or len(ids) > 30:
         raise ValueError("母片选择无效")
+    # Older drafts sent an ordered list of hosts. Its first item is the presenter.
+    primary = ids[0] if ids else None
     pool = []
-    for ident in dict.fromkeys(ids):
-        a = asset(ident)
-        if a["role"] != "host":
+    if primary is not None:
+        a = asset(primary)
+        if a["role"] not in ("host", "insert"):
             raise ValueError("所选素材不能用作人物母片")
-        pool.extend(s for s in shots_for(a) if s["enabled"])
-    insert = config.get("insert")
-    if insert and asset(insert)["role"] != "insert":
-        raise ValueError("请选择补充画面素材")
+        pool = [s for s in shots_for(a) if s["enabled"]]
+    inserts = project_inserts(config)
     with db() as con:
         uses = collections.Counter(
             dict(
@@ -93,17 +141,20 @@ def plan(config):
         if layout == "auto":
             pattern = STYLES[style]
             layout = pattern[i % len(pattern)]
-        if layout not in LAYOUTS or (layout == "insert" and not insert):
-            raise ValueError("补充画面镜头需要先导入对应素材")
+        if layout not in LAYOUTS:
+            raise ValueError("无效的镜头版式")
+        insert, insert_speaking = line_insert(line, inserts, layout, i)
         shot = None
         if layout not in ("card", "insert"):
+            if not pool:
+                raise ValueError("出镜句需要主讲母片和可用切片，请在「准备母片」选择主讲，再到「切片打标」启用镜头")
             candidates = (
                 pool
                 if not line.get("shot")
                 else [s for s in pool if s["id"] == line["shot"]]
             )
             if not candidates:
-                raise ValueError("出镜句缺少可用切片，请到切片打标中启用镜头")
+                raise ValueError("指定的切片不属于当前主讲母片或已停用，请在「选镜与口型」重新选镜")
             shot = min(
                 candidates,
                 key=lambda s: (
@@ -121,7 +172,8 @@ def plan(config):
                 end=end,
                 layout=layout,
                 shot=shot,
-                insert=insert if layout in ("card", "insert") else None,
+                insert=insert,
+                insertSpeaking=insert_speaking,
                 risk=zh_mouth_risk(line["text"], end - start)["level"],
             )
         )
@@ -130,11 +182,13 @@ def plan(config):
         aspect=aspect,
         framing=framing,
         style=style,
+        primaryHost=primary,
         voice=vid,
         frames=math.ceil(voice["duration"] * FPS - 1e-8),
         duration=voice["duration"],
         rows=rows,
-        insert=insert,
+        inserts=[{"id": ident, "speaking": mode} for ident, mode in inserts.items()],
+        insert=next(iter(inserts)) if len(inserts) == 1 else None,
         shift=int(number(config.get("shift", 0), -8, 8, "口型时移限于正负 8 帧")),
         subtitles=config.get("subtitles", True) is True,
     )
@@ -251,10 +305,10 @@ def fit(frame, w, h, cover=True, vertical_anchor=0.12):
 def compose(frame, layout, size, subtitles=False, framing="cover", progress=0):
     w, h = size
     canvas = np.full((h, w, 3), (33, 33, 28), np.uint8)
+    if frame is None:
+        return canvas
     if layout == "card":
         draw_card(canvas, frame, progress)
-        return canvas
-    if frame is None:
         return canvas
     if layout in ("full", "insert"):
         picture_h = h - CAPTION_BAND if subtitles else h
@@ -314,37 +368,44 @@ def caption_box(layout, w, h, card_image=False):
 
 def draw_card(canvas, frame, progress):
     h, w = canvas.shape[:2]
-    left, top, right, bottom = caption_box("card", w, h, frame is not None)
-    if frame is not None:
-        # Fit the whole visual as it slowly grows inside its reserved area.
-        box_w, box_h = card_visual_size(w, h)
-        margin = round(min(w, h) * 0.05)
-        zoom = 0.94 + 0.06 * progress
-        image = fit(
-            frame, round((box_w - 2 * margin) * zoom),
-            round((box_h - 2 * margin) * zoom), cover=False,
-        )
-        ih, iw = image.shape[:2]
-        ix, iy = (box_w - iw) // 2, (box_h - ih) // 2
-        canvas[iy : iy + ih, ix : ix + iw] = image
-    rule_w = round((right - left) * 0.36)
-    x = (left + right - rule_w) // 2
-    y = (top + bottom) // 2 + round(min(w, h) * 0.14)
-    cv.line(canvas, (x, y), (x + rule_w, y), (75, 83, 74), 2, cv.LINE_AA)
-    cv.line(canvas, (x, y), (x + round(rule_w * progress), y), (144, 222, 188), 3, cv.LINE_AA)
+    # Fit the whole visual as it slowly grows inside its reserved area.
+    box_w, box_h = card_visual_size(w, h)
+    margin = round(min(w, h) * 0.05)
+    zoom = 0.94 + 0.06 * progress
+    image = fit(
+        frame, round((box_w - 2 * margin) * zoom),
+        round((box_h - 2 * margin) * zoom), cover=False,
+    )
+    ih, iw = image.shape[:2]
+    ix, iy = (box_w - iw) // 2, (box_h - ih) // 2
+    canvas[iy : iy + ih, ix : ix + iw] = image
 
 
-def write_card_frames(sink, row, size, start, stop):
+def synced_frames(path, count):
+    return Frames(dict(kind="video", path=str(path), duration=count / FPS))
+
+
+def write_insert_frames(sink, row, size, start, stop, part=None, *, subtitles=True, framing="cover"):
     source = Frames(asset(row["insert"])) if row.get("insert") else None
-    span = max(1, row["stop"] - row["first"] - 1)
+    count = row["stop"] - row["first"]
+    synced = synced_frames(part, count) if part else None
+    span = max(1, count - 1)
     frame = None
     try:
         for index in range(start, stop):
             progress = min(1, max(0, (index - row["first"]) / span))
-            if source and (frame is None or row["first"] < index < row["stop"]):
+            if synced and row["first"] <= index < row["stop"]:
+                frame = synced.next()
+            elif synced and index == row["stop"]:
+                # Return to the corresponding original frame during the trailing pause.
+                source.pos = count - 1
                 frame = source.next()
-            sink.write(compose(frame, "card", size, progress=progress).tobytes())
+            elif source and (frame is None or row["first"] < index < row["stop"]):
+                frame = source.next()
+            sink.write(compose(frame, row["layout"], size, subtitles, framing, progress).tobytes())
     finally:
+        if synced:
+            synced.close()
         if source:
             source.close()
 
@@ -426,50 +487,60 @@ def render_card_preview(config, folder):
     count = round(end * FPS) - first
     if count < 1:
         raise ValueError("每句话至少需要一帧")
-    insert = config.get("insert")
-    if insert and asset(insert)["role"] != "insert":
-        raise ValueError("请选择补充画面素材")
-    row = dict(layout="card", first=0, stop=count, text=voice["lines"][line]["text"], insert=insert)
+    insert, speaking = insert_options(config)
+    layout = config.get("layout", "card")
+    if layout not in ("card", "insert") or (layout == "insert" and not insert):
+        raise ValueError("请选择有效的补充素材和镜头版式")
+    subtitles, framing = config.get("subtitles", True) is True, config.get("framing", "cover")
+    if framing not in ("contain", "cover"):
+        raise ValueError("无效的全屏镜头取景方式")
+    row = dict(layout=layout, first=0, stop=count, text=voice["lines"][line]["text"], insert=insert)
+    part = None
+    if speaking:
+        shift = int(number(config.get("shift", 0), -8, 8, "口型时移限于正负 8 帧"))
+        timed = dict(row, first=first, stop=first + count, insertSpeaking=True, shot=None)
+        total = math.ceil(voice["duration"] * FPS - 1e-8)
+        parts, _, _ = sync_parts([timed], voice_id, shift, total, folder, lambda *_: None)
+        part = parts[0]
     ass = folder / "card.ass"
-    write_ass(dict(aspect=aspect, rows=[row], subtitles=True), ass)
-    size = tuple(n // 2 for n in SIZES[aspect])
+    write_ass(dict(aspect=aspect, rows=[row], subtitles=subtitles), ass)
+    size = SIZES[aspect]
     output = folder / "card.mp4"
     with encoder(
         output, size, "-ss", first / FPS, "-t", count / FPS,
         "-i", STORE / "voices" / voice_id / "voice.wav", "-map", "0:v:0", "-map", "1:a:0",
-        "-vf", "subtitles='" + _esc(str(ass)) + "'", "-c:a", "aac",
+        "-vf", "subtitles='" + _esc(str(ass)) + "',scale=iw/2:ih/2", "-c:a", "aac",
     ) as sink:
-        write_card_frames(sink, row, size, 0, count)
+        write_insert_frames(sink, row, size, 0, count, part, subtitles=subtitles, framing=framing)
     return output
 
 
-def render(tl, folder, notify):
-    size = SIZES[tl["aspect"]]
+def sync_parts(rows, voice_id, shift, total, folder, notify):
     cache = STORE / "synced"
     cache.mkdir(exist_ok=True)
-    voice = STORE / "voices" / tl["voice"] / "voice.wav"
-    ass = folder / "captions.ass"
-    write_ass(tl, ass)
+    voice = STORE / "voices" / voice_id / "voice.wav"
     parts = []
     engine = None
     inferred = cached = 0
-    total = tl["frames"]
-    rows = tl["rows"]
     for index, row in enumerate(rows):
         count = row["stop"] - row["first"]
         shot = row["shot"]
-        if not shot:
+        if shot:
+            ident, start, end = shot["asset"], shot["start"], shot["end"]
+        elif row.get("insertSpeaking"):
+            ident, start, end = row["insert"], 0, 0
+        else:
             parts.append(None)
             continue
         key = signature(
             "musetalk-v1",
-            tl["voice"],
+            voice_id,
             row["first"],
             row["stop"],
-            tl["shift"],
-            shot["asset"],
-            shot["start"],
-            shot["end"],
+            shift,
+            ident,
+            start,
+            end,
         )
         path = cache / (key + ".mp4")
         if path.exists():
@@ -485,7 +556,7 @@ def render(tl, folder, notify):
             samples = np.frombuffer(raw, "<f4")
             samples = np.pad(samples, (0, max(0, total * 640 - len(samples))))
             engine = MouthEngine(samples)
-        src = Frames(asset(shot["asset"]), shot["start"], shot["end"])
+        src = Frames(asset(ident), start, end)
         tmp = folder / (key + ".mp4")
         state = {}
         try:
@@ -497,7 +568,7 @@ def render(tl, folder, notify):
                     engine.sync(
                         frames,
                         [row["first"] + k for k in ix],
-                        tl["shift"],
+                        shift,
                         src.fixed,
                         state,
                     )
@@ -507,11 +578,25 @@ def render(tl, folder, notify):
                         10 + int(62 * (row["first"] + ix[-1]) / total),
                         f"口型推理 · 第 {index + 1} 句",
                     )
+        except ValueError as exc:
+            if row.get("insertSpeaking"):
+                raise ValueError(f"补充素材口播失败：{exc} 可更换清晰的单人素材，或把用途改为「配图」。") from exc
+            raise
         finally:
             src.close()
         tmp.replace(path)
         parts.append(path)
         inferred += count
+    return parts, inferred, cached
+
+
+def render(tl, folder, notify):
+    size = SIZES[tl["aspect"]]
+    voice = STORE / "voices" / tl["voice"] / "voice.wav"
+    ass = folder / "captions.ass"
+    write_ass(tl, ass)
+    rows, total = tl["rows"], tl["frames"]
+    parts, inferred, cached = sync_parts(rows, tl["voice"], tl["shift"], total, folder, notify)
     notify(76, "正在组合镜头、动态图文和字幕")
     output = folder / "film.mp4"
     from istream.render import _esc
@@ -538,15 +623,13 @@ def render(tl, folder, notify):
                 return
             source = None
             try:
-                if row["layout"] == "insert":
-                    source = Frames(asset(tl["insert"]))
+                if talking and part:
+                    source = synced_frames(part, n)
+                elif row["layout"] == "insert":
+                    source = Frames(asset(row.get("insert") or tl["insert"]))
                 elif row["shot"]:
                     s = row["shot"]
-                    source = (
-                        Frames(dict(kind="video", path=str(part), duration=n / FPS))
-                        if talking
-                        else Frames(asset(s["asset"]), s["start"], s["end"])
-                    )
+                    source = Frames(asset(s["asset"]), s["start"], s["end"])
                 for _ in range(n):
                     f = source.next() if source else None
                     frame = compose(
@@ -559,9 +642,10 @@ def render(tl, folder, notify):
 
         cursor = 0
         for i, (row, part) in enumerate(zip(rows, parts)):
-            if row["layout"] == "card":
+            if row["layout"] == "card" or row.get("insertSpeaking"):
                 stop = total if i == len(rows) - 1 else row["stop"]
-                write_card_frames(sink, row, size, cursor, stop)
+                write_insert_frames(sink, row, size, cursor, stop, part,
+                                    subtitles=tl["subtitles"], framing=tl.get("framing", "cover"))
                 cursor = stop
                 continue
             section(row, None, row["first"] - cursor, False)

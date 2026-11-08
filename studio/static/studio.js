@@ -72,6 +72,62 @@ const styles = {
   editorial: "编辑混剪",
   lecture: "课程讲解",
 };
+function lineLayout(line, i) {
+  const pattern = {studio: ["full"], editorial: ["full", "split", "card"], lecture: ["full", "pip", "split"]}[draft.style];
+  return line.layout && line.layout !== "auto" ? line.layout : pattern[i % pattern.length];
+}
+const usesHost = (layout) => layout !== "card" && layout !== "insert";
+function lineInsert(line) {
+  const sole = draft.inserts.length === 1 ? draft.inserts[0].id : "";
+  const item = draft.inserts.find(item => item.id === (line.insert ?? sole));
+  return {id: item?.id, speaking: Boolean(item && (line.insertSpeaking ?? item.speaking))};
+}
+function needsInsert(line, layout) {
+  if (usesHost(layout) || lineInsert(line).id) return false;
+  return layout === "insert" || (line.insert == null && draft.inserts.length > 1);
+}
+function lineInsertControls(line, layout) {
+  const visual = lineInsert(line);
+  let options = "";
+  if (needsInsert(line, layout)) options += '<option selected disabled>请选择本句素材</option>';
+  if (layout === "card") options += opt("", "纯文字卡", visual.id || (needsInsert(line, layout) ? null : ""));
+  for (const item of draft.inserts) options += opt(item.id, findAsset(item.id).name, visual.id);
+  let html = '<label class="field"><span>本句补充素材</span><select data-lineprop="insert">' + options + '</select></label>';
+  if (visual.id) {
+    const mode = visual.speaking ? "speaker" : "visual";
+    html += '<label class="field"><span>本句素材用途</span><select data-lineprop="insertSpeaking">' +
+      opt("visual", "配图", mode) + opt("speaker", "人物口播", mode) + '</select></label>';
+  }
+  return html;
+}
+function materialRow(a, removable = false) {
+  return '<div class="assetrow"><img loading="lazy" src="' + mediaURL(a.id, "poster") + '" alt=""><div><b>' +
+    esc(a.name) + '</b><small>' + (a.kind === "photo" ? "照片" : "视频 · " + sec(a.duration)) + '</small></div>' +
+    (removable ? '<button class="minor" data-toggle-insert="' + esc(a.id) + '" aria-label="移出补充素材 ' +
+      esc(a.name) + '">移出</button>' : "") + '</div>';
+}
+function toggleInsert(id) {
+  if (draft.inserts.some(item => item.id === id)) {
+    for (const line of draft.lines) {
+      if (lineInsert(line).id === id) {
+        line.insert = "";
+        delete line.insertSpeaking;
+      }
+    }
+    draft.inserts = draft.inserts.filter(item => item.id !== id);
+  } else {
+    if (draft.inserts.length === 1) {
+      draft.lines.forEach((line, index) => {
+        if (line.insert == null && !usesHost(lineLayout(line, index))) line.insert = draft.inserts[0].id;
+      });
+    }
+    draft.inserts.push({id, speaking: false});
+  }
+  save();
+  if (view === "library") alternative();
+  else inspector();
+  drawTracks();
+}
 const reviewLabels = {
   playback: "完整带声播放",
   mouth: "闭唇与句间停顿",
@@ -97,7 +153,6 @@ let session,
   view = "work",
   step = 2,
   mode = "framing",
-  activeAsset,
   busy = false,
   pollTimer,
   toastTimer,
@@ -111,6 +166,35 @@ let shotMap = {},
 const mediaURL = (id, type) =>
   "/api/assets/" + encodeURIComponent(id) + "/" + type;
 const findAsset = (id) => session.assets.find((a) => a.id === id);
+const primaryHost = () => findAsset(draft.hosts[0]);
+function setPrimaryHost(id) {
+  draft.hosts = id ? [id] : [];
+  // Shot IDs end in "-<index>"; old multi-host drafts can contain foreign pins.
+  for (const line of draft.lines || []) {
+    if (line.shot && line.shot.slice(0, line.shot.lastIndexOf("-")) !== id) line.shot = "";
+  }
+}
+function restoreMaterials() {
+  const first = findAsset(draft.hosts?.[0]);
+  if (!Array.isArray(draft.inserts)) {
+    const ids = [draft.insert, ...(draft.hosts || []).slice(1)].filter(Boolean);
+    draft.inserts = [...new Set(ids)].map(id => ({id, speaking: id === draft.insert && draft.insertSpeaking === true}));
+    if (draft.inserts.length) {
+      for (const line of draft.lines || []) line.insert = draft.insert || "";
+    }
+    delete draft.insert;
+    delete draft.insertSpeaking;
+  }
+  draft.inserts = draft.inserts.filter(item => ["photo", "video"].includes(findAsset(item.id)?.kind));
+  const available = new Set(draft.inserts.map(item => item.id));
+  for (const line of draft.lines || []) {
+    if (line.insert && !available.has(line.insert)) {
+      line.insert = "";
+      delete line.insertSpeaking;
+    }
+  }
+  setPrimaryHost(first && first.kind !== "audio" ? first.id : null);
+}
 const getJob = (id) => session.jobs.find((j) => j.id === id);
 const current = () => getJob(playingJob || draft.job);
 function message(s) {
@@ -154,7 +238,7 @@ function fresh(title) {
     style: "editorial",
     subtitles: true,
     shift: 0,
-    insert: "",
+    inserts: [],
     voiceData: null,
     lines: [],
     job: null,
@@ -293,7 +377,7 @@ function prepMonitor() {
   v.pause();
   stopStill();
   stillClock = 0;
-  const a = findAsset(activeAsset) || findAsset(draft.hosts[0]),
+  const a = primaryHost(),
     j = current(),
     ready = j?.status === "done";
   if (mode === "result" && !ready) mode = "source";
@@ -326,7 +410,7 @@ function prepMonitor() {
 function duration() {
   const v = $("#video");
   if (!v.hidden && Number.isFinite(v.duration)) return v.duration;
-  return draft?.voiceData?.duration || findAsset(activeAsset)?.duration || 0;
+  return draft?.voiceData?.duration || primaryHost()?.duration || 0;
 }
 function updateClock() {
   const v = $("#video"),
@@ -351,7 +435,7 @@ function seek(t) {
 function setStep(i) {
   step = i;
   view = "work";
-  if (i === 2 || i === 4) showMaterialMode("framing");
+  if (i >= 2 && i <= 4) showMaterialMode("framing");
   else if (i < 2) showMaterialMode("source");
   nav();
   inspector();
@@ -382,7 +466,7 @@ function drawTracks() {
       '<p class="timelineNote">准备配音后，这里会显示按声音对齐的镜头和字幕。</p>';
     return;
   }
-  const p = findAsset(activeAsset) || findAsset(draft.hosts[0]);
+  const p = primaryHost();
   const pic = p ? mediaURL(p.id, "poster") : "";
   const lane = (kind) => {
     let result = "",
@@ -392,17 +476,13 @@ function drawTracks() {
         e = Number(l.end) || 0;
       const space = (Math.max(0, s - cursor) / time) * 100;
       if (space) result += '<i style="width:' + space + '%"></i>';
-      const pattern = {
-        studio: ["full"],
-        editorial: ["full", "split", "card"],
-        lecture: ["full", "pip", "split"],
-      }[draft.style];
-      const layout =
-        l.layout && l.layout !== "auto"
-          ? l.layout
-          : pattern[i % pattern.length];
-      const insert = actual ? (l.insert || (layout === "insert" && resultTimeline.insert)) : draft.insert;
-      const isGraphic = layout === "card" || layout === "insert";
+      const layout = lineLayout(l, i);
+      const visual = actual
+        ? {id: l.insert || (layout === "insert" && resultTimeline.insert), speaking: l.insertSpeaking}
+        : lineInsert(l);
+      const insert = visual.id;
+      const isGraphic = !usesHost(layout);
+      const speaking = isGraphic && insert && visual.speaking;
       const thumb = isGraphic ? (insert && mediaURL(insert, "poster"))
         : actual && l.shot ? mediaURL(l.shot.asset, "poster") : pic;
       const bg =
@@ -413,7 +493,7 @@ function drawTracks() {
           : "";
       result +=
         '<button ' +
-        (!actual && layout === "card" && kind === "video" ? `data-card-line="${i}" ` : "") +
+        (!actual && isGraphic && kind === "video" ? `data-card-line="${i}" ` : "") +
         'title="' +
         esc(l.text) +
         '" data-jump="' +
@@ -425,7 +505,8 @@ function drawTracks() {
         "width:" +
         Math.max(0, ((e - s) / time) * 100) +
         '%">' +
-        esc(kind === "video" ? layouts[layout] : l.text) +
+        esc(kind === "video" ? layouts[layout] +
+          (!actual && needsInsert(l, layout) ? " · 待选素材" : speaking ? " · 人物口播" : "") : l.text) +
         "</button>";
       cursor = e;
     }
@@ -460,12 +541,21 @@ function drawTracks() {
 async function previewCard(index) {
   const line = draft.lines[index], dialog = $("#cardPreview");
   const video = dialog.querySelector("video"), status = dialog.querySelector("[role=status]");
+  const layout = lineLayout(line, index);
+  const visual = lineInsert(line);
+  if (needsInsert(line, layout)) {
+    await switchStep(3);
+    document.querySelector(`[data-line="${index}"] [data-lineprop="insert"]`)?.focus();
+    message("请先为这句选择补充素材");
+    return;
+  }
   const controller = new AbortController();
   let url;
   $("#video").pause();
   stopStill();
   updateClock();
-  status.textContent = "正在生成本句预览…";
+  $("#cardPreviewTitle").textContent = layouts[layout] + "预览";
+  status.textContent = visual.speaking ? "正在准备本句口型预览…" : "正在生成本句预览…";
   video.hidden = true;
   dialog.showModal();
   dialog.addEventListener("close", () => {
@@ -480,7 +570,9 @@ async function previewCard(index) {
       method: "POST", signal: controller.signal,
       headers: {"Content-Type": "application/json", "X-Studio-Request": "1"},
       body: JSON.stringify({
-        voiceId: draft.voiceData.id, aspect: draft.aspect, insert: draft.insert,
+        voiceId: draft.voiceData.id, aspect: draft.aspect, insert: visual.id,
+        layout, insertSpeaking: visual.speaking, shift: draft.shift,
+        subtitles: draft.subtitles, framing: draft.framing || "cover",
         line: index, start: line.start, end: line.end,
       }),
     });
@@ -500,7 +592,7 @@ const upload = (role, label) =>
   '<label class="uploadBtn">' +
   icon("upload") +
   label +
-  '<input type="file" hidden data-upload="' +
+  '<input type="file" hidden multiple data-upload="' +
   role +
   '" accept="' +
   (role === "audio"
@@ -664,51 +756,29 @@ function jobBox(j) {
 }
 function inspector() {
   const descriptions = [
-    "选择可复用的人物影像，或导入自己的照片和母片。",
+    "主讲母片用于人物出镜。把本片需要的配图和其他口播素材一起加入项目。",
     "核对切点和表演标签，取消有遮挡或异常的镜头。",
     "以最终配音锁定时间轴，字幕和镜头跟随声音。",
     "逐句指定镜头与版式，隐藏人物的句段跳过推理。",
     "为同一套素材选择画幅和镜头组合。",
     "带声复核闭唇、接缝、字幕和遮挡。",
   ];
-  const a = findAsset(activeAsset) || findAsset(draft.hosts[0]);
+  const a = primaryHost();
   const shots = shotMap[a?.id] || [];
   let body = "";
   if (step === 0) {
-    body =
-      '<div class="stack">' +
-      session.assets
-        .filter((a) => a.role === "host")
-        .map(
-          (a) =>
-            '<label class="assetrow"><input type="checkbox" data-host="' +
-            a.id +
-            '" ' +
-            (draft.hosts.includes(a.id) ? "checked" : "") +
-            '><img src="' +
-            mediaURL(a.id, "poster") +
-            '" alt=""><div><b>' +
-            esc(a.name) +
-            "</b><small>" +
-            (a.kind === "photo" ? "人物照片" : sec(a.duration)) +
-            " · " +
-            a.width +
-            " × " +
-            a.height +
-            "</small></div></label>",
-        )
-        .join("") +
-      upload("host", "导入人物照片或母片") +
-      "</div>";
+    const selected = draft.inserts.map(item => findAsset(item.id)).filter(Boolean);
+    body = '<div class="field"><span>主讲母片</span>' +
+      (a ? materialRow(a) : '<small>请从素材库选择主讲人物。</small>') +
+      '</div><div class="field"><span>补充素材（' + selected.length + '）</span>' +
+      (selected.length ? '<div class="stack project-materials">' + selected.map(item => materialRow(item, true)).join("") + '</div>'
+        : '<small>可选多张照片或多段视频。</small>') +
+      '</div><button class="outline wide" data-view="library">从素材库选取</button>';
   }
   if (step === 1) {
     body =
-      '<label class="field"><span>复核母片</span><select id="reviewAsset">' +
-      session.assets
-        .filter((a) => a.role === "host")
-        .map((o) => opt(o.id, o.name, a?.id))
-        .join("") +
-      '</select></label><div class="stack">' +
+      '<p class="hint">主讲母片：' + esc(a?.name || "请先在「准备母片」选择") +
+      '</p><div class="stack">' +
       shots
         .map(
           (s, i) =>
@@ -786,7 +856,7 @@ function inspector() {
       icon("voice") +
       (draft.voiceData ? "试听配音" : "生成并试听") +
       "</button>" +
-      upload("audio", "导入配音") +
+      '<button class="outline" data-view="library">从素材库选配音</button>' +
       '</div><div id="audioPreview" class="stack"></div><hr class="splitline">' +
       aspectButtons();
   }
@@ -818,26 +888,23 @@ function inspector() {
                       '"></label>',
                   )
                   .join("") +
-                '</div><select data-lineprop="shot" aria-label="选择镜头">' +
-                opt("", "自动轮换切片", l.shot || "") +
-                draft.hosts
-                  .flatMap((id) =>
-                    (shotMap[id] || [])
-                      .filter((s) => s.enabled)
-                      .map((s) =>
-                        opt(s.id, findAsset(id).name + " · " + s.label, l.shot),
-                      ),
-                  )
-                  .join("") +
-                '</select><select data-lineprop="layout" aria-label="选择版式">' +
+                '</div><select data-lineprop="layout" aria-label="选择版式">' +
                 Object.entries(layouts)
                   .map(([k, n]) => opt(k, n, l.layout || "auto"))
                   .join("") +
-                "</select></div>",
+                "</select>" +
+                (usesHost(lineLayout(l, i))
+                  ? '<select data-lineprop="shot" aria-label="主讲母片切片">' +
+                    opt("", (a?.name || "主讲母片") + " · 自动选片", l.shot || "") +
+                    shots.filter(s => s.enabled).map(s => opt(s.id, a.name + " · " + s.label, l.shot)).join("") +
+                    "</select>"
+                  : lineInsertControls(l, lineLayout(l, i))) +
+                "</div>",
             )
             .join("") +
           "</div>"
         : '<button class="outline" id="voiceBtn">准备配音后开始选镜</button>') +
+      '<button class="outline" data-view="library">从素材库选取补充素材</button>' +
       '<label class="field"><span>嘴型延后帧数（负数为提前）</span><input id="shift" type="number" min="-8" max="8" value="' +
       draft.shift +
       '"></label>';
@@ -862,15 +929,8 @@ function inspector() {
       '</select></label>' +
       '<label class="reviewline"><input id="subs" type="checkbox" ' +
       (draft.subtitles ? "checked" : "") +
-      '> 在主讲与补充画面下方显示字幕</label><hr class="splitline"><label class="field"><span>补充画面</span><select id="inserts">' +
-      opt("", "暂未选用", draft.insert) +
-      session.assets
-        .filter((a) => a.role === "insert")
-        .map((a) => opt(a.id, a.name, draft.insert))
-        .join("") +
-      "</select></label>" +
-      upload("insert", "导入补充画面") +
-      '<p class="hint">「动态图文」会将所选素材和台词排在一起，点击时间线上的图文镜头可预览。要让素材单独出镜，可在「选镜与口型」选「补充画面」。</p>';
+      '> 在主讲与补充画面下方显示字幕</label>' +
+      '<button class="minor" data-step="3">调整逐句镜头与素材</button>';
   }
   if (step === 5) {
     body = jobBox(current()) + reviewPanel(current());
@@ -927,28 +987,26 @@ function alternative() {
     return;
   }
   $("#other").innerHTML =
-    '<div class="subline"><h3>素材库</h3>' +
-    upload("host", "导入母片") +
-    '</div><div class="altgrid">' +
-    session.assets
-      .map(
-        (a) =>
-          '<article class="assetcard">' +
-          (a.kind === "audio"
-            ? '<div class="audioart">' + icon("music") + "</div>"
-            : '<img alt="" src="' + mediaURL(a.id, "poster") + '">') +
-          "<div><b>" +
-          esc(a.name) +
-          "</b><small>" +
-          { host: "人物素材", audio: "配音", insert: "补充画面" }[a.role] +
-          " · " +
-          (a.duration ? sec(a.duration) : a.width + " × " + a.height) +
-          '</small><button class="minor topgap" data-use="' +
-          a.id +
-          '">用于当前项目</button></div></article>',
-      )
-      .join("") +
-    "</div>";
+    '<div class="subline library-tools"><span>当前项目 · ' + esc(draft.title) +
+    ' · 已选 ' + draft.inserts.length + ' 份补充素材</span><div class="btnrow">' +
+    upload("host", "导入照片或视频") + upload("audio", "导入配音") +
+    '<button class="outline" data-view="work">返回工作台</button></div></div><div class="altgrid">' +
+    session.assets.map(a => {
+      const audio = a.kind === "audio", primary = draft.hosts[0] === a.id;
+      const selected = draft.inserts.some(item => item.id === a.id);
+      const useLabel = audio ? (draft.voice === a.id ? "当前配音" : "用作配音") : (primary ? "当前主讲" : "设为主讲");
+      return '<article class="assetcard">' +
+        (audio ? '<div class="audioart">' + icon("music") + '</div>'
+          : '<img loading="lazy" alt="" src="' + mediaURL(a.id, "poster") + '">') +
+        '<div><b>' + esc(a.name) + '</b><small>' +
+        ({photo: "照片", video: "视频", audio: "配音"}[a.kind]) + ' · ' +
+        (a.duration ? sec(a.duration) : a.width + ' × ' + a.height) +
+        '</small><div class="btnrow topgap"><button class="minor" data-use="' + esc(a.id) + '"' +
+        (primary || (audio && draft.voice === a.id) ? ' disabled' : '') + '>' + useLabel + '</button>' +
+        (audio ? '' : '<button class="minor" aria-pressed="' + selected + '" data-toggle-insert="' + esc(a.id) + '">' +
+          (selected ? '已选为补充' : '选为补充') + '</button>') +
+        '</div></div></article>';
+    }).join("") + '</div>';
 }
 async function loadShots(id) {
   if (id && !shotMap[id]) shotMap[id] = (await api("/api/shots/" + id)).shots;
@@ -1022,6 +1080,12 @@ async function generate() {
   $("#produce").disabled = true;
   try {
     await ensureVoice();
+    const missing = draft.lines.findIndex((line, i) => needsInsert(line, lineLayout(line, i)));
+    if (missing !== -1) {
+      await switchStep(3);
+      document.querySelector(`[data-line="${missing}"] [data-lineprop="insert"]`)?.focus();
+      throw Error("请为第 " + (missing + 1) + " 句选择补充素材或调整版式");
+    }
     const cfg = { ...draft, voiceId: draft.voiceData.id };
     const j = await api("/api/jobs", cfg);
     draft.job = j.id;
@@ -1041,42 +1105,42 @@ async function switchStep(n) {
     await openFilm(current().id, false);
     return;
   }
-  if (n === 1) await loadShots(activeAsset);
+  if (n === 1) await loadShots(draft.hosts[0]);
   if (n === 3) {
-    await Promise.all(draft.hosts.map(loadShots));
+    await loadShots(draft.hosts[0]);
     if (draft.text.trim()) await ensureVoice();
   }
   setStep(n);
 }
 async function use(a) {
-  if (a.role === "host") {
-    if (!draft.hosts.includes(a.id)) draft.hosts.push(a.id);
-    activeAsset = a.id;
-    await loadShots(a.id);
-    setStep(0);
-  } else if (a.role === "audio") {
+  if (a.kind === "audio") {
     draft.voice = a.id;
     discardVoice();
-    setStep(2);
   } else {
-    draft.insert = a.id;
-    setStep(4);
+    await loadShots(a.id);
+    setPrimaryHost(a.id);
+    save();
   }
-  save();
-  prepMonitor();
-  drawTracks();
+  alternative();
 }
 async function uploadFile(el) {
-  const file = el.files[0];
-  if (!file) return;
-  message("正在读取本机素材…");
-  const f = new FormData();
-  f.append("file", file);
-  f.append("role", el.dataset.upload);
-  const a = await api("/api/assets", f, true);
-  session.assets.push(a);
-  await use(a);
-  message("素材已导入");
+  const files = Array.from(el.files);
+  if (!files.length) return;
+  const errors = [];
+  for (const [index, file] of files.entries()) {
+    message("正在导入 " + (index + 1) + " / " + files.length + " · " + file.name);
+    const form = new FormData();
+    form.append("file", file);
+    form.append("role", el.dataset.upload);
+    try {
+      session.assets.push(await api("/api/assets", form, true));
+    } catch (err) {
+      errors.push(file.name + "：" + err.message);
+    }
+  }
+  if (view === "library") alternative();
+  message("已导入 " + (files.length - errors.length) + " / " + files.length + " 份素材" +
+    (errors.length ? "。" + errors.join("；") : ""));
 }
 function play() {
   const v = $("#video");
@@ -1147,6 +1211,11 @@ document.addEventListener(
       editIssue(b.closest("fieldset").dataset.reviewJob, b.dataset.editIssue);
       return;
     }
+    if (b.dataset.toggleInsert) {
+      toggleInsert(b.dataset.toggleInsert);
+      if (view === "library") document.querySelector('[data-toggle-insert="' + CSS.escape(b.dataset.toggleInsert) + '"]')?.focus();
+      return;
+    }
     if (b.dataset.use) {
       await use(findAsset(b.dataset.use));
       return;
@@ -1158,7 +1227,7 @@ document.addEventListener(
     if (b.dataset.project) {
       save();
       draft = savedProjects()[b.dataset.project];
-      activeAsset = draft.hosts[0];
+      restoreMaterials();
       mode = "source";
       playingJob = null;
       resultTimeline = null;
@@ -1223,7 +1292,6 @@ document.addEventListener(
         if (!t) throw Error("请输入项目名称");
         save();
         draft = fresh(t);
-        activeAsset = draft.hosts[0];
         playingJob = null;
         resultTimeline = null;
         resultVoice = null;
@@ -1236,7 +1304,7 @@ document.addEventListener(
         break;
       }
       case "addshot": {
-        const a = findAsset(activeAsset);
+        const a = primaryHost();
         const arr = shotMap[a.id];
         arr.push({
           asset: a.id,
@@ -1253,7 +1321,7 @@ document.addEventListener(
         break;
       }
       case "saveShots": {
-        const a = findAsset(activeAsset);
+        const a = primaryHost();
         shotMap[a.id] = (
           await api("/api/shots/" + a.id, { shots: shotMap[a.id] })
         ).shots;
@@ -1292,23 +1360,8 @@ document.addEventListener(
       await uploadFile(el);
       return;
     }
-    if (el.dataset.host) {
-      if (el.checked) {
-        if (!draft.hosts.includes(el.dataset.host))
-          draft.hosts.push(el.dataset.host);
-        activeAsset = el.dataset.host;
-        await loadShots(activeAsset);
-      } else {
-        draft.hosts = draft.hosts.filter((i) => i !== el.dataset.host);
-        if (activeAsset === el.dataset.host) activeAsset = draft.hosts[0];
-      }
-      save();
-      prepMonitor();
-      drawTracks();
-      return;
-    }
     if (el.dataset.shotprop) {
-      const shot = shotMap[activeAsset][+el.closest(".shot").dataset.index],
+      const shot = shotMap[draft.hosts[0]][+el.closest(".shot").dataset.index],
         k = el.dataset.shotprop;
       shot[k] =
         k === "enabled"
@@ -1320,13 +1373,17 @@ document.addEventListener(
     }
     if (el.dataset.lineprop) {
       const k = el.dataset.lineprop;
-      draft.lines[+el.closest(".lineRow").dataset.line][k] = [
-        "start",
-        "end",
-      ].includes(k)
-        ? Number(el.value)
-        : el.value;
+      const line = draft.lines[+el.closest(".lineRow").dataset.line];
+      if (k === "insert") {
+        line.insert = el.value;
+        delete line.insertSpeaking;
+      } else if (k === "insertSpeaking") {
+        line.insertSpeaking = el.value === "speaker";
+      } else {
+        line[k] = ["start", "end"].includes(k) ? Number(el.value) : el.value;
+      }
       save();
+      if (k === "layout" || k === "insert") inspector();
       drawTracks();
       return;
     }
@@ -1350,13 +1407,6 @@ document.addEventListener(
       case "mobileSteps":
         await switchStep(+el.value);
         break;
-      case "reviewAsset":
-        activeAsset = el.value;
-        await loadShots(activeAsset);
-        mode = "source";
-        inspector();
-        prepMonitor();
-        break;
       case "voiceChoice":
         draft.voice = el.value;
         discardVoice();
@@ -1366,11 +1416,6 @@ document.addEventListener(
         draft.style = el.value;
         save();
         inspector();
-        drawTracks();
-        break;
-      case "inserts":
-        draft.insert = el.value;
-        save();
         drawTracks();
         break;
       case "subs":
@@ -1417,9 +1462,7 @@ async function start() {
   } catch (e) {}
   if (!draft) draft = fresh();
   await importDraftReviews().catch(() => message("旧勾选暂未同步，刷新后会重试"));
-  draft.hosts = draft.hosts.filter((id) => findAsset(id));
-  activeAsset =
-    draft.hosts[0] || session.assets.find((a) => a.role === "host")?.id;
+  restoreMaterials();
   $("#engineInfo").textContent = session.engine.ready
     ? session.engine.engine
     : "依赖待安装";
@@ -1447,6 +1490,5 @@ async function start() {
     if (step === 2) inspector();
     updateClock();
   }
-  if (activeAsset) await loadShots(activeAsset);
 }
 start().catch((e) => message(e.message));

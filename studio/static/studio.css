@@ -798,6 +798,21 @@ dialog input {
   gap: 13px;
   margin-top: 14px;
 }
+.library-tools {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.library-tools .btnrow {
+  flex-wrap: wrap;
+}
+.assetcard [aria-pressed="true"] {
+  border-color: var(--lime);
+  color: var(--lime);
+}
+.project-materials {
+  max-height: 19rem;
+  overflow-y: auto;
+}
 .assetcard {
   background: #202620;
   border: 1px solid var(--line);

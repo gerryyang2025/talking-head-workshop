@@ -60,6 +60,12 @@ def dependencies():
     )
 
 
+def require_lipsync():
+    deps = dependencies()
+    if not deps["ready"]:
+        raise ValueError("缺少口型依赖：" + ", ".join(deps["missing"]))
+
+
 @app.before_request
 def local_only():
     if urlsplit(request.host_url).hostname not in ("127.0.0.1", "localhost", "::1"):
@@ -167,7 +173,7 @@ def media_file(ident, variant):
 def shots(ident):
     with asset_lock:
         a = asset(ident)
-        if a["role"] != "host":
+        if a["role"] not in ("host", "insert"):
             raise ValueError("请选择人物母片")
         if request.method == "POST":
             a["shots"] = media.clean_shots(a, request.get_json()["shots"])
@@ -183,8 +189,14 @@ def voice():
 
 @app.post("/api/card-preview")
 def card_preview():
-    with tempfile.TemporaryDirectory() as tmp:
-        path = render_card_preview(request.get_json(), Path(tmp))
+    config = request.get_json()
+    with tempfile.TemporaryDirectory(dir=STORE) as tmp:
+        if config.get("insertSpeaking") is True:
+            require_lipsync()
+            # Share the GPU and cache with exports, including simultaneous preview requests.
+            path = executor.submit(render_card_preview, config, Path(tmp)).result()
+        else:
+            path = render_card_preview(config, Path(tmp))
         return app.response_class(path.read_bytes(), mimetype="video/mp4")
 
 
@@ -261,9 +273,8 @@ def create_job():
     config = request.get_json()
     with asset_lock:
         tl = plan(config)
-    deps = dependencies()
-    if not deps["ready"] and any(row["shot"] for row in tl["rows"]):
-        raise ValueError("缺少口型依赖：" + ", ".join(deps["missing"]))
+    if any(row["shot"] or row["insertSpeaking"] for row in tl["rows"]):
+        require_lipsync()
     info = dict(
         id=token(),
         title=tl["title"],

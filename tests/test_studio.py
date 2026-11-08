@@ -2,8 +2,10 @@
 
 import io
 import importlib.util
+import json
 import shutil
 import tempfile
+import types
 import unittest
 import wave
 from pathlib import Path
@@ -106,6 +108,117 @@ class StudioWorkflow(unittest.TestCase):
         lines[1]["start"] = 0
         with self.assertRaisesRegex(ValueError, "重叠"):
             self.production.plan(cfg)
+
+    def test_first_host_is_the_only_speaker_even_in_old_multi_host_drafts(self):
+        for ident, role in (("video", "host"), ("beach", "host"), ("beach-insert", "insert")):
+            self.media.save_asset(dict(id=ident, role=role, shots=[
+                dict(asset=ident, id=f"{ident}-{i}", enabled=True, start=0, end=3)
+                for i in (1, 2)
+            ]))
+        layouts = ["full", "split", "pip", "card", "insert"]
+        lines = [dict(text=k, layout=k, start=i, end=i + 1) for i, k in enumerate(layouts)]
+        cfg = dict(voiceId="voice", style="studio", aspect="16:9", hosts=["video", "beach"],
+                   insert="beach-insert", lines=lines)
+        with patch.object(self.production, "load_voice", return_value=dict(duration=5, lines=lines)):
+            tl = self.production.plan(cfg)
+            self.assertEqual(tl["primaryHost"], "video")
+            self.assertEqual([r["shot"] and r["shot"]["asset"] for r in tl["rows"]],
+                             ["video", "video", "video", None, None])
+            self.assertEqual([r["insert"] for r in tl["rows"]], [None] * 3 + ["beach-insert"] * 2)
+            self.assertNotEqual(tl["rows"][0]["shot"]["id"], tl["rows"][1]["shot"]["id"])
+            lines[1]["shot"] = "beach-1"
+            with self.assertRaisesRegex(ValueError, "不属于当前主讲母片"):
+                self.production.plan(cfg)
+            lines[1]["shot"] = ""
+            self.media.save_asset(dict(id="video", role="host", shots=[]))
+            with self.assertRaisesRegex(ValueError, "启用镜头"):
+                self.production.plan(cfg)
+
+    def test_library_visuals_are_assigned_per_line_without_rotating_the_speaker(self):
+        self.media.save_asset(dict(id="lead", role="insert", shots=[
+            dict(id="lead-1", asset="lead", enabled=True, start=0, end=1)
+        ]))
+        entries = [dict(id=f"visual-{i}") for i in range(40)]
+        for entry in entries:
+            self.media.save_asset(dict(id=entry["id"], role="host", kind="photo"))
+        lines = [dict(text=str(i), start=i, end=i+1, layout=k)
+                 for i, k in enumerate(("split", "card", "insert", "card", "card"))]
+        lines[1].update(insert="visual-0", insertSpeaking=True)
+        lines[2].update(insert="visual-39")
+        lines[3].update(insert="visual-0", insertSpeaking=False)
+        lines[4].update(insert="")
+        cfg = dict(voiceId="voice", aspect="9:16", style="studio", hosts=["lead"], inserts=entries, lines=lines)
+        with patch.object(self.production, "load_voice", return_value=dict(duration=5, lines=lines)):
+            tl = self.production.plan(cfg)
+            rows = tl["rows"]
+            self.assertEqual(rows[0]["shot"]["asset"], "lead")
+            self.assertEqual([(r["insert"], r["insertSpeaking"]) for r in rows],
+                             [(None, False), ("visual-0", True), ("visual-39", False), ("visual-0", False), (None, False)])
+            self.assertEqual(len(tl["inserts"]), 40)
+            del lines[2]["insert"]
+            with self.assertRaisesRegex(ValueError, "第 3 句"):
+                self.production.plan(cfg)
+            lines[2]["insert"] = "outside-project"
+            with self.assertRaisesRegex(ValueError, "未加入当前项目"):
+                self.production.plan(cfg)
+            self.media.save_asset(dict(id="audio", role="audio", kind="audio"))
+            cfg["inserts"] = [dict(id="audio")]
+            with self.assertRaisesRegex(ValueError, "照片或视频"):
+                self.production.plan(cfg)
+
+    def test_speaking_insert_preview_and_export_share_absolute_audio_frames(self):
+        import cv2 as cv
+        import numpy as np
+
+        ident = "e" * 64
+        folder = self.media.STORE / "voices" / ident
+        folder.mkdir(parents=True)
+        lines = [dict(text="你好", start=.2, end=.6, layout="card"),
+                 dict(text="再见", start=.72, end=.96, layout="insert")]
+        (folder / "voice.json").write_text(json.dumps(dict(duration=1, lines=lines)))
+        with wave.open(str(folder / "voice.wav"), "wb") as wav:
+            wav.setparams((1, 2, 48000, 0, "NONE", "not compressed"))
+            wav.writeframes(bytes(96000))
+        path = folder / "photo.png"
+        cv.imwrite(str(path), np.full((120, 90, 3), (180, 20, 30), np.uint8))
+        self.media.save_asset(dict(id="photo", role="insert", kind="photo", path=str(path)))
+        calls = []
+
+        class MarkMouth:
+            def __init__(self, _samples):
+                pass
+
+            def sync(self, frames, indexes, shift, fixed, state):
+                calls.extend(indexes)
+                for frame in frames:
+                    frame[:] = (15, 240, 15)
+
+        def pixel(movie, index, x, y):
+            video = cv.VideoCapture(str(movie))
+            try:
+                video.set(cv.CAP_PROP_POS_FRAMES, index)
+                ok, frame = video.read()
+                self.assertTrue(ok)
+                return frame[y, x]
+            finally:
+                video.release()
+
+        config = dict(voiceId=ident, aspect="16:9", style="editorial", hosts=[],
+                      lines=lines, insert="photo", insertSpeaking=True)
+        with patch.dict("sys.modules", {"studio.engine": types.SimpleNamespace(MouthEngine=MarkMouth)}):
+            preview = self.production.render_card_preview(
+                dict(config, line=0, start=.2, end=.6), folder)
+            self.assertEqual(calls, list(range(5, 15)))
+            self.assertGreater(pixel(preview, 0, 160, 160)[1], 200)
+            tl = self.production.plan(config)
+            result = self.production.render(tl, folder, lambda *_: None)
+        self.assertEqual(calls, list(range(5, 15)) + list(range(18, 24)))
+        self.assertEqual((result["inferred"], result["cached"], result["skipped"]), (6, 10, 9))
+        film = folder / "film.mp4"
+        self.assertGreater(pixel(film, 3, 320, 320)[0], 150)  # Original photo in the pause.
+        self.assertGreater(pixel(film, 6, 320, 320)[1], 200)  # Mouth result reaches the card.
+        self.assertGreater(pixel(film, 20, 640, 320)[1], 200)  # And the full-screen insert.
+        self.assertGreater(pixel(film, 24, 640, 320)[0], 150)
 
     def test_normalized_trim_and_review(self):
         a = {"kind": "video", "duration": 3.0, "id": "plate"}
