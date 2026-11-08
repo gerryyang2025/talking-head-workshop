@@ -229,15 +229,50 @@ function defaultVoice(text) {
   if (text === session.demoText && findAsset("demo-audio")) return "demo-audio";
   return session.engine.tts ? "reed" : "";
 }
+const longScripts = [
+  {
+    title: "海边照片里，少了哪十秒",
+    text: `先别看镜头里的人，看看他脚边那块石头。上半截是干的，下半截颜色很深，中间留着一道弯弯的水印。
+如果请你给这张照片配十秒钟的声音，你会从哪里开始？我会从浪退下去的时候开始录。水从石头缝里抽走，碎石子跟着滚了两下，然后有那么一小会儿，四周安静极了。
+这时再切回照片，你可能会注意到，那个人坐得挺靠后，鞋尖离水印还有一段距离。刚才第一眼看过去，你大概只记住了他的脸。
+如果手里还有一段海浪的视频，我会等到下一排白沫快碰到鞋尖时，再把视频接进来。让观众看一眼水涨到哪里，然后回到同一张照片。
+片尾那两秒，我想只留浪退下去的声音。等碎石子又响起来，就知道下一波浪还在路上。`,
+  },
+  {
+    title: "平均只等四分之一秒，谁等了三秒",
+    text: `假设一家小店刚换了点单系统。午休时一共来了一百位客人，店长看了眼报表，说平均不到四分之一秒就能打开菜单。可收银台前偏偏有人说，我刚才等了整整三秒。
+我们把一百次点单排开看。九十五次只用十分之一秒，另外五次各用了三秒。把等待时间加起来，再除以一百，店长的数字确实算对了，那五位客人的感受也很准确。
+接下来该查哪儿？先把最慢的五次单独挑出来，看它们发生在几点，点开的是哪一页。如果五次都卡在同一张新品大图，就拿一台手机，分别加载原图和缩小后的图，记下两次等待时间。
+第二天再去柜台，除了看平均值，我还想问收银员一句：今天午休，还有多少客人点开菜单以后，抬起头来问你，是不是没点上？`,
+  },
+  {
+    title: "用三次试录，找出旁白里的杂音",
+    text: `戴上耳机，听一遍你刚录好的旁白。每说完一句，尾音后面都跟着一层沙沙声。先把原录音留着，我们用同一句话做三次试录：把白色的本子放在桌边。
+第一次，手机放在平常的位置，念完以后坐着别动，再录三秒。回放时专听这三秒，如果人已经停下，沙沙声还稳稳地响着，就值得先找找房间里有什么一直在转。
+第二次，只关掉桌边的小风扇，手机和椅子都留在原处。把两段停顿连起来听，声音在哪一段轻下去了？如果还是分不清，先别急着开降噪。
+第三次，把手机往自己这边挪近一掌，朝嘴角稍微偏一点，再念一遍。回放前把三段人声调到差不多响，特别听听“白”和“本”开头有没有扑的一声。
+最后选一段你愿意一直听下去的，把手机的位置用一小截胶带标出来。明天接着录下一段时，那截胶带能省下重新试三遍的工夫。`,
+  },
+  {
+    title: "读到一半换手机，书签该落在哪",
+    text: `设想你在地铁上读一篇长访谈，读到摄影师讲第一份工作的地方，刚好到站。晚上换一部手机接着看，屏幕上显示阅读进度百分之六十，可眼前这一段，你明明已经看过了。
+问题可能出在这个百分数上。两部手机一宽一窄，同样一句话，在一块屏幕上占两行，换一块可能要占四行。访谈前面还有张通栏照片，屏幕一窄，照片反而变矮了。这么一来，直接跳到页面高度的六成，就可能落在另一段。
+要是让你设计这个书签，可以试试记住读者停下时，屏幕上方露出的是哪一段，再记下那一段开头的几个字。下次打开时，先找这段文字，再按新屏幕的宽度把它排出来。
+现在请朋友做一次小改动，在访谈开头补一张老照片，再把两处回答的第一句都改成“我记得那天”。你手里的书签还能找到原处吗？这时，给每段文字一个固定编号就派上了用场。照片多占了半屏，两句话也长得一模一样，但书签记得读者停在哪一段。
+还有个小麻烦：如果编辑恰好删掉了那一段呢？这时可以退回到前一个还在的小标题，让读者从熟悉的地方往下找。
+最后，把一部手机的字调到最大，另一部调到最小，在两边各打开一次书签。请两个人分别念出屏幕上的第一句话。听到他们同时念出摄影师的那句回答，这次测试才算过关。`,
+  },
+];
 function fresh(title) {
   const host =
     findAsset("demo-plate") || session.assets.find((a) => a.role === "host");
+  const sample = session.engine.tts ? longScripts[0] : {title: "三步制作数字人口播", text: session.demoText};
   return {
     id: crypto.randomUUID(),
-    title: title || "三步制作数字人口播",
+    title: title || sample.title,
     hosts: host ? [host.id] : [],
-    text: session.demoText,
-    voice: defaultVoice(session.demoText),
+    text: sample.text,
+    voice: defaultVoice(sample.text),
     aspect: "16:9",
     style: "editorial",
     subtitles: true,
@@ -249,7 +284,7 @@ function fresh(title) {
     job: null,
   };
 }
-function scriptSamples() {
+function shortScripts() {
   return {
     三步制作数字人口播: session.demoText,
     自我介绍: "大家好，我是 Gerry。\n我平时写程序，也喜欢拍照。\n今天用一张海边的照片，跟你打个招呼。",
@@ -990,8 +1025,9 @@ function inspector() {
   if (step === 2) {
     body =
       '<label class="field"><span>测试文案</span><select id="scriptSample"><option value="" disabled selected>选择一篇填入口播文案</option>' +
-      Object.entries(scriptSamples()).map(([name, text]) => opt(text, name, draft.text)).join("") +
-      '</select></label><label class="field"><span>口播文案</span><textarea id="script" maxlength="1500" placeholder="输入文案，按句号或换行分句。">' +
+      '<optgroup label="长篇口播">' + longScripts.map(s => opt(s.text, s.title, draft.text)).join("") +
+      '</optgroup><optgroup label="快速测试">' + Object.entries(shortScripts()).map(([name, text]) => opt(text, name, draft.text)).join("") +
+      '</optgroup></select></label><label class="field"><span>口播文案</span><textarea id="script" maxlength="1500" placeholder="输入文案，按句号或换行分句。">' +
       esc(draft.text) +
       '</textarea><small class="count" id="count">' +
       draft.text.length +
