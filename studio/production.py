@@ -47,6 +47,9 @@ def plan(config):
     aspect, style = config.get("aspect"), config.get("style")
     if aspect not in SIZES or style not in STYLES:
         raise ValueError("无效的画幅或版式")
+    framing = config.get("framing", "cover")
+    if framing not in ("cover", "contain"):
+        raise ValueError("无效的全屏镜头取景方式")
     ids = config.get("hosts", [])
     if not isinstance(ids, list) or len(ids) > 30:
         raise ValueError("母片选择无效")
@@ -120,6 +123,7 @@ def plan(config):
     return dict(
         title=str(config.get("title", "未命名口播"))[:80],
         aspect=aspect,
+        framing=framing,
         style=style,
         voice=vid,
         frames=math.ceil(voice["duration"] * FPS - 1e-8),
@@ -226,7 +230,7 @@ def encoder(path, size, *extra):
             raise ValueError("FFmpeg 编码失败")
 
 
-def fit(frame, w, h, cover=True):
+def fit(frame, w, h, cover=True, vertical_anchor=0.12):
     fh, fw = frame.shape[:2]
     scale = (max if cover else min)(w / fw, h / fh)
     ww, hh = max(1, round(fw * scale)), max(1, round(fh * scale))
@@ -234,25 +238,26 @@ def fit(frame, w, h, cover=True):
         frame, (ww, hh), interpolation=cv.INTER_AREA if scale < 1 else cv.INTER_CUBIC
     )
     if cover:
-        x, y = (ww - w) // 2, max(0, round((hh - h) * 0.12))
+        x, y = (ww - w) // 2, max(0, round((hh - h) * vertical_anchor))
         return image[y : y + h, x : x + w]
     return image
 
 
-def compose(frame, layout, size, subtitles=False):
+def compose(frame, layout, size, subtitles=False, framing="cover"):
     w, h = size
     canvas = np.full((h, w, 3), (33, 33, 28), np.uint8)
     if layout == "card" or frame is None:
         return canvas
     if layout in ("full", "insert"):
-        if subtitles:
-            # Keep the original framing and aspect ratio inside the picture area.
-            picture_h = h - CAPTION_BAND
-            picture_w = round(w * picture_h / h)
-            left = (w - picture_w) // 2
-            canvas[:picture_h, left : left + picture_w] = fit(frame, picture_w, picture_h)
-            return canvas
-        return fit(frame, w, h)
+        picture_h = h - CAPTION_BAND if subtitles else h
+        picture_w = round(w * picture_h / h)
+        image = fit(
+            frame, picture_w, picture_h, cover=framing == "cover", vertical_anchor=0.5
+        )
+        ih, iw = image.shape[:2]
+        x, y = (w - iw) // 2, (picture_h - ih) // 2
+        canvas[y : y + ih, x : x + iw] = image
+        return canvas
     if layout == "split":
         if w > h:
             cw = round(w * SPLIT_FRACTION)
@@ -459,7 +464,10 @@ def render(tl, folder, notify):
                     )
                 for _ in range(n):
                     f = source.next() if source else None
-                    sink.write(compose(f, row["layout"], size, tl["subtitles"]).tobytes())
+                    frame = compose(
+                        f, row["layout"], size, tl["subtitles"], tl.get("framing", "cover")
+                    )
+                    sink.write(frame.tobytes())
             finally:
                 if source:
                     source.close()

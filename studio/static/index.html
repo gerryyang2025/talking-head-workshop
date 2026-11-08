@@ -55,18 +55,21 @@
                 <div class="panelhead">
                   <h2><i data-icon="screen"></i>画面监看</h2>
                   <div class="segmented" id="monitorTabs">
-                    <button data-mode="source" class="chosen">母片</button
-                    ><button data-mode="result">成片</button>
+                    <button data-mode="source">母片</button>
+                    <button data-mode="framing">全屏取景</button>
+                    <button data-mode="result">成片</button>
                   </div>
                 </div>
-                <div class="screen" id="screen">
-                  <video id="video" playsinline preload="metadata"></video
-                  ><img id="still" alt="人物母片" hidden />
-                  <div class="screenempty" id="empty" hidden></div>
-                  <div class="framecorners" hidden id="guides">
-                    <i></i><i></i><i></i><i></i>
+                <div class="monitor-stage" id="monitorStage">
+                  <div class="screen" id="screen">
+                    <video id="video" playsinline preload="metadata"></video>
+                    <img id="still" alt="人物母片" hidden />
+                    <div class="screenempty" id="empty" hidden></div>
+                    <div class="framecorners" hidden id="guides">
+                      <i></i><i></i><i></i><i></i>
+                    </div>
+                    <div class="monitorTag" id="screenTag">SOURCE</div>
                   </div>
-                  <div class="monitorTag" id="screenTag">SOURCE</div>
                 </div>
                 <div class="transport">
                   <button class="iconBtn play" id="play" aria-label="播放">

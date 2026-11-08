@@ -90,7 +90,7 @@ let session,
   draft,
   view = "work",
   step = 2,
-  mode = "source",
+  mode = "framing",
   activeAsset,
   busy = false,
   pollTimer,
@@ -246,11 +246,41 @@ function nav() {
   $("#work").hidden = view !== "work";
   $("#other").hidden = view === "work";
 }
+function updateMonitorFrame() {
+  const result = mode === "result";
+  const aspect = (result ? current()?.aspect : draft.aspect) || "16:9";
+  const screen = $("#screen");
+  screen.dataset.aspect = aspect;
+  screen.dataset.mode = mode;
+  screen.dataset.fit = draft.framing || "cover";
+  if (mode === "framing") {
+    const height = session.exportSizes[aspect][1];
+    const scale = draft.subtitles ? (height - session.captionBand) / height : 1;
+    screen.style.setProperty("--picture-scale", scale * 100 + "%");
+  }
+  $("#screenTag").textContent = mode === "source"
+    ? "SOURCE  /  母片原貌"
+    : (result ? "PROGRAM  /  成片" : "全屏取景") + " · " + aspect;
+  for (const b of document.querySelectorAll("button[data-mode]")) {
+    b.classList.toggle("chosen", b.dataset.mode === mode);
+    b.setAttribute("aria-pressed", b.dataset.mode === mode);
+    if (b.dataset.mode === "result") b.disabled = current()?.status !== "done";
+  }
+}
+function showMaterialMode(next) {
+  const wasResult = mode === "result";
+  mode = next;
+  if (wasResult) {
+    prepMonitor();
+    drawTracks();
+  } else {
+    updateMonitorFrame();
+  }
+}
 function prepMonitor() {
   const v = $("#video"),
     im = $("#still"),
-    empty = $("#empty"),
-    screen = $("#screen");
+    empty = $("#empty");
   v.pause();
   stopStill();
   stillClock = 0;
@@ -281,15 +311,7 @@ function prepMonitor() {
     v.load();
     if (imgSrc) im.src = imgSrc;
   }
-  $("#screenTag").textContent = result ? "PROGRAM  /  成片" : "SOURCE  /  母片";
-  screen.classList.toggle(
-    "vertical",
-    result ? j.aspect === "9:16" : draft.aspect === "9:16",
-  );
-  for (const b of document.querySelectorAll("[data-mode]")) {
-    b.classList.toggle("chosen", b.dataset.mode === mode);
-    if (b.dataset.mode === "result") b.disabled = !ready;
-  }
+  updateMonitorFrame();
   updateClock();
 }
 function duration() {
@@ -320,6 +342,8 @@ function seek(t) {
 function setStep(i) {
   step = i;
   view = "work";
+  if (i === 2 || i === 4) showMaterialMode("framing");
+  else if (i < 2) showMaterialMode("source");
   nav();
   inspector();
   drawTracks();
@@ -438,6 +462,8 @@ function aspectButtons() {
         (a, i) =>
           '<button class="outline ' +
           (draft.aspect === a ? "selected" : "") +
+          '" aria-pressed="' +
+          (draft.aspect === a) +
           '" data-aspect="' +
           a +
           '">' +
@@ -700,6 +726,10 @@ function inspector() {
       }[draft.style] +
       "</p>" +
       aspectButtons() +
+      '<label class="field"><span>全屏镜头取景</span><select id="framing">' +
+      opt("cover", "铺满画幅（居中裁切）", draft.framing || "cover") +
+      opt("contain", "保留全貌（等比留边）", draft.framing || "cover") +
+      '</select></label>' +
       '<label class="reviewline"><input id="subs" type="checkbox" ' +
       (draft.subtitles ? "checked" : "") +
       '> 在主讲与补充画面下方显示字幕</label><hr class="splitline"><label class="field"><span>补充画面</span><select id="inserts">' +
@@ -913,7 +943,6 @@ async function use(a) {
     setStep(4);
   }
   save();
-  mode = "source";
   prepMonitor();
   drawTracks();
 }
@@ -966,18 +995,18 @@ document.addEventListener(
     if (b.dataset.mode) {
       if (b.dataset.mode === "result" && current())
         await openFilm(current().id, false);
-      else {
-        mode = "source";
-        prepMonitor();
-        drawTracks();
-      }
+      else showMaterialMode(b.dataset.mode);
       return;
     }
     if (b.dataset.aspect) {
       draft.aspect = b.dataset.aspect;
       save();
-      inspector();
-      prepMonitor();
+      showMaterialMode("framing");
+      for (const button of document.querySelectorAll("button[data-aspect]")) {
+        const selected = button.dataset.aspect === draft.aspect;
+        button.classList.toggle("selected", selected);
+        button.setAttribute("aria-pressed", selected);
+      }
       return;
     }
     if (b.dataset.jump !== undefined) {
@@ -1022,7 +1051,7 @@ document.addEventListener(
         break;
       case "expand":
         if (document.fullscreenElement) await document.exitFullscreen();
-        else await $("#screen").requestFullscreen();
+        else await $("#monitorStage").requestFullscreen();
         break;
       case "guideline":
         $("#guides").hidden = !$("#guides").hidden;
@@ -1217,6 +1246,12 @@ document.addEventListener(
       case "subs":
         draft.subtitles = el.checked;
         save();
+        showMaterialMode("framing");
+        break;
+      case "framing":
+        draft.framing = el.value;
+        save();
+        showMaterialMode("framing");
         break;
       case "shift":
         draft.shift = Number(el.value);

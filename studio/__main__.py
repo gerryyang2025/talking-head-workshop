@@ -25,7 +25,7 @@ from .media import (
     save_asset,
     token,
 )
-from .production import plan, render
+from .production import CAPTION_BAND, SIZES, plan, render
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.config.update(MAX_CONTENT_LENGTH=160 * 1024 * 1024)
@@ -106,7 +106,12 @@ def session():
             for r in con.execute("SELECT info FROM assets ORDER BY rowid")
         ]
     return jsonify(
-        assets=assets, jobs=all_jobs(), engine=dependencies(), demoText=media.DEMO_TEXT
+        assets=assets,
+        jobs=all_jobs(),
+        engine=dependencies(),
+        demoText=media.DEMO_TEXT,
+        exportSizes=SIZES,
+        captionBand=CAPTION_BAND,
     )
 
 

@@ -407,8 +407,17 @@ main {
   color: #e8ede3;
   background: #343c32;
 }
+.monitor-stage {
+  display: grid;
+  place-items: center;
+  container-type: size;
+  aspect-ratio: 16 / 9;
+  background: #292e2a;
+}
 .screen {
-  aspect-ratio: 16/9;
+  --ratio: calc(16 / 9);
+  width: min(100cqw, calc(100cqh * var(--ratio)));
+  aspect-ratio: var(--ratio);
   position: relative;
   background: repeating-linear-gradient(
     45deg,
@@ -419,18 +428,38 @@ main {
   );
   overflow: hidden;
 }
-.screen video,
-.screen img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-  object-position: center 12%;
+.screen[data-aspect="9:16"] {
+  --ratio: calc(9 / 16);
 }
-.screen.vertical video,
-.screen.vertical img {
+.screen video,
+.screen img,
+.assetcard img,
+.assetrow > img {
+  display: block;
   object-fit: contain;
   background: #111512;
+}
+.screen video,
+.screen img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.screen[data-mode="framing"] {
+  background: #1c2121;
+}
+.screen[data-mode="framing"] :is(video, img) {
+  inset: 0 auto auto 50%;
+  transform: translateX(-50%);
+  width: var(--picture-scale);
+  height: var(--picture-scale);
+  background: transparent;
+  object-fit: cover;
+  object-position: center;
+}
+.screen[data-mode="framing"][data-fit="contain"] :is(video, img) {
+  object-fit: contain;
 }
 .screenempty {
   position: absolute;
@@ -660,7 +689,6 @@ dialog input {
 .assetrow > img {
   width: 45px;
   height: 45px;
-  object-fit: cover;
   border-radius: 5px;
 }
 .assetrow > div {
@@ -748,8 +776,6 @@ dialog input {
 .audioart {
   width: 100%;
   height: 145px;
-  object-fit: cover;
-  object-position: 50% 35%;
 }
 .audioart {
   display: grid;
@@ -1003,6 +1029,9 @@ dialog h3 {
   }
 }
 @media (max-width: 690px) {
+  .monitor-stage:has(.screen[data-aspect="9:16"]) {
+    aspect-ratio: 1;
+  }
   .desk {
     display: flex;
     flex-direction: column;
