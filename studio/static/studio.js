@@ -686,7 +686,7 @@ function inspector() {
       aspectButtons() +
       '<label class="reviewline"><input id="subs" type="checkbox" ' +
       (draft.subtitles ? "checked" : "") +
-      '> 主讲与补充画面叠加字幕</label><hr class="splitline"><label class="field"><span>补充画面</span><select id="inserts">' +
+      '> 在主讲与补充画面下方显示字幕</label><hr class="splitline"><label class="field"><span>补充画面</span><select id="inserts">' +
       opt("", "暂未选用", draft.insert) +
       session.assets
         .filter((a) => a.role === "insert")

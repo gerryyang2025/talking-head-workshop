@@ -2,6 +2,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import shutil
 import sqlite3
 import subprocess
@@ -269,13 +270,27 @@ def clean_shots(a, rows):
     return result
 
 
+def english_sentences(text):
+    """Split at sentence-final periods, preserving decimals, domains and initials."""
+    start = 0
+    for match in re.finditer(r'\.[”"’)]*(?=\s|$)', text):
+        prefix = text[start : match.start() + 1]
+        if re.search(r"\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|e\.g|i\.e|[A-Z])\.$", prefix, re.I):
+            continue
+        yield text[start : match.end()].strip()
+        start = match.end()
+    if text[start:].strip():
+        yield text[start:].strip()
+
+
 def sentences(text):
     if not isinstance(text, str) or not text.strip() or len(text) > 1500:
         raise ValueError("请填写 1 至 1500 字的文案")
     _, beats, _ = screenplay.parse(text.strip())
-    if not beats or len(beats) > 60:
+    lines = [sentence for beat in beats for sentence in english_sentences(beat["text"])]
+    if not lines or len(lines) > 60:
         raise ValueError("请使用 1 至 60 个句段")
-    return [b["text"] for b in beats]
+    return lines
 
 
 def read_pcm(path):

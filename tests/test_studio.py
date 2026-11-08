@@ -89,3 +89,32 @@ class StudioWorkflow(unittest.TestCase):
         self.assertEqual(clean[0]["emotion"], "平静")
         with self.assertRaisesRegex(ValueError, "出点"):
             self.media.clean_shots(a, [{"start": 2, "end": 1}])
+
+    def test_paragraph_from_an_existing_voice_is_paged_inside_its_timing(self):
+        sentence = "Dr. Wu uses version 1.5 and writes about it on example.com."
+        text = " ".join([sentence] * 5)
+        self.assertEqual(self.media.sentences(text), [sentence] * 5)
+        row = dict(text=text, first=13, stop=255)
+        pages = list(self.production.caption_cues(row, 28))
+        self.assertGreater(len(pages), 1)
+        self.assertEqual((pages[0][0], pages[-1][1]), (13, 255))
+        self.assertEqual(" ".join(line for _, _, lines in pages for line in lines), text)
+        for i, (start, stop, lines) in enumerate(pages):
+            self.assertLess(start, stop)
+            self.assertLessEqual(len(lines), 2)
+            if i:
+                self.assertEqual(start, pages[i - 1][1])
+
+    def test_caption_area_contains_no_picture_in_either_aspect(self):
+        import numpy as np
+
+        p = self.production
+        image = np.full((120, 100, 3), 240, dtype=np.uint8)
+        for size in p.SIZES.values():
+            for layout in ("full", "insert", "split", "pip"):
+                with self.subTest(size=size, layout=layout):
+                    frame = p.compose(image, layout, size, subtitles=True)
+                    left, top, right, bottom = p.caption_box(layout, *size)
+                    self.assertTrue(np.all(frame[top:bottom, left:right] == (33, 33, 28)))
+                    self.assertTrue(np.any(frame == 240))
+            self.assertTrue(np.all(p.compose(image, "full", size, subtitles=False) == 240))

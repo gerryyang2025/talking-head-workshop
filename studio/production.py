@@ -15,6 +15,7 @@ from .media import (
     LAYOUTS,
     asset,
     db,
+    english_sentences,
     ff,
     inspect_file,
     number,
@@ -28,6 +29,8 @@ STYLES = {
     "lecture": ["full", "pip", "split"],
 }
 SIZES = {"16:9": (1280, 720), "9:16": (720, 1280)}
+CAPTION_BAND = 104  # pixels at both supported export resolutions
+SPLIT_FRACTION = 0.54
 
 
 def plan(config):
@@ -236,19 +239,26 @@ def fit(frame, w, h, cover=True):
     return image
 
 
-def compose(frame, layout, size):
+def compose(frame, layout, size, subtitles=False):
     w, h = size
     canvas = np.full((h, w, 3), (33, 33, 28), np.uint8)
     if layout == "card" or frame is None:
         return canvas
     if layout in ("full", "insert"):
+        if subtitles:
+            # Keep the original framing and aspect ratio inside the picture area.
+            picture_h = h - CAPTION_BAND
+            picture_w = round(w * picture_h / h)
+            left = (w - picture_w) // 2
+            canvas[:picture_h, left : left + picture_w] = fit(frame, picture_w, picture_h)
+            return canvas
         return fit(frame, w, h)
     if layout == "split":
         if w > h:
-            cw = round(w * 0.54)
+            cw = round(w * SPLIT_FRACTION)
             canvas[:, :cw] = fit(frame, cw, h)
         else:
-            ch = round(h * 0.54)
+            ch = round(h * SPLIT_FRACTION)
             canvas[:ch] = fit(frame, w, ch)
     else:
         radius = round(min(w, h) * 0.20)
@@ -266,9 +276,39 @@ def ass_time(frame):
     return f"{cs // 360000}:{cs // 6000 % 60:02}:{cs // 100 % 60:02}.{cs % 100:02}"
 
 
-def safe_text(s, width):
-    s = s.replace("\\", "＼").replace("{", "｛").replace("}", "｝").replace("\n", " ")
-    return r"\N".join(textwrap.wrap(s, width=width, break_on_hyphens=False))
+def caption_box(layout, w, h):
+    pad = round(w * 0.05)
+    if layout in ("full", "insert"):
+        return pad, h - CAPTION_BAND, w - pad, h
+    if layout == "split":
+        if w > h:
+            return round(w * SPLIT_FRACTION) + pad, 0, w - pad, h
+        return pad, round(h * SPLIT_FRACTION), w - pad, h
+    if layout == "pip":
+        circle_bottom = round(h * 0.34) + round(min(w, h) * 0.20)
+        return pad, circle_bottom + 12, w - pad, h - 24
+    return pad, 0, w - pad, h
+
+
+def caption_cues(row, columns):
+    # Older voice files can contain an entire paragraph in a single timed row.
+    pages = []
+    for sentence in english_sentences(row["text"]):
+        lines = textwrap.wrap(sentence, width=columns, break_on_hyphens=False)
+        pages.extend(lines[i : i + 2] for i in range(0, len(lines), 2))
+    frames = row["stop"] - row["first"]
+    if len(pages) > frames:
+        raise ValueError("字幕页数超过句段帧数，请延长该句或缩短文案。")
+    weights = [sum(map(len, page)) for page in pages]
+    total = sum(weights)
+    cursor = row["first"]
+    used = 0
+    for i, (page, weight) in enumerate(zip(pages, weights), 1):
+        used += weight
+        # Assign at least one frame per page, with no gaps or overlaps.
+        end = row["first"] + i + round((frames - len(pages)) * used / total)
+        yield cursor, end, page
+        cursor = end
 
 
 def write_ass(tl, path):
@@ -277,7 +317,7 @@ def write_ass(tl, path):
 ScriptType: v4.00+
 PlayResX: {w}
 PlayResY: {h}
-WrapStyle: 0
+WrapStyle: 2
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Main,Heiti SC,38,&H00FFFFFF,&H00FFFFFF,&H00201C18,&H50201C18,0,0,0,0,100,100,0,0,1,2,1,2,26,26,40,1
@@ -286,27 +326,30 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     events = []
     for row in tl["rows"]:
-
-        def add(text):
-            events.append(
-                f"Dialogue: 0,{ass_time(row['first'])},{ass_time(row['stop'])},Main,,0,0,0,,{text}"
-            )
-
         layout = row["layout"]
-        if layout in ("split", "card", "pip"):
-            x, y = (
-                ((0.765, 0.48) if w > h else (0.50, 0.73))
-                if layout == "split"
-                else ((0.5, 0.64) if layout == "pip" else (0.5, 0.5))
+        caption = layout in ("full", "insert")
+        if caption and not tl["subtitles"]:
+            continue
+        left, top, right, bottom = caption_box(layout, w, h)
+        font = 32 if caption else 40
+        # Budget one em per character so CJK and mixed-script lines also fit.
+        columns = min(48, (right - left - 16) // font)
+        x, y = (left + right) // 2, (top + bottom) // 2
+        position = rf"\an5\fs{font}\pos({x},{y})\clip({left},{top},{right},{bottom})"
+        for start, stop, lines in caption_cues(row, columns):
+            fade = ""
+            if not caption:
+                half_ms = (stop - start) * 500 // FPS
+                fade_in = min(160, half_ms) if start == row["first"] else 0
+                fade_out = min(110, half_ms) if stop == row["stop"] else 0
+                fade = rf"\fad({fade_in},{fade_out})"
+            text = r"\N".join(
+                line.replace("\\", "＼").replace("{", "｛").replace("}", "｝")
+                for line in lines
             )
-            add(
-                r"{\an5\fad(160,110)\pos("
-                + f"{int(w * x)},{int(h * y)}"
-                + r")\fs44}"
-                + safe_text(row["text"], 10 if layout == "split" else 14)
+            events.append(
+                f"Dialogue: 0,{ass_time(start)},{ass_time(stop)},Main,,0,0,0,,{{{position}{fade}}}{text}"
             )
-        elif tl["subtitles"]:
-            add(safe_text(row["text"], 18 if w > h else 13))
     path.write_text(header + "\n".join(events) + "\n")
 
 
@@ -315,6 +358,8 @@ def render(tl, folder, notify):
     cache = STORE / "synced"
     cache.mkdir(exist_ok=True)
     voice = STORE / "voices" / tl["voice"] / "voice.wav"
+    ass = folder / "captions.ass"
+    write_ass(tl, ass)
     parts = []
     engine = None
     inferred = cached = 0
@@ -378,8 +423,6 @@ def render(tl, folder, notify):
         parts.append(path)
         inferred += count
     notify(76, "正在组合镜头、动态图文和字幕")
-    ass = folder / "captions.ass"
-    write_ass(tl, ass)
     output = folder / "film.mp4"
     from istream.render import _esc
 
@@ -416,7 +459,7 @@ def render(tl, folder, notify):
                     )
                 for _ in range(n):
                     f = source.next() if source else None
-                    sink.write(compose(f, row["layout"], size).tobytes())
+                    sink.write(compose(f, row["layout"], size, tl["subtitles"]).tobytes())
             finally:
                 if source:
                     source.close()
