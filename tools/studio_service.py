@@ -109,6 +109,9 @@ def stop(pid):
 def main():
     parser = argparse.ArgumentParser(prog="./optools.sh", description="管理口播工坊的本地服务")
     commands = parser.add_subparsers(dest="action", required=True)
+    init_help = "安装工作台运行依赖及全部口型、个人音色模型"
+    init = commands.add_parser("init", help=init_help, description=init_help)
+    init.add_argument("--web-only", action="store_true", help="仅配置网页运行环境，跳过本地推理引擎和模型")
     commands.add_parser("start", help="后台启动")
     commands.add_parser("stop", help="停止服务")
     commands.add_parser("restart", help="重启服务")
@@ -123,10 +126,16 @@ def main():
             return 0
         os.execlp("tail", "tail", "-n", "80", *(["-f"] if args.follow else []), str(LOG))
 
-    STORE.mkdir(parents=True, exist_ok=True)
-    # Serialize lifecycle commands separately from the lock owned by the web server.
-    with (STORE / "optools.lock").open("a") as operations:
+    # The runtime is shared across all data stores in this checkout.
+    lock_dir = ROOT / "build/studio" if args.action == "init" else STORE
+    lock_dir.mkdir(parents=True, exist_ok=True)
+    with (lock_dir / "optools.lock").open("a") as operations:
         fcntl.flock(operations, fcntl.LOCK_EX)
+        if args.action == "init":
+            from studio_setup import initialize
+
+            initialize(web_only=args.web_only)
+            return 0
         service = current()
         if args.action == "status" or (args.action == "start" and service):
             if not service:
@@ -140,7 +149,7 @@ def main():
 
         if args.action in ("start", "restart"):
             if not os.access(PYTHON, os.X_OK):
-                raise RuntimeError(f"缺少工程虚拟环境 {PYTHON}，请先按 README 配置。")
+                raise RuntimeError(f"缺少工程虚拟环境 {PYTHON}，请先运行 ./optools.sh init。")
             port = int(os.environ.get("KOUBO_STUDIO_PORT", service[1] if service else DEFAULT_PORT))
             if not 1 <= port <= 65535:
                 raise ValueError("KOUBO_STUDIO_PORT 须为 1 至 65535 的整数。")

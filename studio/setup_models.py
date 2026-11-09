@@ -1,5 +1,6 @@
-"""Populate the optional Apple Silicon inference cache from pinned or checksummed public weights."""
+"""Download and verify the local lip-sync and personal voice models."""
 
+import argparse
 import hashlib
 import os
 import shutil
@@ -36,6 +37,24 @@ WEIGHTS = {
     ),
 }
 
+VOICE_REVISION = "0d6bb6fe33f92d47a507e23b9148940e8366ab5b"
+VOICE_FOLDER = "qwen3-tts-0.6b-base-4bit"
+VOICE_URL = f"https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-0.6B-Base-4bit/resolve/{VOICE_REVISION}/"
+VOICE_HASHES = {
+    "config.json": "ba59b8d2d47746e844f6a96e2232a969d8d89dcc34450fbad94d912bb9ee2e27",
+    "generation_config.json": "f1b90b4513f3b34c62851049e2492d7b4c5940daf1276f89c82b8ef04127f3aa",
+    "merges.txt": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3",
+    "model.safetensors": "07dcb37b323614af64624af687876edd5c9a8b442da2a7b549d62f9ba2770ec1",
+    "model.safetensors.index.json": "86f65f69204f3fb9dc5ec22ed94da4865594c901b45d2508c60a5931d12787d4",
+    "preprocessor_config.json": "efdde1022ea9d76928bf7a9cd53139138f5ba2e466e837f08f6105ab1af1c119",
+    "speech_tokenizer/config.json": "ee65bb901c876664ab8707c487157aa1a6ee57c65969b28fb5ec9dc211e68167",
+    "speech_tokenizer/configuration.json": "6bc26d64eb5024b4d1dab5a52371958b429256d6c9d59787f1f5294a54e0cebd",
+    "speech_tokenizer/model.safetensors": "836b7b357f5ea43e889936a3709af68dfe3751881acefe4ecf0dbd30ba571258",
+    "speech_tokenizer/preprocessor_config.json": "fcb3805e597e786d4067706e602f6688524640f8d3396790e2e09b5942fcbdfb",
+    "tokenizer_config.json": "dc3c31c3bdaedd5016382bb3cbe07323026775ad51f5a4fb564505992ae4a670",
+    "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+}
+
 
 def checksum(path):
     digest = hashlib.sha256()
@@ -46,7 +65,11 @@ def checksum(path):
 
 
 def main():
-    for name, (url, expected) in WEIGHTS.items():
+    weights = {
+        **WEIGHTS,
+        **{f"{VOICE_FOLDER}/{name}": (VOICE_URL + name, digest) for name, digest in VOICE_HASHES.items()},
+    }
+    for name, (url, expected) in weights.items():
         path = BASE / name
         if path.is_file() and checksum(path) == expected:
             print("已校验", name)
@@ -66,4 +89,5 @@ def main():
 
 
 if __name__ == "__main__":
+    argparse.ArgumentParser(description=__doc__).parse_args()
     main()

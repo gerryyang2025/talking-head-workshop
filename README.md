@@ -8,6 +8,8 @@
 
 ## 快速开始
 
+第一次在本机启动，运行 `./optools.sh init` 安装工作台依赖和全部本地模型。[首次安装](#首次安装)
+
 **已经配置过这台 Mac**：在工程目录运行 `./optools.sh start`，打开[首页](http://127.0.0.1:8765/)了解功能，或收藏[制作工作台](http://127.0.0.1:8765/studio)继续编辑。两个地址都由本机服务提供。服务启动后可以关闭终端。
 
 素材库、导出记录和六个制作步骤各有独立地址。可以收藏常用页面，也可以用浏览器前进、后退切换。打开书签时会使用本浏览器的当前项目。[素材库](http://127.0.0.1:8765/studio/library) · [导出记录](http://127.0.0.1:8765/studio/exports) · [文案配音](http://127.0.0.1:8765/studio/steps/voice)
@@ -34,7 +36,7 @@
 | 已有资源 | 选择方式 | 时间线依据 |
 | --- | --- | --- |
 | 只有文案 | 在「文案配音」选 macOS 已安装的系统音色；可用短句试听比较。 | 根据每句实际合成的音频定时。 |
-| 自己的音色样本 | 安装可选的 Qwen3-TTS 后，在「素材库 → 添加个人音色」保存参考录音和逐字稿。之后直接在「文案配音」选这个音色读新稿。 | 模型在本机逐句合成，根据新配音的实际时长定时。 |
+| 自己的音色样本 | 在「素材库 → 添加个人音色」保存参考录音和逐字稿。之后直接在「文案配音」选这个音色读新稿。 | 模型在本机逐句合成，根据新配音的实际时长定时。 |
 | 录好了这篇台词 | 导入整篇音频，在素材库点「用作配音」，并填写对应台词。 | 按录音时长和台词字数初排，可在「选镜与口型」校正句段边界。 |
 
 个人音色建议使用 10～20 秒清晰的单人录音（WAV、M4A、MP3、AIFF 或 AAC）。逐字稿填写**参考录音里实际说的话**，可以从 UTF-8 TXT 导入。在「核对参考录音与逐字稿」可回听、更正后重新生成。
@@ -49,28 +51,18 @@
 
 ### 首次安装
 
-网页的本地推理路径面向 **Apple Silicon Mac**。以下以 Python 3.12 为例。先安装带 `libass` 的 FFmpeg、FFprobe，并确保系统有中文字体。在工程根目录执行：
+在 **Apple Silicon Mac** 上装好 Homebrew，然后在工程根目录运行以下命令。首次初始化需要联网。
 
 ```bash
-brew install python@3.12 ffmpeg-full
-export PATH="$(brew --prefix ffmpeg-full)/bin:$PATH"
-python3.12 -m venv .venv
-.venv/bin/python -m pip install -r studio/requirements.txt
-.venv/bin/python -m studio.setup_models
+./optools.sh init
 ./optools.sh start
 ```
 
-以后从新终端启动，也要让 `ffmpeg-full/bin` 在 `PATH` 中优先于其他 FFmpeg。口型及定位模型约 2 GB。打开工作台的「本地模型与引擎」，可查看每项依赖的用途和就绪状态：MuseTalk 生成口型，Whisper 编码器提取音频特征，YuNet 和 2DFAN4 定位面部；macOS 系统语音和 FFmpeg / FFprobe 分别负责配音与音视频处理。
+`init` 为工作台和个人音色各建一套 Python 3.12 环境，安装第三方库，配置 FFmpeg、FFprobe 并检查中文字体。它会下载并校验约 3.7 GB 的模型，包括 MuseTalk、Whisper 音频编码器、YuNet、2DFAN4 和 Qwen3-TTS。重复执行会复用已校验的模型，补齐缺失或损坏的文件。
 
-**可选：启用个人音色**。系统音色和整篇录音不需要这一步。个人音色通过独立环境中的 MLX-Audio 运行，Qwen3-TTS 0.6B Base 四位模型文件约 1.7 GB：
+启动后，在「本地模型与引擎」查看就绪状态，在「文案配音 → 配音来源」选择系统音色或已保存的个人音色。首次添加自己的音色，请到「素材库 → 添加个人音色」保存参考录音和逐字稿。[打开文案配音](http://127.0.0.1:8765/studio/steps/voice)
 
-```bash
-.venv/bin/python -m venv build/voice-env
-build/voice-env/bin/python -m pip install -r studio/voice-requirements.txt
-build/voice-env/bin/hf download mlx-community/Qwen3-TTS-12Hz-0.6B-Base-4bit \
-  --revision 0d6bb6fe33f92d47a507e23b9148940e8366ab5b \
-  --local-dir build/models/qwen3-tts-0.6b-base-4bit
-```
+仅需浏览网页或管理素材时，可用 `./optools.sh init --web-only` 跳过模型安装。之后运行 `./optools.sh init` 即可补齐。
 
 ### 服务、数据与输出
 

@@ -1123,7 +1123,7 @@ function inspector() {
       '<button class="minor" data-view="library">从素材库选配音</button></div>' +
       (findAsset(draft.voice)?.role === "personal_voice" ? '<p class="hint">' +
         (session.engine.personalVoice ? `Qwen3-TTS 在本机逐句合成，整篇配音最长 ${session.maxNarrationSeconds / 60} 分钟。`
-          : '个人音色引擎尚未就绪，请按 README 的个人音色安装步骤配置。') + '</p>' : '') +
+          : '个人音色引擎尚未就绪，请在工程目录运行 <code>./optools.sh init</code>。') + '</p>' : '') +
       (findAsset(draft.voice)?.role === "personal_voice" ? '<button class="minor" data-edit-reference="' +
         esc(draft.voice) + '">核对参考录音与逐字稿</button>' : '') +
       '<button class="outline wide" id="voiceBtn">' +

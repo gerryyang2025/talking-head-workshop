@@ -7,6 +7,18 @@ import subprocess
 import sys
 
 
+def ffmpeg_errors(binary):
+    errors = []
+    filters = subprocess.run([binary, "-hide_banner", "-filters"], capture_output=True, text=True, check=True).stdout
+    encoders = subprocess.run([binary, "-hide_banner", "-encoders"], capture_output=True, text=True, check=True).stdout
+    for feature in ("drawtext", "subtitles"):
+        if not any(line.split()[1:2] == [feature] for line in filters.splitlines()):
+            errors.append("FFmpeg is missing the " + feature + " filter")
+    if "libx264" not in encoders:
+        errors.append("FFmpeg is missing the libx264 encoder")
+    return errors
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--render", action="store_true", help="also require FFmpeg filters, encoder and CJK font")
@@ -21,13 +33,7 @@ def main():
             if not shutil.which(binary):
                 errors.append(binary + " is not on PATH")
         if shutil.which("ffmpeg"):
-            filters = subprocess.run(["ffmpeg", "-hide_banner", "-filters"], capture_output=True, text=True, check=True).stdout
-            encoders = subprocess.run(["ffmpeg", "-hide_banner", "-encoders"], capture_output=True, text=True, check=True).stdout
-            for feature in ("drawtext", "subtitles"):
-                if not any(line.split()[1:2] == [feature] for line in filters.splitlines()):
-                    errors.append("FFmpeg is missing the " + feature + " filter")
-            if "libx264" not in encoders:
-                errors.append("FFmpeg is missing the libx264 encoder")
+            errors.extend(ffmpeg_errors("ffmpeg"))
         sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
         from istream.render import FONT
         if not FONT:

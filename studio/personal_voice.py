@@ -16,7 +16,7 @@ def synthesize(request, folder):
     model = load_model(request["model"])
     if (model.tokenizer is None or model.speech_tokenizer is None
             or not model.speech_tokenizer.has_encoder or model.speaker_encoder is None):
-        raise ValueError("个人音色模型或语音分词器不完整，请重新运行个人音色安装步骤")
+        raise ValueError("个人音色模型或语音分词器不完整，请在工程目录运行 ./optools.sh init 补齐")
     with wave.open(request["reference"], "rb") as wav:
         if (wav.getnchannels(), wav.getsampwidth(), wav.getframerate()) != (1, 2, model.sample_rate):
             raise ValueError("参考录音格式无效，请重新导入")

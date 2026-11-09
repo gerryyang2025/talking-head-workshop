@@ -15,6 +15,7 @@ from pathlib import Path
 import numpy as np
 
 from istream import script as screenplay, slicer
+from .setup_models import VOICE_FOLDER, VOICE_REVISION
 
 ROOT = Path(__file__).resolve().parents[1]
 STORE = Path(os.environ.get("KOUBO_STUDIO_DATA", ROOT / "build/studio")).resolve()
@@ -27,8 +28,7 @@ os.environ["PATH"] = str(ROOT / ".venv/bin") + os.pathsep + os.environ.get("PATH
 DEMO_TEXT = "把一张照片做成口播视频，要经过三步。\n先确定人物形象，再为文案配音。\n最后，让人物的口型跟上每一个字。"
 LEGACY_VOICE_IDS = {"Reed": "reed", "Tingting": "tingting"}
 VOICE_PYTHON = ROOT / "build/voice-env/bin/python"
-VOICE_MODEL = MODELS / "qwen3-tts-0.6b-base-4bit"
-VOICE_REVISION = "0d6bb6fe33f92d47a507e23b9148940e8366ab5b"
+VOICE_MODEL = MODELS / VOICE_FOLDER
 SPEECH_PAUSE = 0.14
 LAYOUTS = {
     "full": "全屏人物",
@@ -380,7 +380,7 @@ def personal_voice_ready():
 def synthesized_lines(mode, lines, folder, profile):
     if profile is not None:
         if not personal_voice_ready():
-            raise ValueError("本机缺少个人音色引擎或模型，请按 README 的个人音色步骤安装")
+            raise ValueError("本机缺少个人音色引擎或模型，请在工程目录运行 ./optools.sh init")
         request = dict(lines=lines, model=str(VOICE_MODEL), transcript=profile["transcript"],
                        reference=str(Path(profile["path"]).with_name("reference.wav")),
                        maxSeconds=MAX_NARRATION_SECONDS, pause=SPEECH_PAUSE)
