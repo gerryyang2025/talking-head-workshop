@@ -2,7 +2,7 @@
 
 ## 运行依赖
 
-在仓库根目录运行 `./optools.sh init`，即可安装两个 Python 环境、配置媒体工具，并下载和校验全部模型。首次安装需要联网。下列版本来自 2026-11-09 在 macOS 15.5（arm64）上从空目录执行 `init` 的结果。再次安装时，pip 会按项目约束解析版本。[安装流程](tools/studio_setup.py)
+在仓库根目录运行 `./optools.sh init`，即可安装两个 Python 环境、配置媒体工具，并下载和校验全部模型。首次安装需要联网。原有依赖于 2026-11-09 在 macOS 15.5（arm64）上从空目录初始化。SoulX 和 LatentSync 于 2026-11-10 在同一台 Mac 上完成安装验证。再次安装时，pip 会按项目约束解析版本。[安装流程](tools/studio_setup.py)
 
 ### 系统工具
 
@@ -12,12 +12,13 @@
 | Homebrew | 缺少系统工具时用于补装。本机为 7.0.12 | 首次使用可从官网下载 macOS 的 `.pkg` 安装器，安装后用 `brew --version` 确认。[Homebrew 官网](https://brew.sh/) |
 | Python 3.12 | 工作台和个人音色各用一个虚拟环境，本机均为 3.12.13 | `init` 复用已有的 Python 3.12 环境。新机缺少 Python 3.12 时会通过 Homebrew 安装；也可手动执行 `brew install python@3.12`。 |
 | FFmpeg、FFprobe | 转码、探测和导出，本机均为 9.0.2 | `init` 检查已有安装是否支持 `drawtext`、`subtitles` 和 `libx264`，需要时通过 Homebrew 安装。手动执行 `brew install ffmpeg-full` 即可取得两个工具。 |
+| audio.cpp 0.9.4 | SoulX-FlashHead 和 LatentSync 共用的原生 Metal 推理程序 | `init` 下载固定的 [macOS arm64 Metal 发行包](https://github.com/0xShug0/audio.cpp/releases/tag/v0.9.4)，校验归档和程序的 SHA-256，安装到 `build/models/native-lipsync/audio.cpp-0.9.4/audiocpp_cli`。 |
 | 中文字体 | 渲染字幕和图文，本机使用 STHeiti Medium | 优先使用系统已有的中文字体。也可在 macOS「字体册」下载安装中文字体，将 `ISTREAM_FONT` 设为字体文件的绝对路径。 |
 | macOS 系统语音 | 系统音色朗读，使用 `/usr/bin/say` | `say` 随 macOS 提供。更多音色可在「系统设置」中的朗读设置里下载，用 `say -v '?'` 列出可用音色。[Apple 声音下载说明](https://support.apple.com/zh-cn/guide/mac-help/mchlp2290/mac) |
 
 ### 本地模型
 
-首次安装由 `init` 从 Hugging Face 下载 19 个文件（约 3.69 GiB），保存在 `build/models/`。已经建好工作台环境时，可以在仓库根目录用以下命令单独补齐或校验模型。
+首次安装由 `init` 从 Hugging Face 下载 21 个模型文件（约 8.30 GiB），保存在 `build/models/`。已经建好工作台环境时，可以在仓库根目录用以下命令单独补齐或校验模型。
 
 ```sh
 .venv/bin/python -m studio.setup_models
@@ -29,10 +30,16 @@
 | --- | --- | --- | --- |
 | MuseTalk 1.5 FP16 | 根据配音生成嘴型 | [模型目录 · ad54104a](https://huggingface.co/mlx-community/MuseTalk-1.5-fp16/tree/ad54104a0129121fe2ea67471250c0656c985284) | `musetalk-1.5-fp16/` 下的 `config.json`、`unet.safetensors`、`vae.safetensors` |
 | EDTalk 256 | 音频驱动嘴部，ONNX Runtime 在 CPU 推理 | [FaceFusion 转换权重 · 6271ab1c](https://huggingface.co/facefusion/models-3.3.0/blob/6271ab1c4619ceb2e534d65e0ec973f22a9aec38/edtalk_256.onnx) · [EDTalk 原项目](https://github.com/tanshuai0219/EDTalk) | `facefusion/edtalk_256.onnx` |
+| SoulX-FlashHead Lite Q8 | 用人物照片和配音生成整帧动态肖像 | [原项目](https://github.com/Soul-AILab/SoulX-FlashHead) · [GGUF 下载](https://huggingface.co/audio-cpp/SoulX-FlashHead-GGUF/resolve/cc83157045008de647a4ba11ca5ed19e66caa575/SoulX-FlashHead-Lite-Q8_0.gguf) | `native-lipsync/SoulX-FlashHead-Lite-Q8_0.gguf` |
+| LatentSync 1.6 Q8/F16 | 按音频同步视频人物口型，使用原视频姿态 | [原项目](https://github.com/bytedance/LatentSync) · [GGUF 下载](https://huggingface.co/audio-cpp/LatentSync-1.6-GGUF/resolve/937b95aa98518dff8728541a8a38b94985d90dd1/latentsync-1.6-q8_0-f16.gguf) | `native-lipsync/latentsync-1.6-q8_0-f16.gguf` |
 | Whisper 音频编码器 | 为 MuseTalk 提取语音特征 | [下载编码器](https://huggingface.co/mlx-community/MuseTalk-1.5-fp16/resolve/ad54104a0129121fe2ea67471250c0656c985284/whisper_encoder.safetensors) | `musetalk-1.5-fp16/whisper_encoder.safetensors` |
 | YuNet 2023mar | 检测人脸 | [下载 OpenCV 权重](https://huggingface.co/opencv/face_detection_yunet/resolve/main/face_detection_yunet_2023mar.onnx) | `studio/yunet.onnx`（按此文件名保存） |
 | 2DFAN4 | 定位人脸与唇部关键点 | [下载 FaceFusion 权重](https://huggingface.co/facefusion/models-3.0.0/resolve/main/2dfan4.onnx) | `studio/2dfan4.onnx` |
 | Qwen3-TTS 12Hz 0.6B Base 4-bit | 按参考录音和逐字稿合成个人音色 | [模型目录 · 0d6bb6fe](https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-0.6B-Base-4bit/tree/0d6bb6fe33f92d47a507e23b9148940e8366ab5b) | `qwen3-tts-0.6b-base-4bit/`，保留根目录的 8 个模型与配置文件和 `speech_tokenizer/` 下的 4 个文件 |
+
+本机 M1 Pro（32 GB）使用同一段真人视频和 1.92 秒配音，首次导出 48 帧竖版样片，SoulX Lite 用时约 1 分 08 秒，LatentSync 1.6 约 13 分 53 秒。句段缓存命中后可直接复用。
+
+两个 GGUF 包分别包含所需的音频编码器、生成模型及视觉组件。LatentSync 包含 InsightFace 的预训练人脸模型，其条款限非商业研究使用。SoulX Lite 的 LTX VAE 另适用 OpenRAIL-M。[LatentSync 转换包说明](https://huggingface.co/audio-cpp/LatentSync-1.6-GGUF) · [SoulX 权重授权](https://huggingface.co/Soul-AILab/SoulX-FlashHead-1_3B)
 
 <details>
 <summary>手动下载 Qwen3-TTS 时需要的 12 个文件</summary>
@@ -162,11 +169,11 @@ build/voice-env/bin/python -m pip list
 | 服务启停、首次安装、模型就绪状态 | [optools.sh](optools.sh)、[安装流程](tools/studio_setup.py)、[模型清单与校验](studio/setup_models.py) |
 | 素材与声音 | [媒体与配音](studio/media.py) 管理上传、系统音色和逐句时点；[个人音色](studio/personal_voice.py) 在独立 Python 环境运行 Qwen3-TTS。 |
 | 选镜、补充画面和导出 | [制作流程](studio/production.py) 以确认的配音建立时间轴，只对可见的说话片段运行口型，再合成画幅、字幕和音轨。 |
-| 口型与停顿 | [口型引擎](studio/engine.py) 跟踪人脸，MuseTalk 使用 Whisper 特征，[EDTalk](studio/edtalk.py) 使用与转换权重匹配的 80 带梅尔频谱，按预测唇形重映射母片唇纹和可见牙纹。闭唇母片遇到张口音时，会用同一配音额外推理放大的取景，仅补充露齿区域的亮度细节。两者按所选模型独立缓存。[停顿闭唇](studio/mouth_rest.py) 和[镜头衔接](studio/mouth_transition.py) 处理收口及头姿连续性。 |
+| 口型与停顿 | [口型引擎](studio/engine.py) 跟踪人脸，MuseTalk 使用 Whisper 特征，[EDTalk](studio/edtalk.py) 使用与转换权重匹配的 80 带梅尔频谱，按预测唇形重映射母片唇纹和可见牙纹。闭唇母片遇到张口音时，会用同一配音额外推理放大的取景，仅补充露齿区域的亮度细节。[SoulX 和 LatentSync 适配器](studio/native_lipsync.py) 截取当前可见段的配音，按时间线接收 25 FPS 画面。四个模型独立缓存推理结果。[停顿闭唇](studio/mouth_rest.py) 和[镜头衔接](studio/mouth_transition.py) 处理收口及头姿连续性。 |
 
 ## 命令行装配
 
-`python -m istream` 可独立读取标记脚本、素材目录和逐句时间戳，生成时间轴 JSON。[规划器](istream/planner.py) 选镜，[质检](istream/qc.py) 检查重复镜头、人物遮挡等问题，[口型任务](istream/lipsync.py) 按可见时段分配工作，[渲染器](istream/render.py) 装配输出。CLI 的 `passthrough` 用于预览剪辑；要生成真实嘴型可直接用工作台的 MuseTalk 或 EDTalk，或给 CLI 提供真实引擎处理过的片段。[可复跑的示例](DEMO.md)
+`python -m istream` 可独立读取标记脚本、素材目录和逐句时间戳，生成时间轴 JSON。[规划器](istream/planner.py) 选镜，[质检](istream/qc.py) 检查重复镜头、人物遮挡等问题，[口型任务](istream/lipsync.py) 按可见时段分配工作，[渲染器](istream/render.py) 装配输出。CLI 的 `passthrough` 用于预览剪辑；要生成真实嘴型可在工作台选择口型模型，或给 CLI 提供真实引擎处理过的片段。[可复跑的示例](DEMO.md)
 
 ## 提示词、标签和示例的维护位置
 

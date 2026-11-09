@@ -212,9 +212,23 @@ class StudioWorkflow(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "MuseTalk"):
                 self.server.require_lipsync("musetalk")
         self.assertEqual(self.production.selected_model({}), "musetalk")
-        for invalid in (None, [], "unknown"):
+        for invalid in (None, ["musetalk", "edtalk"], "unknown"):
             with self.assertRaisesRegex(ValueError, "口型模型"):
                 self.production.selected_model({"lipModel": invalid})
+
+    def test_native_audio_shift_pads_at_both_master_boundaries(self):
+        import numpy as np
+        from studio.native_lipsync import write_audio
+        path = self.media.STORE / "segment.wav"
+        samples = np.ones(640, dtype=np.float32)
+        for first, voiced in [(-1, slice(640, 1280)), (0, slice(0, 640)), (3, slice(0, 0))]:
+            write_audio(path, samples, first, 2)
+            with wave.open(str(path), "rb") as wav:
+                self.assertEqual((wav.getframerate(), wav.getnframes()), (16000, 1280))
+                pcm = np.frombuffer(wav.readframes(1280), "<i2")
+            expected = np.zeros(1280, dtype="<i2")
+            expected[voiced] = 32767
+            np.testing.assert_array_equal(pcm, expected)
 
     def test_model_list_reports_missing_components_separately(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(self.server, "MODELS", Path(tmp)), patch.object(
@@ -547,8 +561,10 @@ class StudioWorkflow(unittest.TestCase):
         calls.clear()
         with patch.dict("sys.modules", {"studio.edtalk": types.SimpleNamespace(EDTalkEngine=MarkMouth),
                                        "studio.engine": types.SimpleNamespace(FaceLandmarks=NoFace)}):
-            comparison_tl = self.production.plan(dict(config, lipModel="edtalk"))
-            result = self.production.render(comparison_tl, folder, lambda *_: None)
+            # A saved secondary preview model in an older project must never drive its export.
+            edtalk_tl = self.production.plan(dict(config, lipModel="edtalk", compareModel="latentsync"))
+            self.assertNotIn("compareModel", edtalk_tl)
+            result = self.production.render(edtalk_tl, folder, lambda *_: None)
             self.assertEqual((result["inferred"], result["cached"]), (16, 0))
             preview = self.production.render_card_preview(
                 dict(config, line=0, start=.2, end=.6, lipModel="edtalk"), folder)

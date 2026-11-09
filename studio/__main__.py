@@ -3,6 +3,7 @@ import collections
 import datetime
 import importlib.util
 import json
+import os
 import re
 import shutil
 import threading
@@ -26,9 +27,9 @@ from .media import (
     save_asset,
     token,
 )
-from .production import (CAPTION_BAND, MODEL_NAMES, SIZES, compare_mouths, plan, render,
+from .production import (CAPTION_BAND, MODEL_NAMES, SIZES, plan, render,
                          render_card_preview, selected_model, visual_spans)
-from .setup_models import EDTALK_FILE
+from .setup_models import EDTALK_FILE, NATIVE_CLI, NATIVE_WEIGHTS
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.config.update(MAX_CONTENT_LENGTH=160 * 1024 * 1024)
@@ -52,6 +53,13 @@ def lipsync_models():
         missing = [pkg for pkg in packages if not importlib.util.find_spec(pkg)]
         missing.extend(path for path in files if not (MODELS / path).is_file())
         models.append(dict(name=name, purpose=purpose, missing=missing))
+    for key, description in (("soulx_flashhead", "从所选片段首帧生成有表情的人像"),
+                             ("latentsync", "跟随原视频姿态重新同步唇形")):
+        weight = NATIVE_WEIGHTS[key]
+        missing = [] if (MODELS / weight).is_file() else [weight]
+        if not os.access(MODELS / NATIVE_CLI, os.X_OK):
+            missing.append("audio.cpp 本机推理程序")
+        models.append(dict(name=MODEL_NAMES[key], purpose=description, missing=missing))
     return models
 
 
@@ -288,18 +296,6 @@ def timeline_preview():
             path = executor.submit(render, *args).result()
         else:
             path = render(*args)
-        return app.response_class(path.read_bytes(), mimetype="video/mp4")
-
-
-@app.post("/api/lipsync-comparison")
-def lipsync_comparison():
-    config = request.get_json()
-    with asset_lock:
-        tl = plan(config)
-    for model in MODEL_NAMES:
-        require_lipsync(model)
-    with tempfile.TemporaryDirectory(dir=STORE) as tmp:
-        path = executor.submit(compare_mouths, tl, config.get("line"), Path(tmp)).result()
         return app.response_class(path.read_bytes(), mimetype="video/mp4")
 
 

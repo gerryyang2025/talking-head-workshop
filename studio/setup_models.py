@@ -5,13 +5,30 @@ import hashlib
 import os
 import shutil
 import tempfile
+import tarfile
 from pathlib import Path
 from urllib.request import urlopen
 
 BASE = Path(__file__).resolve().parents[1] / "build/models"
 MUSE = "https://huggingface.co/mlx-community/MuseTalk-1.5-fp16/resolve/ad54104a0129121fe2ea67471250c0656c985284/"
 EDTALK_FILE = "facefusion/edtalk_256.onnx"
+NATIVE_CLI = "native-lipsync/audio.cpp-0.9.4/audiocpp_cli"
+CLI_URL = "https://github.com/0xShug0/audio.cpp/releases/download/v0.9.4/audio-v0.9.4-bin-macos-arm64-metal.tar.gz"
+CLI_ARCHIVE_SHA = "5722c4f33e56114345965c0dee472a9239218f7499ace6393bba6a951a41b86a"
+CLI_SHA = "3a9e8a749a14bcbebdc97d7e5a22fc4f0b3cdaf10bd239f59c90ce85a9a564ee"
+NATIVE_WEIGHTS = {
+    "soulx_flashhead": "native-lipsync/SoulX-FlashHead-Lite-Q8_0.gguf",
+    "latentsync": "native-lipsync/latentsync-1.6-q8_0-f16.gguf",
+}
 WEIGHTS = {
+    NATIVE_WEIGHTS["soulx_flashhead"]: (
+        "https://huggingface.co/audio-cpp/SoulX-FlashHead-GGUF/resolve/cc83157045008de647a4ba11ca5ed19e66caa575/SoulX-FlashHead-Lite-Q8_0.gguf",
+        "29f186f666a4b1ee8af257a2163d521545d94c600c46d97998c57d6fefc95751",
+    ),
+    NATIVE_WEIGHTS["latentsync"]: (
+        "https://huggingface.co/audio-cpp/LatentSync-1.6-GGUF/resolve/937b95aa98518dff8728541a8a38b94985d90dd1/latentsync-1.6-q8_0-f16.gguf",
+        "a1bf72c22ab9fe24202f4d4ecff7e9d8076957b111844dd256d5b90e8c53e4a0",
+    ),
     EDTALK_FILE: (
         "https://huggingface.co/facefusion/models-3.3.0/resolve/6271ab1c4619ceb2e534d65e0ec973f22a9aec38/edtalk_256.onnx",
         "c4dd933458814f280b9b4b94a6d6bd73a103ce8db9a531542831327c0a14d43e",
@@ -69,7 +86,30 @@ def checksum(path):
     return digest.hexdigest()
 
 
+def install_native_cli():
+    path = BASE / NATIVE_CLI
+    if path.is_file() and checksum(path) == CLI_SHA:
+        path.chmod(0o755)
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=path.parent) as tmp:
+        archive = Path(tmp) / "runtime.tar.gz"
+        with urlopen(CLI_URL, timeout=90) as src, archive.open("wb") as out:
+            shutil.copyfileobj(src, out)
+        if checksum(archive) != CLI_ARCHIVE_SHA:
+            raise ValueError("audio.cpp 下载包校验失败")
+        binary = Path(tmp) / "audiocpp_cli"
+        with tarfile.open(archive, "r:gz") as tar, binary.open("wb") as out:
+            with tar.extractfile("./audiocpp_cli") as src:
+                shutil.copyfileobj(src, out)
+        if checksum(binary) != CLI_SHA:
+            raise ValueError("audio.cpp 可执行文件校验失败")
+        binary.chmod(0o755)
+        os.replace(binary, path)
+
+
 def main():
+    install_native_cli()
     weights = {
         **WEIGHTS,
         **{f"{VOICE_FOLDER}/{name}": (VOICE_URL + name, digest) for name, digest in VOICE_HASHES.items()},

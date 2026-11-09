@@ -188,6 +188,7 @@ async function restoreDraft() {
   voiceRequest = null;
   draft.cutaways ||= [];
   draft.lipModel ??= "musetalk";
+  delete draft.compareModel; // Older drafts stored a second model for previews.
   const referenceVersion = findAsset(draft.voice)?.referenceVersion;
   if (referenceVersion && draft.voiceData && draft.voiceData.referenceVersion !== referenceVersion) {
     Object.assign(draft, {voiceData: null, lines: [], job: null});
@@ -596,14 +597,6 @@ function hasUncoveredFrames(start, stop) {
   return cursor < stop;
 }
 
-function canCompareLine(line, index) {
-  const start = cueFrame(line.start), stop = cueFrame(line.end);
-  const speakingCut = draft.cutaways.some(cut =>
-    cut.insert && cut.insertSpeaking && cut.first < stop && cut.stop > start);
-  const speakingBase = usesHost(lineLayout(line, index)) ? primaryHost() : lineInsert(line).speaking;
-  return speakingCut || (speakingBase && hasUncoveredFrames(start, stop));
-}
-
 function cutEditorList() {
   return '<div class="cut-list"><b>时间线补充镜头</b>' +
     '<small>在剪辑时间线播放或拖动配音，定位后插入。镜头结束时回到原画面。</small>' +
@@ -848,7 +841,6 @@ async function playPreview(endpoint, title, config) {
   $("#cardPreviewTitle").textContent = title;
   status.textContent = "正在生成带声预览…";
   video.hidden = true;
-  dialog.classList.toggle("comparison", endpoint === "/api/lipsync-comparison");
   dialog.showModal();
   dialog.addEventListener("close", () => {
     controller.abort();
@@ -858,9 +850,10 @@ async function playPreview(endpoint, title, config) {
     if (url) URL.revokeObjectURL(url);
   }, {once: true});
   try {
+    const headers = {"Content-Type": "application/json", "X-Studio-Request": "1"};
     const response = await fetch(endpoint, {
       method: "POST", signal: controller.signal,
-      headers: {"Content-Type": "application/json", "X-Studio-Request": "1"},
+      headers,
       body: JSON.stringify(config),
     });
     if (!response.ok) throw Error((await response.json()).error || "视频预览失败");
@@ -1009,12 +1002,14 @@ function lipModelControl() {
   const options = session.lipModels.map(model =>
     '<option value="' + esc(model.id) + '"' + (draft.lipModel === model.id ? " selected" : "") +
     (model.ready ? ">" : " disabled>") + esc(model.name) + (model.ready ? "" : "（缺依赖）") + "</option>");
-  const hint = session.lipModels.every(model => model.ready)
-    ? "点击句段中的「并排对比口型」，用相同镜头和配音查看句尾与停顿。"
-    : "运行 ./optools.sh init 补齐模型后，可以并排对比口型。";
+  const hints = {
+    musetalk: "沿用母片动作，根据配音修改嘴型。",
+    edtalk: "建议使用有自然露齿片段的清晰近景。",
+    soulx_flashhead: "用照片或视频切片的首帧重新生成人物表情和头部动作。",
+    latentsync: "保留视频中的人物动作。照片会先转成静止视频。推理耗时较长，可先用短稿试做。",
+  };
   return '<label class="field"><span>成片口型模型</span><select id="lipModel">' +
-    options.join("") + '</select></label><p class="hint">' + hint +
-    (draft.lipModel === "edtalk" ? " EDTalk 建议选用有自然露齿片段的清晰近景。" : "") + '</p>';
+    options.join("") + '</select></label><p class="hint">' + esc(hints[draft.lipModel] || "") + '</p>';
 }
 
 function jobBox(j) {
@@ -1205,9 +1200,6 @@ function inspector() {
                     shots.filter(s => s.enabled).map(s => opt(s.id, a.name + " · " + s.label, l.shot)).join("") +
                     "</select>"
                   : lineInsertControls(l, lineLayout(l, i))) +
-                (canCompareLine(l, i)
-                  ? '<button class="minor" data-compare-line="' + i + '"' +
-                    (session.lipModels.every(model => model.ready) ? "" : " disabled") + '>并排对比口型</button>' : "") +
                 "</div>",
             )
             .join("") +
@@ -1628,12 +1620,6 @@ document.addEventListener(
       await previewTimeline(first, stop);
       return;
     }
-    if (b.dataset.compareLine !== undefined) {
-      await playPreview("/api/lipsync-comparison", "口型对比 · 左 MuseTalk 1.5 / 右 EDTalk 256", {
-        ...draft, voiceId: draft.voiceData.id, line: Number(b.dataset.compareLine),
-      });
-      return;
-    }
     if (b.dataset.cardLine !== undefined) {
       await previewCard(Number(b.dataset.cardLine));
       return;
@@ -1927,6 +1913,7 @@ document.addEventListener(
       case "lipModel":
         draft.lipModel = el.value;
         save();
+        inspector();
         break;
       case "shift":
         draft.shift = Number(el.value);
