@@ -107,7 +107,7 @@ def stop(pid):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog="./optools.sh", description="管理帧间本地口播工作台")
+    parser = argparse.ArgumentParser(prog="./optools.sh", description="管理口播工坊的本地服务")
     commands = parser.add_subparsers(dest="action", required=True)
     commands.add_parser("start", help="后台启动")
     commands.add_parser("stop", help="停止服务")

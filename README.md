@@ -1,4 +1,4 @@
-<h1 align="center">帧间 · 本地口播工作台</h1>
+<h1 align="center">口播工坊 · 本地口播工作台</h1>
 
 <p align="center">
   <strong>Gerry · 无限流数字人口播</strong><br>
@@ -32,7 +32,7 @@
 
 ## 本地口播工作台
 
-在本机已配置的工程目录运行 `./optools.sh start`，然后打开 [帧间工作台](http://127.0.0.1:8765/)。服务在后台运行，可以关闭终端。
+在本机已配置的工程目录运行 `./optools.sh start`，然后打开[口播工坊](http://127.0.0.1:8765/)。服务在后台运行，可以关闭终端。
 
 ```bash
 ./optools.sh status    # 显示 PID、网页就绪状态和访问地址

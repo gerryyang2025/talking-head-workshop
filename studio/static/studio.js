@@ -345,7 +345,7 @@ function shortScripts() {
   return {
     三步制作数字人口播: session.demoText,
     自我介绍: "大家好，我是 Gerry。\n我平时写程序，也喜欢拍照。\n今天用一张海边的照片，跟你打个招呼。",
-    产品演示: "今天试试帧间的口播工作台。\n选一张照片，写下你想说的话，再点一下试听。\n听到哪里不顺，就改那一句。",
+    产品演示: "今天用口播工坊做一段视频。\n选一张照片，写下你想说的话，再点一下试听。\n听到哪里不顺，就改那一句。",
     口型与停顿: "爸爸把白色的杯子摆在旁边。\n慢一点，抿抿嘴。\n好，我们再说一遍。",
     英文短句: "Hi, I'm Gerry.\nI took this photo by the sea.\nCan you hear the waves?",
   };
@@ -1356,8 +1356,8 @@ function playVoice(audio, label) {
 async function previewTone(button) {
   const voice = narrationVoice(draft.voice);
   if (!voice) return;
-  const text = voice.role === "personal_voice" || voice.locale.startsWith("zh") ? "你好，欢迎来到帧间。听听这句话的语气和停顿。"
-    : voice.sample || "Welcome to Frame Studio.";
+  const text = voice.role === "personal_voice" || voice.locale.startsWith("zh") ? "你好，欢迎来到口播工坊。听听这句话的语气和停顿。"
+    : voice.sample || "Welcome to Koubo Workshop.";
   button.disabled = true;
   button.textContent = "正在准备试听…";
   try {

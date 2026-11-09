@@ -91,6 +91,7 @@ p {
 .brand {
   display: flex;
   align-items: center;
+  white-space: nowrap;
   gap: 11px;
   text-decoration: none;
   color: var(--ink);
@@ -1087,6 +1088,10 @@ dialog h3 {
   .rail {
     width: 172px;
     padding-inline: 9px;
+  }
+  .brand {
+    gap: 6px;
+    padding-inline: 4px;
   }
   main {
     margin-left: 172px;
