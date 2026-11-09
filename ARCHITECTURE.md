@@ -1,185 +1,180 @@
-# 高级无限流 · 架构说明
+# 架构与维护入口
 
-> 面向制片 / 负责人的结论在前，工程细节在后。所有数字都来自本包里实际跑出来的产物（`recipes/*/out/`），价格是 2026-10 的公开价，落地前请核实。
+## 运行依赖
 
----
+在仓库根目录运行 `./optools.sh init`，即可安装两个 Python 环境、配置媒体工具，并下载和校验全部模型。首次安装需要联网。下列本机版本记录于 2026-11-09，重新安装时 pip 会按项目声明的约束解析版本。[安装流程](tools/studio_setup.py)
 
-## 1. 为什么配得上“高级无限流”
+### 系统工具
 
-“无限流”不是“一套底板永远用下去”，而是一个**闭环**：
+| 依赖 | 用途与本机版本 | 获取方式 |
+| --- | --- | --- |
+| Apple Silicon、macOS、Metal | 本地模型推理。本机为 macOS 15.5、arm64 | 使用 Apple Silicon Mac 的原生终端，Metal 随 macOS 提供。可用 `uname -m` 确认输出为 `arm64`。 |
+| Homebrew | 缺少系统工具时用于补装。本机为 7.0.12 | 首次使用可从官网下载 macOS 的 `.pkg` 安装器，安装后用 `brew --version` 确认。[Homebrew 官网](https://brew.sh/) |
+| Python 3.12 | 工作台和个人音色各用一个虚拟环境，本机均为 3.12.13 | `init` 优先使用已有的 `python3.12`。如果终端还没有可运行的 Python 3，先执行 `brew install python@3.12`。 |
+| FFmpeg、FFprobe | 转码、探测和导出，本机均为 9.0.2 | `init` 检查已有安装是否支持 `drawtext`、`subtitles` 和 `libx264`，需要时通过 Homebrew 安装。手动执行 `brew install ffmpeg-full` 即可取得两个工具。 |
+| 中文字体 | 渲染字幕和图文，本机使用 STHeiti Medium | 优先使用系统已有的中文字体。也可在 macOS「字体册」下载安装中文字体，将 `ISTREAM_FONT` 设为字体文件的绝对路径。 |
+| macOS 系统语音 | 系统音色朗读，使用 `/usr/bin/say` | `say` 随 macOS 提供。更多音色可在「系统设置」中的朗读设置里下载，用 `say -v '?'` 列出可用音色。[Apple 声音下载说明](https://support.apple.com/zh-cn/guide/mac-help/mchlp2290/mac) |
 
-- 底板只买一次表演；
-- 每条视频只付“嘴”和“剪”的钱；
-- 剪由脚本驱动，可以像代码一样改，每一步都有 QC 兜底；
-- 账本告诉你哪些镜头被看腻了，月度换新用同一套锁定段补进新动作。
+### 本地模型
 
-所以它能长期跑下去，而且越跑越便宜。
+首次安装由 `init` 从 Hugging Face 下载 18 个文件（约 3.44 GiB），保存在 `build/models/`。已经建好工作台环境时，可以在仓库根目录用以下命令单独补齐或校验模型。
 
-“高级”体现在 8 个具体设计上，每一个都在代码里，不是口号：
-
-| # | 设计 | 解决什么 | 在哪里 |
-|---|---|---|---|
-| 1 | **配音锁时间，编辑只改槽位内容** | 改片永远不会把嘴和声音弄错位；重排就是镜头在槽位间换位 | `timeline.py` |
-| 2 | **先时间、再口型、后空间** | 口型模型永远拿到原分辨率、单张脸、无字幕的主播；推近、画中画、裁画幅在口型之后做，不损失嘴部清晰度 | `render.py` 阶段 A/B/C |
-| 3 | **只把可见段送口型，按脸的大小分档** | 被 B-roll / 卡片盖住的段不花钱；画中画小脸走快模型；只有开场、重音和大脸付 pro 价 | `lipsync.py` |
-| 4 | **标签是契约，带来源** | 规划、QC、路由、成本全读标签；`spec → measured → reviewed`，没复核的预期标签一眼可见 | `vocab.py` · `schema/` |
-| 5 | **最受约束的槽先选 + 手势对准关键词** | 招牌镜头留给最需要它的那句。演示里“MCP 就是 AI 的 USB-C”的托掌，落在“USB-C”后 0.11 秒 | `planner.py` |
-| 6 | **缺陷带区域，裁画幅能“救活”镜头** | 右半区烧录乱码的镜头，在竖版里裁到人物就能用（演示 9:16 多用了 2 个镜头） | `slicer.py` · `planner.py` |
-| 7 | **一个提示词来源，四份产物** | `library.json` → 提示词文档、纯提示词、预期标签目录、月度换新；换形象只改一处；K01–K03 与定稿逐字一致 | `prompts.py` · `tools/build_library.py` |
-| 8 | **确定性 + 种子** | 同输入同结果，可审计；换种子得到另一版合法剪辑（seed 7→11：5/21 镜头不同；7→23：8/21），可做 A/B 或多账号分发 | `planner.py` |
-
----
-
-## 2. 组件与数据流
-
-```
-prompts/library.json ──► prompts build ──► PROMPT_LIBRARY.md / prompts-only.txt ──► 视频模型（人工或 API）──► 底板
-        │                                                                                  │
-        └──► catalog build-spec ──► catalog/spec（预期标签）                              ▼
-                                                                         slice（测得）+ review（VLM/人工）
-                                                                                           │
-script.md + align.json/vo ──► script.parse/timing ──► Planner ◄── catalog（plates.json + shots.json）◄─┘
-                                                         │            ▲ ledger.json（疲劳）
-                                                         ▼
-                                                   timeline.json ◄──► edit ops（swap/punch/pip/hide/order/split/mg…）
-                                                         │
-                                       qc ◄──────────────┤
-                                                         ▼
-                              lipsync plan ──► jobs.json（可见段 · 分档 · 中文风险 · face_lock）
-                                                         │
-                          render A: 时间操作 → 原分辨率主播 + 配音切片 ──► 口型引擎（B）──► synced runs
-                                                         │
-                          render C: 空间操作 → B-roll 淡化 → MG → 字幕 → 配音 ──► final.mp4（16:9 / 9:16 / 1:1）
-                                                         │
-                                                  cost · ledger record
+```sh
+.venv/bin/python -m studio.setup_models
 ```
 
-**模块（Python，约 4,000 行）：**
-- 核心模块只依赖标准库：`vocab`、`schema`、`catalog`、`script`、`planner`、`timeline`、`qc`、`lipsync`、`cost`、`prompts`。
-- `render` 需要 ffmpeg；`slicer` 需要 numpy，OpenCV 可选，只用来画联系表。
+下载中断后重跑同一命令即可。脚本根据 SHA-256 跳过已校验的文件，重新下载缺失或校验失败的文件。中断的单个文件会从头下载，校验通过后才移入目标路径。[逐文件下载地址与 SHA-256 清单](studio/setup_models.py)
 
-**数据契约：**
-- `shot.schema.json`：镜头单元。
-- `timeline.schema.json`：时间轴；`rec` = 成片时间，`src` = 底板时间，`ops` 有序。
-- `istream.lipsync/1`：口型任务清单。
+| 模型 | 用途 | 下载来源 | 保存位置（相对于 `build/models/`） |
+| --- | --- | --- | --- |
+| MuseTalk 1.5 FP16 | 根据配音生成嘴型 | [模型目录 · ad54104a](https://huggingface.co/mlx-community/MuseTalk-1.5-fp16/tree/ad54104a0129121fe2ea67471250c0656c985284) | `musetalk-1.5-fp16/` 下的 `config.json`、`unet.safetensors`、`vae.safetensors` |
+| Whisper 音频编码器 | 为 MuseTalk 提取语音特征 | [下载编码器](https://huggingface.co/mlx-community/MuseTalk-1.5-fp16/resolve/ad54104a0129121fe2ea67471250c0656c985284/whisper_encoder.safetensors) | `musetalk-1.5-fp16/whisper_encoder.safetensors` |
+| YuNet 2023mar | 检测人脸 | [下载 OpenCV 权重](https://huggingface.co/opencv/face_detection_yunet/resolve/main/face_detection_yunet_2023mar.onnx) | `studio/yunet.onnx`（按此文件名保存） |
+| 2DFAN4 | 定位人脸与唇部关键点 | [下载 FaceFusion 权重](https://huggingface.co/facefusion/models-3.0.0/resolve/main/2dfan4.onnx) | `studio/2dfan4.onnx` |
+| Qwen3-TTS 12Hz 0.6B Base 4-bit | 按参考录音和逐字稿合成个人音色 | [模型目录 · 0d6bb6fe](https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-0.6B-Base-4bit/tree/0d6bb6fe33f92d47a507e23b9148940e8366ab5b) | `qwen3-tts-0.6b-base-4bit/`，保留根目录的 8 个模型与配置文件和 `speech_tokenizer/` 下的 4 个文件 |
 
-三者都有版本号，后续加字段不破坏旧数据。
+<details>
+<summary>手动下载 Qwen3-TTS 时需要的 12 个文件</summary>
 
-**渲染缓存：**
-- 每个片段按内容哈希命名。
-- 预览（passthrough）时，片段直接读这个镜头自己的时间段缓存，改片只重建改过的镜头。演示：首次 41 个片段，改片后只新增 11 个。
-- 接入真实口型引擎后，改动所在的口型任务需要重新同步，这是引擎上下文决定的，无法省掉。
+- 模型根目录放置 `config.json`、`generation_config.json`、`merges.txt`、`model.safetensors`、`model.safetensors.index.json`、`preprocessor_config.json`、`tokenizer_config.json`、`vocab.json`。
+- `speech_tokenizer/` 子目录放置 `config.json`、`configuration.json`、`model.safetensors`、`preprocessor_config.json`。
 
----
+</details>
 
-## 3. 关键决策（取舍写清楚）
+手动下载时，按表中的文件名和目录放置文件。也可从另一台已初始化的机器复制整个 `build/models/`，再运行上面的命令校验。工作台侧栏的「本地模型与引擎」可查看就绪状态。
 
-| 决策 | 选了什么 | 为什么不选另一个 |
-|---|---|---|
-| 口型在哪一步做 | 拼好的主播底板上，按可见段分任务 | 逐镜头单独做：每段太短，引擎缺上下文，接缝处嘴型跳；整片做：B-roll 段白花钱，而且画面里可能有两张脸 |
-| 转场 | 说话脸之间只用切 / 缩放跳切；淡化只用在主播和 B-roll 之间 | 两张说话的脸叠化，口型模型会锁错脸，叠化区间也没法同步 |
-| 底板长度 | 30 秒为单位；60 秒只做 L01 / L02，用接力 A/B 生成 | 越长身份越漂移；复用单位是“两次回位之间的片段”，不是底板时长 |
-| 开场 | 专用开场镜头 + 配音自动延后 | 第一帧就开口，像“被丢进画面”；开场专用镜头让主播先“到场” |
-| 重复 | 12 秒内绝不重复；更远的重复必须是不同变体（缩放 / 倒放 / 画中画），而且 QC 要提示 | 一刀切禁止重复会让小素材库无法出片；不加限制观众马上认出 |
-| 素材不够时 | 规划器自动降级（改画中画 → 再不行改卡片），并提示补哪种底板 | 硬选一个会撞车的镜头，问题会留到成片里 |
-| 价格和路由 | 策略是一个 JSON 文件（默认混合 / 全自部署 / 全 pro） | 写死引擎；价格和质量每季度都在变 |
-| 中文 | 语速、闭唇音、唇齿音、夹杂英文、数字、停顿都单独检查，并分级成 RISK / WARN | 只看“嘴在动”。中文快语速的闭唇音是最常见的穿帮点 |
+### Python 第三方库
 
----
+`init` 会用各虚拟环境自己的 pip 安装下列直接依赖。普通包及其间接依赖从 pip 配置的包索引下载（默认为 PyPI）。口型引擎使用仓库指定的 GitHub 源码提交。pip 随虚拟环境初始化，缺失时由 Python 的 `ensurepip` 补齐。
 
-## 4. 成本模型
+| 环境 | 直接依赖 | 项目安装约束 | 本机版本 | 下载来源 |
+| --- | --- | --- | --- | --- |
+| 工作台 | Flask | `>=3.1,<4` | 3.1.3 | [PyPI · Flask](https://pypi.org/project/Flask/) |
+| 工作台、独立 CLI 切片 | NumPy | `>=1.23` | 2.5.4（工作台） | [PyPI · numpy](https://pypi.org/project/numpy/) |
+| 工作台 | ONNX Runtime | `onnxruntime>=1.20` | 1.31.1 | [PyPI · onnxruntime](https://pypi.org/project/onnxruntime/) |
+| 工作台 | OpenCV | `opencv-python>=4.10` | 5.0.0.93 | [PyPI · opencv-python](https://pypi.org/project/opencv-python/) |
+| 工作台 | MuseTalk MLX | `musetalk-mlx` 固定提交（macOS arm64） | 0.1.0 | [GitHub 源码归档 · c6eb30ebd1ed](https://codeload.github.com/xocialize/musetalk-mlx/tar.gz/c6eb30ebd1ed4d043983209813370153de9346bf) |
+| 个人音色 | MLX-Audio | `mlx-audio==0.6.4` | 0.6.4 | [PyPI · mlx-audio](https://pypi.org/project/mlx-audio/) |
+| 个人音色 | Transformers | `transformers==5.22.2` | 5.22.2 | [PyPI · transformers](https://pypi.org/project/transformers/) |
 
-### 4.1 公式
+已有虚拟环境时，修复某个环境的 Python 包可选用对应的命令。工作台清单同时包含网页、媒体处理和口型引擎。
 
+```sh
+# 工作台
+.venv/bin/python -m pip install -r studio/requirements.txt
+
+# 个人音色
+build/voice-env/bin/python -m pip install -r studio/voice-requirements.txt
 ```
-F  = 底板一次性成本 = Σ 底板秒数 × $0.08–0.14/s × 每条抽 4–5 次（+ 人工）
-L  = 预计这套底板服务的成片分钟数（换新前）
-单条 = Σ_job（可见说话秒数 / 60 × 引擎单价 × 返工系数） + F × 本条分钟数 / L      （TTS 两条路线都要，另计）
-回本点 M* = F ÷ (a − b)；a = 对标方案每分钟成本，b = 本方案每分钟成本（沿用可行性报告 §6）
+
+只用独立 CLI 切片时，可在自己的虚拟环境执行 `python -m pip install -r requirements.txt`。CLI 规划与提示词拼装使用标准库。[CLI 依赖](requirements.txt) · [网页与媒体依赖](studio/web-requirements.txt) · [口型依赖](studio/requirements.txt) · [个人音色依赖](studio/voice-requirements.txt)
+
+<details>
+<summary>展开本机完整包清单（工作台 54 项，个人音色 39 项，含间接依赖和 pip）</summary>
+
+| Python 包 | 工作台 `.venv` | 个人音色 `build/voice-env` |
+| --- | --- | --- |
+| `annotated-doc` | — | 0.0.5 |
+| `anyio` | 4.16.0 | 4.16.0 |
+| `blinker` | 1.9.0 | — |
+| `certifi` | 2026.10.23 | — |
+| `cffi` | 2.1.1 | 2.1.1 |
+| `charset-normalizer` | 3.5.2 | — |
+| `click` | 8.5.1 | 8.5.1 |
+| `cloudpickle` | 3.1.2 | — |
+| `decorator` | 5.3.1 | — |
+| `filelock` | 4.2.9 | 4.2.9 |
+| `Flask` | 3.1.3 | — |
+| `flatbuffers` | 25.12.19 | — |
+| `fsspec` | 2026.9.0 | 2026.9.0 |
+| `h11` | 0.16.0 | 0.16.0 |
+| `hf-xet` | 1.8.0 | 1.8.0 |
+| `httpcore2` | 2.16.0 | 2.16.0 |
+| `httpx2` | 2.16.0 | 2.16.0 |
+| `huggingface_hub` | 2.4.0 | 2.4.0 |
+| `idna` | 3.20 | 3.20 |
+| `itsdangerous` | 2.2.0 | — |
+| `Jinja2` | 3.1.6 | 3.1.6 |
+| `joblib` | 1.6.0 | — |
+| `lazy-loader` | 0.6 | — |
+| `librosa` | 1.0.0 | — |
+| `llvmlite` | 0.50.0 | — |
+| `markdown-it-py` | — | 4.2.0 |
+| `MarkupSafe` | 3.0.4 | 3.0.4 |
+| `mdurl` | — | 0.1.2 |
+| `miniaudio` | — | 1.72 |
+| `mlx` | 0.32.4 | 0.32.4 |
+| `mlx-audio` | — | 0.6.4 |
+| `mlx-metal` | 0.32.4 | 0.32.4 |
+| `msgpack` | 1.2.4 | — |
+| `musetalk-mlx` | 0.1.0 | — |
+| `narwhals` | 2.28.0 | — |
+| `numba` | 0.68.1 | — |
+| `numpy` | 2.5.4 | 2.5.4 |
+| `onnxruntime` | 1.31.1 | — |
+| `opencv-python` | 5.0.0.93 | — |
+| `opencv-python-headless` | 5.0.0.93 | — |
+| `packaging` | 26.3 | 26.3 |
+| `pip` | 26.0 | 26.0 |
+| `platformdirs` | 4.14.5 | — |
+| `pooch` | 1.9.0 | — |
+| `protobuf` | 7.36.2 | — |
+| `pycparser` | 3.12 | 3.12 |
+| `Pygments` | — | 2.21.0 |
+| `PyYAML` | 6.0.3 | 6.0.3 |
+| `regex` | — | 2026.11.7 |
+| `requests` | 2.34.2 | — |
+| `rich` | — | 15.0.0 |
+| `safetensors` | 0.8.0 | 0.8.0 |
+| `scikit-learn` | 1.9.1 | — |
+| `scipy` | 1.18.1 | 1.18.1 |
+| `sentencepiece` | — | 0.2.3 |
+| `shellingham` | — | 1.5.4 |
+| `sounddevice` | — | 0.5.6 |
+| `soundfile` | 0.14.0 | — |
+| `soxr` | 1.1.0 | — |
+| `threadpoolctl` | 3.8.0 | — |
+| `tokenizers` | — | 0.23.3 |
+| `tqdm` | 4.70.1 | 4.70.1 |
+| `transformers` | — | 5.22.2 |
+| `truststore` | 0.10.5 | 0.10.5 |
+| `typer` | — | 0.28.0 |
+| `typing_extensions` | 4.16.0 | 4.16.0 |
+| `urllib3` | 2.8.0 | — |
+| `Werkzeug` | 3.1.9 | — |
+
+</details>
+
+在仓库根目录用下列命令查看安装或升级后的实际版本，与上面的快照对照。
+
+```sh
+.venv/bin/python -m pip list
+build/voice-env/bin/python -m pip list
 ```
 
-返工系数：商用 1.1–1.3，开源 1.2–1.5，分身服务 1.1（经验值，见 `cost.py`）。
+## 工作台从文案到成片
 
-### 4.2 实测（同一份时间轴，只换 `recipes/policies/*.json`）
+网页由 Flask 提供。首页位于 `/`，工作台位于 `/studio`，素材库、导出记录和制作步骤支持子路径直达。浏览器保存当前项目草稿，服务端用 SQLite 索引本机素材、配音、渲染任务和复核结果。[网页入口与 API](studio/__main__.py) · [工作台交互](studio/static/studio.js)
 
-| | 默认混合 | 全自部署 | 全 pro | 不分段整片 pro |
-|---|---|---|---|---|
-| **demo60**：56 秒，替身底板，50.75 秒可见，5.32 秒隐藏，11 个任务 | $2.02–3.25 | $0.11–0.72 | $3.61–5.21 | $4.11–6.07 |
-| **longform**：约 3.9 分钟，规格目录，212 秒可见，19 秒隐藏，28 个任务 | $9.27–15.40 | $1.32–4.88 | $15.93–23.65 | $16.98–25.09 |
-| longform 每成片分钟 | $2.40–3.99 | **$0.34–1.26** | $4.13–6.13 | $4.40–6.50 |
+| 修改目标 | 实现入口 |
+| --- | --- |
+| 服务启停、首次安装、模型就绪状态 | [optools.sh](optools.sh)、[安装流程](tools/studio_setup.py)、[模型清单与校验](studio/setup_models.py) |
+| 素材与声音 | [媒体与配音](studio/media.py) 管理上传、系统音色和逐句时点；[个人音色](studio/personal_voice.py) 在独立 Python 环境运行 Qwen3-TTS。 |
+| 选镜、补充画面和导出 | [制作流程](studio/production.py) 以确认的配音建立时间轴，只对可见的说话片段运行口型，再合成画幅、字幕和音轨。 |
+| 口型与停顿 | [口型引擎](studio/engine.py) 跟踪人脸，用 Whisper 音频特征驱动 MuseTalk；[停顿闭唇](studio/mouth_rest.py) 和[镜头衔接](studio/mouth_transition.py) 处理收口及头姿连续性。 |
 
-底板折旧已计入：进阶组合 270 秒底板 $86–189，按 300 成片分钟分摊，每分钟约 $0.29–0.63。
+## 命令行装配
 
-### 4.3 结论
+`python -m istream` 可独立读取标记脚本、素材目录和逐句时间戳，生成时间轴 JSON。[规划器](istream/planner.py) 选镜，[质检](istream/qc.py) 检查重复镜头、人物遮挡等问题，[口型任务](istream/lipsync.py) 按可见时段分配工作，[渲染器](istream/render.py) 装配输出。CLI 的 `passthrough` 用于预览剪辑；要生成真实嘴型可直接用工作台的 MuseTalk，或给 CLI 提供真实引擎处理过的片段。[可复跑的示例](DEMO.md)
 
-1. **对标整段生成（$10–25/分钟）**，任何一种策略都很快回本：F = $189 时，回本点 M* = 189 ÷ (a − b) 约 8–30 成片分钟（混合策略 b ≈ $2.4–4.0，全自部署 b ≈ $0.3–1.3）。
-2. **对标音频驱动数字人 SaaS（$5–8/分钟）**，只有“混合”或“全自部署”才有意义。全 pro 的价差太小，和可行性报告的结论一致。
-3. **对标现成数字分身（$1–1.5/分钟）**，只有全自部署且月产量大时才便宜。否则自建的理由是原创形象、多品牌、统一审美和可编程剪辑，不是钱。
-4. 本技能额外省下的两块：
-   - **可见段路由：** demo60 约 9%，longform 约 8% 的时长不送口型；内容主导的片子比例更高。
-   - **剪辑自动化：** 人工从每条 20–40 分钟降到 5–10 分钟复核。可行性报告 §6.5 指出人工才是最大成本。
+## 提示词、标签和示例的维护位置
 
-### 4.4 “无限”的数学，和它的上限
-- **组合数：**
-  - 规格目录 36 个镜头，算上推近、倒放和版式变体，约 465 个视觉单元；加上 2 条替身底板共 537 个。
-  - 60 秒视频约 20 个槽位，可排列的合法剪辑是天文数字。
-  - **真正的上限是观众的记忆，不是组合数。**
-- **控制手段：**
-  - 账本记录每个镜头的曝光：疲劳惩罚为 0.5·ln(1+n)，近 2 天用过再罚 1.5。
-  - 退役阈值默认 40 次曝光。
-  - 月度换新（`prompts refresh`）从 31 个微动作的菜单里抽出没用过的组合，同一套锁定段可以直接混进旧库。
-  - 换新节奏沿用可行性报告：每月 4–6 条。
+| 内容 | 维护源与生成方式（从仓库根目录执行） |
+| --- | --- |
+| 默认母片提示词库 | K01–K03 定稿在 [plates-source.md](prompts/plates-source.md)。`python tools/build_library.py` 构建默认 `library.json`，`python -m istream prompts build` 导出 Markdown 和纯文本，`python -m istream prompts verify` 校验定稿。重建默认库请使用干净检出，以免覆盖本地定制形象。 |
+| 人物生成包 | `istream identity set` 根据参考照、当前身份与叠加配置生成 [GENERATE_PACK.md](prompts/GENERATE_PACK.md)；用户照片流程见 [制作 Skill](SKILL.md)。 |
+| 真人感、手势与表情指南 | 提示词和评分项在 [overlays](prompts/overlays/)，说明文字在 [真人感模板](tools/HUMAN_PREMIUM.template.md) 和[手势模板](tools/GESTURE_EXPRESSION.template.md)。改动后分别运行 `python tools/build_human_premium_doc.py` 和 `python tools/build_gesture_expression_doc.py`。 |
+| 切片标签 | [词表](istream/vocab.py) 和 [schema 定义](istream/schema.py) 通过 `python -m istream schema --write` 生成 [标签文档](schema/TAGS.md) 和 JSON Schema。 |
+| 示例输入和结果 | [recipes](recipes/) 保留可执行的脚本、时间戳、编辑指令和预期输出。历史成本报告按示例参数估算；本地工作台的运行方式见 [README](README.md)。 |
 
----
-
-## 5. 故障模式（以及谁来兜底）
-
-| # | 故障 | 表现 | 兜底 | 状态 |
-|---|---|---|---|---|
-| 1 | 身份漂移 | 底板之间脸不一样 | 共享身份块 + 首帧图 + 入库验收；口型后和参考图比对 | 流程；自动人脸相似度**未内置** |
-| 2 | 手部 / 遮挡 | 手指畸形、手过嘴 | `hands: near_face` 直接排除；`keep_out` 不在手势中间切 | ✅ 已实现 |
-| 3 | 中文口型 | 闭唇音不闭、快语速糊 | 语速 RISK/WARN、闭唇音密度、英文字母、数字、停顿检查；hero 段走 pro | ✅ 已实现（拼音为近似，装 `pypinyin` 后精确） |
-| 4 | 重复感 | “又是这个动作” | 12 秒禁重复 + 变体规则 + 种子 + 账本疲劳 + 月度换新 | ✅ 已实现 |
-| 5 | 接缝 / 跳帧 | 同底板硬切像丢帧 | 回位点入；同底板相邻镜头缩放差 ≥ 8%；QC `jumpcut` | ✅ 已实现 |
-| 6 | 第二张脸 | 口型锁到倒影或海报 | `second_face` → 任务带 `face_lock` 框 | ✅ 标注和传递；能否锁定取决于引擎 |
-| 7 | 烧录缺陷 | 乱码、字幕、叠化双影 | 切片自动测出并带区域；只有裁画幅能裁掉才可用 | ✅ 已实现（测得的是边缘 / 亮度异常，复杂情况要人工补标） |
-| 8 | 画质 | 放大后糊 | QC `upscale`（> 1.6×）+ 规划器罚分；按目标画幅生成原生底板 | ✅ 已实现 |
-| 9 | MG 挡人 | 卡片压到脸 / 手 | `safe_zones` 硬过滤；画中画放在内容对侧；MG 尾巴在下一句前收掉；QC `mg_zone` | ✅ 已实现 |
-| 10 | 开场生硬 | 第一帧就在说话 | 开场专用镜头 + 配音延后 | ✅ 已实现 |
-| 11 | 素材不够 | 某个版式没有镜头可用 | 规划器降级 + 警告“补一条那一侧空着的底板” | ✅ 已实现 |
-| 12 | 语义错位 | 讲坏消息时她在笑 | 情绪标签加分；强情绪句用卡片 / B-roll | 部分：只能选最接近的，没法生成新表情 |
-| 13 | 平台 / 合规 | 被判 AI 同质化；未标注 | 混剪 B-roll；AI 标识；授权文件 | 流程 |
-
----
-
-## 6. 哪些是真的，哪些是桩（诚实清单）
-
-**真的跑通了（本包内有产物）：**
-- 提示词库构建，K01–K03 逐字校验。
-- 规格目录，月度换新。
-- 两条真实替身底板的切片和复核。
-- 规划、编辑、QC、口型任务、成本、渲染，16:9 和 9:16 都出了片。
-- 约 4 分钟长视频的规划和占位动态分镜。
-- 22 个契约测试。
-
-**桩 / 未内置：**
-- **口型引擎：** 只有 `passthrough` 是真执行。演示成片**没有改嘴**，主播的嘴在说原片的话。sync / 可灵 / HeyGen / LatentSync / MuseTalk 都是模板适配器，只打印要发的请求或命令，拒绝伪造结果。
-- **底板生成：** 提示词没有在真实视频模型里跑过，规格目录的标签都是 `provenance: spec`。
-- **其他：**
-  - VLM 自动打标：只给了提示词，没有接 API。
-  - 人脸相似度：未内置。
-  - SyncNet / LSE 指标：未内置。
-  - TTS 生成：用的是现成配音或估算时长。
-  - 动态 Glass Protocol MG：本渲染器只做 PNG 卡的摆位和淡入淡出；动态版用动效包的合成流程。
-- **替身底板的局限：** 本项目的两条原片只有 720p，主播穿印花 T 恤（违反锁定清单），也没有回位纪律。它们只用来证明流程能在真实数字人素材上跑，不是生产底板。
-
----
-
-## 7. 升级路线
-
-| 阶段 | 做什么 | 验收 |
-|---|---|---|
-| **Phase 0**（1–2 天，< $100） | 生成 K01、K02、O01；用 sync-2-pro 和 LatentSync 各跑 demo 脚本的 3 段中文音频（含绕口令）；按评分卡打分；切片 → 复核 → 对比 `spec` 标签 | 平均 ≥ 4、无 ≤ 2、5 人盲测 ≥ 3 人没看出嘴；记录真实的单价和返工率，回填 `cost.py` |
-| **Phase 1**（约 1 周） | 进阶组合 7 条；接入第一个真实口型适配器（把模板改成 API 调用）；TTS 导出逐句时间戳 → `align.json`；10 条真实视频 | 每条人工时间 ≤ 10 分钟；记录完播率 |
-| **Phase 2**（2–4 周） | VLM 自动打标接 API；人脸相似度入库检查；SyncNet 指标进 QC；Glass Protocol 动态 MG 按时间轴自动渲染；账本接发布系统 | 无人值守生成预览；人只看 RISK 和抽查 |
-| **Phase 3** | 多身份 / 多品牌目录；45° 第二机位和坐姿底板；按完播率学习打分权重（替换手写权重）；Web 时间轴编辑器读写同一份 JSON | 月产 > 200 分钟时，每分钟成本接近全自部署那一列 |
+在独立检出中按 CI 顺序运行 `python tools/build_library.py`、`python -m istream prompts verify` 和 `python -m unittest discover -s tests -v`。身份测试会在该副本内切换和恢复模板。涉及导出时，先用 `python tools/check_environment.py --render` 检查 FFmpeg 滤镜和字体。

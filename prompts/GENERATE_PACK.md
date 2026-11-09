@@ -1,28 +1,12 @@
 # 生成包 · GENERATE_PACK — 无遮挡元视频底板
 
-> 由 `python3 -m istream identity set` 生成 · 身份 slug=`gerry` · 2026-11-07T21:14:36+08:00
-> **先生成可无限复用的无遮挡口播元视频，再切片；不要先剪片再找底板。**
-> This pack is the front door for plate generation. Full library: `PROMPT_LIBRARY.md`.
+> 当前模板：`reference`。在仓库根目录运行 `python3 -m istream identity set --photo ./me.jpg` 可生成自己的版本。
 
-## 为什么先做元视频 / Why meta plates first
+## 生成母片
 
-1. **无遮挡 (no occlusion)**：脸、嘴、发际线全程可见——手不挡脸、无道具挡嘴、背景干净。这样切出来的镜头才能随便换镜 / 推近 / 画中画 / 隐藏。
-2. **一次生成、无限服用**：同一套底板服务很多条脚本；口型只对「露脸」段计费。
-3. **身份锁定**：每次生成都挂**同一张**参考图（本包里的 photo），提示词里的 Identity 块与首帧图一致。
-
-## 操作清单 / Checklist
-
-- [ ] 视频模型与版本固定（同一批底板不要换模型）
-- [ ] 分辨率 ≥ 1080p（能更高更好，留给推近 / 裁竖）
-- [ ] 帧率统一（优先 **25 fps**）
-- [ ] **每次挂上本参考图作身份参考**（identity reference）
-  - 路径：`prompts/identity/gerry/ref.png`
-  - 称呼：gerry
-- [ ] 首帧图：先出 IMG-A（近景）/ IMG-B（中景）/ IMG-A169（横屏），或把参考图按构图裁切后 img2img
-- [ ] **模型自带音频一律静音**（口型与配音另做）
-- [ ] 每条抽 4–5 次，挑最好一条入库
-- [ ] 验收：同人、回位静止在切点附近、**手不过胸不碰脸**、闭嘴段闭嘴、无字幕水印
-- [ ] 生成后：`istream slice` → 复核 → 再 `plan` / `edit`
+- 人物：参考照中的人物。参考照：请使用自己的单人参考照。
+- 为同一批母片使用相同参考照、模型与版本。先生成首帧，再生成近景、中景或开场动作。
+- 建议使用 1080p 或更高分辨率、25 fps。保留嘴部清晰、手势避开脸、切点处姿势稳定的片段。剪辑时沿用最终配音。
 
 ## 负面提示词 / Negative (all starter plates)
 

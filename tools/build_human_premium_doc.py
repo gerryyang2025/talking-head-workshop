@@ -13,21 +13,12 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 tpl = open(os.path.join(ROOT, "tools", "HUMAN_PREMIUM.template.md"), encoding="utf-8").read()
 ov = json.load(open(os.path.join(ROOT, "prompts", "overlays", "human_premium.json"), encoding="utf-8"))
 
-rows = ["| 原句 | 改为 | 为什么 |", "|---|---|---|"]
-for r in ov["replace"]:
-    rows.append(f"| {r['zh'][0]}<br>*{r['en'][0]}* | {r['zh'][1]}<br>*{r['en'][1]}* | {r.get('why_zh', r['why'])} |")
 score = ["| # | 检查（是 / 否） | Check (yes / no) |", "|---|---|---|"]
 for it in ov["scorecard"]:
     score.append(f"| {it['id']} | {it['zh']} | {it['en']} |")
 
-values = {
-    "REPLACE_TABLE": "\n".join(rows),
-    "SCORECARD_TABLE": "\n".join(score),
-    "negative.en": ", ".join(ov["negative_extra"]["en"]),
-    "negative.zh": "，".join(ov["negative_extra"]["zh"]),
-    "negative.short_en": ", ".join(ov["negative_extra"]["short_en"]),
-}
-for key in ("setting_append", "setting_compact", "performance_append", "performance_compact", "first_frame_append", "style_line", "scorecard_rule"):
+values = {"SCORECARD_TABLE": "\n".join(score), "scorecard_rule.zh": ov["scorecard_rule"]["zh"]}
+for key in ("setting_append", "performance_append", "first_frame_append", "style_line"):
     for lang in ("en", "zh"):
         values[f"{key}.{lang}"] = ov[key][lang]
 
