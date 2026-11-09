@@ -17,7 +17,7 @@
 
 ### 本地模型
 
-首次安装由 `init` 从 Hugging Face 下载 18 个文件（约 3.44 GiB），保存在 `build/models/`。已经建好工作台环境时，可以在仓库根目录用以下命令单独补齐或校验模型。
+首次安装由 `init` 从 Hugging Face 下载 19 个文件（约 3.69 GiB），保存在 `build/models/`。已经建好工作台环境时，可以在仓库根目录用以下命令单独补齐或校验模型。
 
 ```sh
 .venv/bin/python -m studio.setup_models
@@ -28,6 +28,7 @@
 | 模型 | 用途 | 下载来源 | 保存位置（相对于 `build/models/`） |
 | --- | --- | --- | --- |
 | MuseTalk 1.5 FP16 | 根据配音生成嘴型 | [模型目录 · ad54104a](https://huggingface.co/mlx-community/MuseTalk-1.5-fp16/tree/ad54104a0129121fe2ea67471250c0656c985284) | `musetalk-1.5-fp16/` 下的 `config.json`、`unet.safetensors`、`vae.safetensors` |
+| EDTalk 256 | 音频驱动嘴部，ONNX Runtime 在 CPU 推理 | [FaceFusion 转换权重 · 6271ab1c](https://huggingface.co/facefusion/models-3.3.0/blob/6271ab1c4619ceb2e534d65e0ec973f22a9aec38/edtalk_256.onnx) · [EDTalk 原项目](https://github.com/tanshuai0219/EDTalk) | `facefusion/edtalk_256.onnx` |
 | Whisper 音频编码器 | 为 MuseTalk 提取语音特征 | [下载编码器](https://huggingface.co/mlx-community/MuseTalk-1.5-fp16/resolve/ad54104a0129121fe2ea67471250c0656c985284/whisper_encoder.safetensors) | `musetalk-1.5-fp16/whisper_encoder.safetensors` |
 | YuNet 2023mar | 检测人脸 | [下载 OpenCV 权重](https://huggingface.co/opencv/face_detection_yunet/resolve/main/face_detection_yunet_2023mar.onnx) | `studio/yunet.onnx`（按此文件名保存） |
 | 2DFAN4 | 定位人脸与唇部关键点 | [下载 FaceFusion 权重](https://huggingface.co/facefusion/models-3.0.0/resolve/main/2dfan4.onnx) | `studio/2dfan4.onnx` |
@@ -53,6 +54,7 @@
 | 工作台、独立 CLI 切片 | NumPy | `>=1.23` | 2.5.4（工作台） | [PyPI · numpy](https://pypi.org/project/numpy/) |
 | 工作台 | ONNX Runtime | `onnxruntime>=1.20` | 1.31.1 | [PyPI · onnxruntime](https://pypi.org/project/onnxruntime/) |
 | 工作台 | OpenCV | `opencv-python>=4.10` | 5.0.0.93 | [PyPI · opencv-python](https://pypi.org/project/opencv-python/) |
+| 工作台 | SciPy（EDTalk 音频特征） | `>=1.10,<2` | 1.18.1 | [PyPI · SciPy](https://pypi.org/project/scipy/) |
 | 工作台 | MuseTalk MLX | `musetalk-mlx` 固定提交（macOS arm64） | 0.1.0 | [GitHub 源码归档 · c6eb30ebd1ed](https://codeload.github.com/xocialize/musetalk-mlx/tar.gz/c6eb30ebd1ed4d043983209813370153de9346bf) |
 | 个人音色 | MLX-Audio | `mlx-audio==0.6.4` | 0.6.4 | [PyPI · mlx-audio](https://pypi.org/project/mlx-audio/) |
 | 个人音色 | Transformers | `transformers==5.22.2` | 5.22.2 | [PyPI · transformers](https://pypi.org/project/transformers/) |
@@ -160,11 +162,11 @@ build/voice-env/bin/python -m pip list
 | 服务启停、首次安装、模型就绪状态 | [optools.sh](optools.sh)、[安装流程](tools/studio_setup.py)、[模型清单与校验](studio/setup_models.py) |
 | 素材与声音 | [媒体与配音](studio/media.py) 管理上传、系统音色和逐句时点；[个人音色](studio/personal_voice.py) 在独立 Python 环境运行 Qwen3-TTS。 |
 | 选镜、补充画面和导出 | [制作流程](studio/production.py) 以确认的配音建立时间轴，只对可见的说话片段运行口型，再合成画幅、字幕和音轨。 |
-| 口型与停顿 | [口型引擎](studio/engine.py) 跟踪人脸，用 Whisper 音频特征驱动 MuseTalk；[停顿闭唇](studio/mouth_rest.py) 和[镜头衔接](studio/mouth_transition.py) 处理收口及头姿连续性。 |
+| 口型与停顿 | [口型引擎](studio/engine.py) 跟踪人脸，MuseTalk 使用 Whisper 特征，[EDTalk](studio/edtalk.py) 使用与转换权重匹配的 80 带梅尔频谱，按预测唇形重映射母片唇纹和可见牙纹。闭唇母片遇到张口音时，会用同一配音额外推理放大的取景，仅补充露齿区域的亮度细节。两者按所选模型独立缓存。[停顿闭唇](studio/mouth_rest.py) 和[镜头衔接](studio/mouth_transition.py) 处理收口及头姿连续性。 |
 
 ## 命令行装配
 
-`python -m istream` 可独立读取标记脚本、素材目录和逐句时间戳，生成时间轴 JSON。[规划器](istream/planner.py) 选镜，[质检](istream/qc.py) 检查重复镜头、人物遮挡等问题，[口型任务](istream/lipsync.py) 按可见时段分配工作，[渲染器](istream/render.py) 装配输出。CLI 的 `passthrough` 用于预览剪辑；要生成真实嘴型可直接用工作台的 MuseTalk，或给 CLI 提供真实引擎处理过的片段。[可复跑的示例](DEMO.md)
+`python -m istream` 可独立读取标记脚本、素材目录和逐句时间戳，生成时间轴 JSON。[规划器](istream/planner.py) 选镜，[质检](istream/qc.py) 检查重复镜头、人物遮挡等问题，[口型任务](istream/lipsync.py) 按可见时段分配工作，[渲染器](istream/render.py) 装配输出。CLI 的 `passthrough` 用于预览剪辑；要生成真实嘴型可直接用工作台的 MuseTalk 或 EDTalk，或给 CLI 提供真实引擎处理过的片段。[可复跑的示例](DEMO.md)
 
 ## 提示词、标签和示例的维护位置
 

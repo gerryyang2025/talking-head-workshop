@@ -91,7 +91,8 @@ def ensure_musetalk(python):
     # installed pin only after the engine imports successfully.
     pin = (ROOT / "studio/requirements.txt").read_text()
     receipt = python.parent.parent / ".studio-musetalk-requirement"
-    probe = [python, "-c", "from musetalk_mlx.pipeline_mlx import MuseTalkPipeline"]
+    probe = [python, "-c", "from musetalk_mlx.pipeline_mlx import MuseTalkPipeline; "
+             "from studio.edtalk import EDTalkEngine"]
     if receipt.is_file() and receipt.read_text() == pin:
         healthy = subprocess.run([python, "-m", "pip", "check"], stdout=subprocess.DEVNULL)
         if healthy.returncode == 0 and subprocess.run(probe, cwd=ROOT).returncode == 0:

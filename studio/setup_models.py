@@ -10,7 +10,12 @@ from urllib.request import urlopen
 
 BASE = Path(__file__).resolve().parents[1] / "build/models"
 MUSE = "https://huggingface.co/mlx-community/MuseTalk-1.5-fp16/resolve/ad54104a0129121fe2ea67471250c0656c985284/"
+EDTALK_FILE = "facefusion/edtalk_256.onnx"
 WEIGHTS = {
+    EDTALK_FILE: (
+        "https://huggingface.co/facefusion/models-3.3.0/resolve/6271ab1c4619ceb2e534d65e0ec973f22a9aec38/edtalk_256.onnx",
+        "c4dd933458814f280b9b4b94a6d6bd73a103ce8db9a531542831327c0a14d43e",
+    ),
     "musetalk-1.5-fp16/config.json": (
         MUSE + "config.json",
         "527702bfd2111adab8b4713d4f70d920a479b5816cbb373731e791f6e3bd47d5",

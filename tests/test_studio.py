@@ -199,6 +199,23 @@ class StudioWorkflow(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "600 秒"):
                 media.build_asset(Path("long.wav"), "audio", "audio", "整篇录音", "long")
 
+    def test_lipsync_dependencies_follow_the_selected_model(self):
+        from studio.setup_models import EDTALK_FILE
+        with tempfile.TemporaryDirectory() as tmp, patch.object(self.server, "MODELS", Path(tmp)), patch(
+            "importlib.util.find_spec", return_value=True
+        ):
+            for name in ("studio/yunet.onnx", "studio/2dfan4.onnx", EDTALK_FILE):
+                path = Path(tmp) / name
+                path.parent.mkdir(exist_ok=True)
+                path.touch()
+            self.server.require_lipsync("edtalk")
+            with self.assertRaisesRegex(ValueError, "MuseTalk"):
+                self.server.require_lipsync("musetalk")
+        self.assertEqual(self.production.selected_model({}), "musetalk")
+        for invalid in (None, [], "unknown"):
+            with self.assertRaisesRegex(ValueError, "口型模型"):
+                self.production.selected_model({"lipModel": invalid})
+
     def test_model_list_reports_missing_components_separately(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(self.server, "MODELS", Path(tmp)), patch.object(
             self.media, "personal_voice_missing", return_value=[]
@@ -524,6 +541,20 @@ class StudioWorkflow(unittest.TestCase):
             start_red = int(pixel(film, first, 320, 320)[2])
             self.assertAlmostEqual(int(pixel(film, first+1, 320, 320)[2]), start_red, delta=2)
             self.assertAlmostEqual(int(pixel(film, first+4, 320, 320)[2]), start_red+24, delta=5)
+
+        # Switching models must recompute the same frames; an EDTalk preview
+        # can then reuse the EDTalk take without MuseTalk's one-frame delay.
+        calls.clear()
+        with patch.dict("sys.modules", {"studio.edtalk": types.SimpleNamespace(EDTalkEngine=MarkMouth),
+                                       "studio.engine": types.SimpleNamespace(FaceLandmarks=NoFace)}):
+            comparison_tl = self.production.plan(dict(config, lipModel="edtalk"))
+            result = self.production.render(comparison_tl, folder, lambda *_: None)
+            self.assertEqual((result["inferred"], result["cached"]), (16, 0))
+            preview = self.production.render_card_preview(
+                dict(config, line=0, start=.2, end=.6, lipModel="edtalk"), folder)
+            self.assertEqual(calls, list(range(5, 15)) + list(range(18, 24)))
+            self.assertAlmostEqual(int(pixel(preview, 3, 160, 160)[2]) -
+                                   int(pixel(preview, 0, 160, 160)[2]), 24, delta=5)
 
         # A speaking cut crosses a pause. Only its two voiced ranges reach the model.
         calls.clear()

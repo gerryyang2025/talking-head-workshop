@@ -1040,6 +1040,9 @@ dialog h3 {
 #cardPreview {
   width: min(720px, 92vw);
 }
+#cardPreview.comparison {
+  width: min(1200px, 96vw);
+}
 #cardPreview video {
   width: 100%;
   max-height: 68vh;

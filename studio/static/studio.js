@@ -187,6 +187,7 @@ async function restoreDraft() {
   voiceError = "";
   voiceRequest = null;
   draft.cutaways ||= [];
+  draft.lipModel ??= "musetalk";
   const referenceVersion = findAsset(draft.voice)?.referenceVersion;
   if (referenceVersion && draft.voiceData && draft.voiceData.referenceVersion !== referenceVersion) {
     Object.assign(draft, {voiceData: null, lines: [], job: null});
@@ -338,6 +339,7 @@ function fresh(title) {
     style: "editorial",
     subtitles: true,
     shift: 0,
+    lipModel: "musetalk",
     inserts: [],
     cutaways: [],
     voiceData: null,
@@ -579,14 +581,27 @@ const cutRange = cut => cutSeconds(cut.first) + "–" + cutSeconds(cut.stop) + "
 const cutName = cut => findAsset(cut.insert)?.name || "待选素材";
 
 function baseVisible(index) {
-  let cursor = index ? cueFrame(draft.lines[index - 1].end) : 0;
+  const start = index ? cueFrame(draft.lines[index - 1].end) : 0;
   const stop = index + 1 === draft.lines.length ? timelineFrames() : cueFrame(draft.lines[index].end);
+  return hasUncoveredFrames(start, stop);
+}
+
+function hasUncoveredFrames(start, stop) {
+  let cursor = start;
   for (const cut of draft.cutaways) {
     if (cut.first > cursor) break;
     cursor = Math.max(cursor, cut.stop);
     if (cursor >= stop) return false;
   }
   return cursor < stop;
+}
+
+function canCompareLine(line, index) {
+  const start = cueFrame(line.start), stop = cueFrame(line.end);
+  const speakingCut = draft.cutaways.some(cut =>
+    cut.insert && cut.insertSpeaking && cut.first < stop && cut.stop > start);
+  const speakingBase = usesHost(lineLayout(line, index)) ? primaryHost() : lineInsert(line).speaking;
+  return speakingCut || (speakingBase && hasUncoveredFrames(start, stop));
 }
 
 function cutEditorList() {
@@ -811,7 +826,7 @@ async function previewCard(index) {
   }
   return playPreview("/api/card-preview", layouts[layout] + "预览", {
     voiceId: draft.voiceData.id, aspect: draft.aspect, insert: visual.id,
-    layout, insertSpeaking: visual.speaking, shift: draft.shift,
+    layout, insertSpeaking: visual.speaking, shift: draft.shift, lipModel: draft.lipModel,
     subtitles: draft.subtitles, framing: draft.framing || "cover",
     line: index, start: line.start, end: line.end,
   });
@@ -833,6 +848,7 @@ async function playPreview(endpoint, title, config) {
   $("#cardPreviewTitle").textContent = title;
   status.textContent = "正在生成带声预览…";
   video.hidden = true;
+  dialog.classList.toggle("comparison", endpoint === "/api/lipsync-comparison");
   dialog.showModal();
   dialog.addEventListener("close", () => {
     controller.abort();
@@ -847,7 +863,7 @@ async function playPreview(endpoint, title, config) {
       headers: {"Content-Type": "application/json", "X-Studio-Request": "1"},
       body: JSON.stringify(config),
     });
-    if (!response.ok) throw Error((await response.json()).error || "图文预览失败");
+    if (!response.ok) throw Error((await response.json()).error || "视频预览失败");
     const clip = await response.blob();
     if (controller.signal.aborted) return;
     url = URL.createObjectURL(clip);
@@ -985,6 +1001,22 @@ async function importDraftReviews() {
     updateJob(await api("/api/jobs/" + id + "/review", {items, onlyMissing: true}));
   }
 }
+function modelName(id = "musetalk") {
+  return session.lipModels.find(model => model.id === id)?.name || id;
+}
+
+function lipModelControl() {
+  const options = session.lipModels.map(model =>
+    '<option value="' + esc(model.id) + '"' + (draft.lipModel === model.id ? " selected" : "") +
+    (model.ready ? ">" : " disabled>") + esc(model.name) + (model.ready ? "" : "（缺依赖）") + "</option>");
+  const hint = session.lipModels.every(model => model.ready)
+    ? "点击句段中的「并排对比口型」，用相同镜头和配音查看句尾与停顿。"
+    : "运行 ./optools.sh init 补齐模型后，可以并排对比口型。";
+  return '<label class="field"><span>成片口型模型</span><select id="lipModel">' +
+    options.join("") + '</select></label><p class="hint">' + hint +
+    (draft.lipModel === "edtalk" ? " EDTalk 建议选用有自然露齿片段的清晰近景。" : "") + '</p>';
+}
+
 function jobBox(j) {
   if (!j)
     return '<p class="hint">点击「生成口播」，即可用当前文案和配音生成成片。已生成的版本可在「导出记录」查看。</p>';
@@ -992,7 +1024,7 @@ function jobBox(j) {
     '<div class="jobstatus stack"><b>' +
     esc(j.title) +
     '</b><span class="hint">' +
-    esc(j.message) +
+    esc(j.message) + " · " + esc(modelName(j.lipModel)) +
     "</span>" +
     (j.status === "running" || j.status === "queued"
       ? '<progress max="100" value="' + j.progress + '"></progress>'
@@ -1134,6 +1166,7 @@ function inspector() {
   }
   if (step === 3) {
     body =
+      lipModelControl() +
       (draft.lines.length ? cutEditorList() : "") +
       (draft.lines.length
         ? '<p class="hint">' +
@@ -1172,6 +1205,9 @@ function inspector() {
                     shots.filter(s => s.enabled).map(s => opt(s.id, a.name + " · " + s.label, l.shot)).join("") +
                     "</select>"
                   : lineInsertControls(l, lineLayout(l, i))) +
+                (canCompareLine(l, i)
+                  ? '<button class="minor" data-compare-line="' + i + '"' +
+                    (session.lipModels.every(model => model.ready) ? "" : " disabled") + '>并排对比口型</button>' : "") +
                 "</div>",
             )
             .join("") +
@@ -1244,7 +1280,7 @@ function alternative() {
             "</b><small>" +
             esc(j.created.replace("T", " ").slice(0, 19)) +
             " · " +
-            j.aspect +
+            j.aspect + " · " + esc(modelName(j.lipModel)) +
             " · " +
             esc(j.message) +
             (j.status === "done" ? " · " + reviewSummary(j) : "") +
@@ -1592,6 +1628,12 @@ document.addEventListener(
       await previewTimeline(first, stop);
       return;
     }
+    if (b.dataset.compareLine !== undefined) {
+      await playPreview("/api/lipsync-comparison", "口型对比 · 左 MuseTalk 1.5 / 右 EDTalk 256", {
+        ...draft, voiceId: draft.voiceData.id, line: Number(b.dataset.compareLine),
+      });
+      return;
+    }
     if (b.dataset.cardLine !== undefined) {
       await previewCard(Number(b.dataset.cardLine));
       return;
@@ -1813,7 +1855,7 @@ document.addEventListener(
         line[k] = ["start", "end"].includes(k) ? Number(el.value) : el.value;
       }
       save();
-      if (k === "layout" || k === "insert") inspector();
+      if (["layout", "insert", "insertSpeaking", "start", "end"].includes(k)) inspector();
       drawTracks();
       return;
     }
@@ -1881,6 +1923,10 @@ document.addEventListener(
         draft.framing = el.value;
         save();
         showMaterialMode("framing");
+        break;
+      case "lipModel":
+        draft.lipModel = el.value;
+        save();
         break;
       case "shift":
         draft.shift = Number(el.value);

@@ -26,7 +26,9 @@ from .media import (
     save_asset,
     token,
 )
-from .production import CAPTION_BAND, SIZES, plan, render, render_card_preview, visual_spans
+from .production import (CAPTION_BAND, MODEL_NAMES, SIZES, compare_mouths, plan, render,
+                         render_card_preview, selected_model, visual_spans)
+from .setup_models import EDTALK_FILE
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.config.update(MAX_CONTENT_LENGTH=160 * 1024 * 1024)
@@ -38,9 +40,10 @@ voice_lock = threading.Lock()
 def lipsync_models():
     folder = "musetalk-1.5-fp16/"
     components = (
-        ("MuseTalk 1.5", "根据配音生成口型 · UNet、VAE", ("mlx", "musetalk_mlx"),
+        (MODEL_NAMES["musetalk"], "根据配音生成口型 · UNet、VAE", ("mlx", "musetalk_mlx"),
          (folder + "config.json", folder + "unet.safetensors", folder + "vae.safetensors")),
         ("Whisper 音频编码器", "为 MuseTalk 提取语音特征", ("mlx", "musetalk_mlx"), (folder + "whisper_encoder.safetensors",)),
+        (MODEL_NAMES["edtalk"], "根据配音生成口型 · ONNX Runtime CPU", ("onnxruntime", "scipy"), (EDTALK_FILE,)),
         ("YuNet", "检测画面中的人脸", ("cv2",), ("studio/yunet.onnx",)),
         ("2DFAN4", "定位面部关键点和嘴部区域", ("onnxruntime",), ("studio/2dfan4.onnx",)),
     )
@@ -52,20 +55,24 @@ def lipsync_models():
     return models
 
 
-def dependencies(models=None):
+def dependencies(models=None, model="musetalk"):
     models = lipsync_models() if models is None else models
-    missing = list(dict.fromkeys(item for model in models for item in model["missing"]))
+    required = {MODEL_NAMES[model], "YuNet", "2DFAN4"}
+    if model == "musetalk":
+        required.add("Whisper 音频编码器")
+    missing = list(dict.fromkeys(item for component in models if component["name"] in required
+                                 for item in component["missing"]))
     return dict(
         ready=not missing,
         missing=missing,
-        engine="MuseTalk 1.5",
+        engine=MODEL_NAMES[model],
     )
 
 
-def require_lipsync():
-    deps = dependencies()
+def require_lipsync(model):
+    deps = dependencies(model=model)
     if not deps["ready"]:
-        raise ValueError("缺少口型依赖：" + ", ".join(deps["missing"]))
+        raise ValueError(f"{MODEL_NAMES[model]} 缺少口型依赖，请运行 ./optools.sh init：" + ", ".join(deps["missing"]))
 
 
 @app.before_request
@@ -139,6 +146,8 @@ def session():
         jobs=all_jobs(),
         engine=dict(dependencies(models), tts=bool(voices), personalVoice=not voice_missing,
                     models=catalog, tools=tools),
+        lipModels=[dict(id=key, name=name, ready=dependencies(models, key)["ready"])
+                   for key, name in MODEL_NAMES.items()],
         systemVoices=list(voices.values()),
         demoText=media.DEMO_TEXT,
         maxNarrationSeconds=media.MAX_NARRATION_SECONDS,
@@ -244,7 +253,7 @@ def card_preview():
     config = request.get_json()
     with tempfile.TemporaryDirectory(dir=STORE) as tmp:
         if config.get("insertSpeaking") is True:
-            require_lipsync()
+            require_lipsync(selected_model(config))
             # Share the GPU and cache with exports, including simultaneous preview requests.
             path = executor.submit(render_card_preview, config, Path(tmp)).result()
         else:
@@ -275,10 +284,22 @@ def timeline_preview():
     with tempfile.TemporaryDirectory(dir=STORE) as tmp:
         args = (tl, Path(tmp), lambda *_: None, (first, stop))
         if visible_speech(spans):
-            require_lipsync()
+            require_lipsync(tl["lipModel"])
             path = executor.submit(render, *args).result()
         else:
             path = render(*args)
+        return app.response_class(path.read_bytes(), mimetype="video/mp4")
+
+
+@app.post("/api/lipsync-comparison")
+def lipsync_comparison():
+    config = request.get_json()
+    with asset_lock:
+        tl = plan(config)
+    for model in MODEL_NAMES:
+        require_lipsync(model)
+    with tempfile.TemporaryDirectory(dir=STORE) as tmp:
+        path = executor.submit(compare_mouths, tl, config.get("line"), Path(tmp)).result()
         return app.response_class(path.read_bytes(), mimetype="video/mp4")
 
 
@@ -349,12 +370,13 @@ def create_job():
     with asset_lock:
         tl = plan(config)
     if visible_speech(visual_spans(tl)):
-        require_lipsync()
+        require_lipsync(tl["lipModel"])
     info = dict(
         id=token(),
         voiceId=tl["voice"],
         title=tl["title"],
         aspect=tl["aspect"],
+        lipModel=tl["lipModel"],
         status="queued",
         progress=0,
         message="等待本机渲染",

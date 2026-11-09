@@ -35,6 +35,14 @@ SPLIT_FRACTION = 0.54
 # SyncNet measured a 1–2 frame lead in MuseTalk 1.5's native 25 fps output.
 # Apply the baseline when reading a synced clip so existing inference is reusable.
 MOUTH_DELAY_FRAMES = 1
+MODEL_NAMES = {"musetalk": "MuseTalk 1.5", "edtalk": "EDTalk 256"}
+
+
+def selected_model(config):
+    model = config.get("lipModel", "musetalk")
+    if not isinstance(model, str) or model not in MODEL_NAMES:
+        raise ValueError("请选择工作台支持的口型模型")
+    return model
 
 
 def load_voice(vid):
@@ -225,6 +233,7 @@ def plan(config):
         framing=framing,
         style=style,
         primaryHost=primary,
+        lipModel=selected_model(config),
         voice=vid,
         frames=frames,
         cutaways=cutaways,
@@ -430,6 +439,7 @@ def synced_frames(path, count):
 
 def visual_spans(tl):
     """Resolve the visible source at each audio or cut boundary, in master frames."""
+    delay = MOUTH_DELAY_FRAMES if selected_model(tl) == "musetalk" else 0
     rows, cuts = tl["rows"], tl.get("cutaways", [])
     boundaries = {0, tl["frames"]}
     for item in [*rows, *cuts]:
@@ -455,7 +465,7 @@ def visual_spans(tl):
             pause_start = rows[ri - 1]["stop"] if ri else 0
             if first >= row["stop"] and row["shot"]:
                 # Continue from the last displayed source time in the tail.
-                offset = max(0, first - row["first"] - MOUTH_DELAY_FRAMES)
+                offset = max(0, first - row["first"] - delay)
             elif row["shot"] and 0 < row["first"] - pause_start <= 6:
                 # A brief lead-in shows the incoming speaker. Do not play the
                 # first few head movements twice when the synced take starts.
@@ -464,7 +474,7 @@ def visual_spans(tl):
             else:
                 offset = first - (row["stop"] if first >= row["stop"] else pause_start)
         span = dict(
-            first=first, stop=stop, layout=layout, shot=source.get("shot"),
+            first=first, stop=stop, layout=layout, delay=delay, shot=source.get("shot"),
             insert=source["insert"], insertSpeaking=source["insertSpeaking"],
             voiced=voiced, offset=offset, hold=hold, origin=source["first"],
             length=source["stop"] - source["first"], owner=("cut", ci) if covered else ("line", ri),
@@ -483,7 +493,8 @@ def visual_spans(tl):
 def draw_span(sink, span, part, size, start, stop, subtitles, framing, performance=None,
               cycle=None, open_tail=None):
     source = tail = tail_source = None
-    windows = loop_windows(span, start, stop, *cycle, MOUTH_DELAY_FRAMES) if part and cycle else {}
+    delay = span.get("delay", MOUTH_DELAY_FRAMES)
+    windows = loop_windows(span, start, stop, *cycle, delay) if part and cycle else {}
     count = span["stop"] - span["first"]
     if part:
         source = synced_frames(part, count)
@@ -499,8 +510,8 @@ def draw_span(sink, span, part, size, start, stop, subtitles, framing, performan
             return None
         local = index - span["first"]
         if part:
-            last = max(0, count - 1 - MOUTH_DELAY_FRAMES)
-            source.pos = min(last, max(0, local - MOUTH_DELAY_FRAMES))
+            last = max(0, count - 1 - delay)
+            source.pos = min(last, max(0, local - delay))
             if local >= count and open_tail and performance:
                 if tail is None:
                     tail_source = open_tail()
@@ -520,7 +531,7 @@ def draw_span(sink, span, part, size, start, stop, subtitles, framing, performan
                 cut, radius = windows[index]
                 if cut != active_cut:
                     saved = source.pos
-                    source.pos = cut - span["first"] - MOUTH_DELAY_FRAMES - 1
+                    source.pos = cut - span["first"] - delay - 1
                     seam = PoseTransition(source.next(), source.next())
                     source.pos = saved
                     active_cut = cut
@@ -643,7 +654,7 @@ def render_card_preview(config, folder):
         raise ValueError("无效的全屏镜头取景方式")
     row = dict(layout=layout, first=first, stop=first + count, text=voice["lines"][line]["text"],
                insert=insert, insertSpeaking=speaking, shot=None)
-    tl = dict(rows=[row], aspect=aspect, subtitles=subtitles, framing=framing, voice=voice_id,
+    tl = dict(rows=[row], lipModel=selected_model(config), aspect=aspect, subtitles=subtitles, framing=framing, voice=voice_id,
               shift=int(number(config.get("shift", 0), -8, 8, "口型时移限于正负 8 帧")),
               frames=math.ceil(voice["duration"] * FPS - 1e-8))
     return render(tl, folder, lambda *_: None, window=(first, first + count))
@@ -658,7 +669,7 @@ def speaker_clip(span):
     return None
 
 
-def sync_parts(rows, voice_id, shift, total, folder, notify):
+def sync_parts(rows, voice_id, shift, total, folder, notify, model):
     cache = STORE / "synced"
     cache.mkdir(exist_ok=True)
     voice = STORE / "voices" / voice_id / "voice.wav"
@@ -674,7 +685,7 @@ def sync_parts(rows, voice_id, shift, total, folder, notify):
         ident, start, end = clip
         offset_key = (row["offset"],) if row.get("offset") else ()
         key = signature(
-            "musetalk-v1",
+            "edtalk-v5" if model == "edtalk" else "musetalk-v1",
             voice_id,
             row["first"],
             row["stop"],
@@ -690,14 +701,16 @@ def sync_parts(rows, voice_id, shift, total, folder, notify):
             cached += count
             continue
         if engine is None:
-            from .engine import MouthEngine
-
-            notify(8, "正在载入本机 MuseTalk 口型模型")
+            if model == "edtalk":
+                from .edtalk import EDTalkEngine as Engine
+            else:
+                from .engine import MouthEngine as Engine
+            notify(8, f"正在载入本机 {MODEL_NAMES[model]} 口型模型")
             # Decode a band-limited inference copy of the final audio.
             raw = ff("-i", voice, "-ar", "16000", "-ac", "1", "-f", "f32le", "pipe:1")
             samples = np.frombuffer(raw, "<f4")
             samples = np.pad(samples, (0, max(0, total * 640 - len(samples))))
-            engine = MouthEngine(samples)
+            engine = Engine(samples)
         src = Frames(asset(ident), start, end)
         src.pos = row.get("offset", 0)
         tmp = folder / (key + ".mp4")
@@ -733,7 +746,7 @@ def sync_parts(rows, voice_id, shift, total, folder, notify):
     return parts, inferred, cached
 
 
-def render(tl, folder, notify, window=None):
+def render(tl, folder, notify, window=None, *, full_resolution=False):
     from istream.render import _esc
 
     size = SIZES[tl["aspect"]]
@@ -749,7 +762,7 @@ def render(tl, folder, notify, window=None):
     tails = {s["rest_from"]: s["stop"] for s in all_spans if "rest_from" in s}
     spans = [s for s in all_spans if "rest_from" not in s and s["first"] < stop
              and tails.get(s["first"], s["stop"]) > first]
-    parts, inferred, cached = sync_parts(spans, tl["voice"], tl["shift"], total, folder, notify)
+    parts, inferred, cached = sync_parts(spans, tl["voice"], tl["shift"], total, folder, notify, selected_model(tl))
     weights = rest_mouth = None
     clips = [speaker_clip(span) for span in spans]
     actors = {ident: asset(ident) for ident in {clip[0] for clip in clips if clip}}
@@ -775,7 +788,8 @@ def render(tl, folder, notify, window=None):
     audio_trim = []
     if window:
         audio_trim = ["-ss", first / FPS, "-t", (stop - first) / FPS]
-        filters += ",scale=iw/2:ih/2"
+        if not full_resolution:
+            filters += ",scale=iw/2:ih/2"
     with encoder(
         output, size, *audio_trim, "-i", voice, "-map", "0:v:0", "-map", "1:a:0",
         "-vf", filters, "-c:a", "aac", "-b:a", "160k",
@@ -815,3 +829,34 @@ def render(tl, folder, notify, window=None):
         video=v["codec_name"],
         audio=a["codec_name"],
     )
+
+
+def compare_mouths(tl, line, folder):
+    """Use a single shot plan and one audio stream for the two previews."""
+    if type(line) is not int or not 0 <= line < len(tl["rows"]):
+        raise ValueError("请选择要对比的句段")
+    row = tl["rows"][line]
+    speech = [s for s in visual_spans(tl) if row["first"] <= s["first"] < row["stop"]
+              and s["voiced"] and speaker_clip(s)]
+    if not speech:
+        raise ValueError("这一句没有可见的口播人物，请选择人物出镜的句段")
+    end = speech[-1]["stop"]
+    following = tl["rows"][line + 1]["first"] if line + 1 < len(tl["rows"]) else tl["frames"]
+    stop = min(end + 6, following) if end == row["stop"] else end
+    window = (max(row["first"], stop - 3 * FPS), stop)
+    files = []
+    for model in ("musetalk", "edtalk"):
+        side = folder / model
+        side.mkdir()
+        # Preserve export-resolution lip detail for a close comparison.
+        files.append(render(dict(tl, lipModel=model), side, lambda *_: None,
+                            window, full_resolution=True))
+    output = folder / "comparison.mp4"
+    label = "x=12:y=12:fontsize=24:fontcolor=white:box=1:boxcolor=black@0.6"
+    layout = (f"[0:v]drawtext=text='MuseTalk 1.5':{label}[left];"
+              f"[1:v]drawtext=text='EDTalk 256':{label}[right];"
+              "[left][right]hstack=inputs=2[v]")
+    ff("-i", files[0], "-i", files[1], "-filter_complex", layout,
+       "-map", "[v]", "-map", "0:a:0", "-c:a", "copy", "-c:v", "libx264", "-crf", "17",
+       "-pix_fmt", "yuv420p", "-movflags", "+faststart", output)
+    return output

@@ -45,6 +45,26 @@ class FaceLandmarks:
         pts = next(o for o in raw if o.ndim == 3)[0, :, :2] * 4
         return cv.transform(pts[None], cv.invertAffineTransform(mat))[0]
 
+    def track(self, frame, state):
+        pts = self.landmarks(frame)
+        if "pts" in state and np.mean(np.abs(pts - state["pts"])) < 3:
+            pts = 0.72 * pts + 0.28 * state["pts"]
+        state["pts"] = pts
+        return pts
+
+
+def mouth_mask(lips, box):
+    x, y, r, b = box
+    cx, cy = (lips.max(0) + lips.min(0)) / 2
+    width = max(8.0, float(lips[:, 0].max() - lips[:, 0].min()))
+    yy, xx = np.ogrid[y:b, x:r]
+    distance = np.sqrt(
+        ((xx - cx) / (0.88 * width)) ** 2
+        + ((yy - cy - width * 0.09) / (0.78 * width)) ** 2
+    )
+    mask = np.clip((1 - distance) / 0.32, 0, 1).astype(np.float32)
+    return (mask * mask * (3 - 2 * mask))[..., None]
+
 
 class MouthEngine(FaceLandmarks):
     def __init__(self, wav16):
@@ -80,16 +100,8 @@ class MouthEngine(FaceLandmarks):
         if min(r - x, b - y) < 32:
             raise ValueError("人脸有效区域过小，请选择近一些的镜头")
         crop = cv.resize(frame[y:b, x:r], (256, 256), interpolation=cv.INTER_AREA)
-        lips = pts[48:60]
-        cx, cy = (lips.max(0) + lips.min(0)) / 2
-        width = max(8.0, float(lips[:, 0].max() - lips[:, 0].min()))
-        yy, xx = np.ogrid[y:b, x:r]
-        distance = np.sqrt(
-            ((xx - cx) / (0.88 * width)) ** 2
-            + ((yy - cy - width * 0.09) / (0.78 * width)) ** 2
-        )
-        mask = np.clip((1 - distance) / 0.32, 0, 1).astype(np.float32)
-        return crop, (x, y, r, b), (mask * mask * (3 - 2 * mask))[..., None]
+        box = (x, y, r, b)
+        return crop, box, mouth_mask(pts[48:60], box)
 
     def sync(self, frames, indexes, shift, fixed, state):
         latents, regions = [], []
@@ -98,10 +110,7 @@ class MouthEngine(FaceLandmarks):
                 latent, region = state["geometry"]
             else:
                 # Track on each moving frame so a different speaker is never silently selected.
-                pts = self.landmarks(f)
-                if "pts" in state and np.mean(np.abs(pts - state["pts"])) < 3:
-                    pts = 0.72 * pts + 0.28 * state["pts"]
-                state["pts"] = pts
+                pts = self.track(f, state)
                 crop, box, alpha = self.face(f, pts)
                 latent = self.pipe.get_latents_for_unet(crop).astype(self.mx.float16)
                 region = box, alpha
