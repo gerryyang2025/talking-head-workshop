@@ -2,7 +2,7 @@
 
 ## 运行依赖
 
-在仓库根目录运行 `./optools.sh init`，即可安装两个 Python 环境、配置媒体工具，并下载和校验全部模型。首次安装需要联网。下列本机版本记录于 2026-11-09，重新安装时 pip 会按项目声明的约束解析版本。[安装流程](tools/studio_setup.py)
+在仓库根目录运行 `./optools.sh init`，即可安装两个 Python 环境、配置媒体工具，并下载和校验全部模型。首次安装需要联网。下列版本来自 2026-11-09 在 macOS 15.5（arm64）上从空目录执行 `init` 的结果。再次安装时，pip 会按项目约束解析版本。[安装流程](tools/studio_setup.py)
 
 ### 系统工具
 
@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | Apple Silicon、macOS、Metal | 本地模型推理。本机为 macOS 15.5、arm64 | 使用 Apple Silicon Mac 的原生终端，Metal 随 macOS 提供。可用 `uname -m` 确认输出为 `arm64`。 |
 | Homebrew | 缺少系统工具时用于补装。本机为 7.0.12 | 首次使用可从官网下载 macOS 的 `.pkg` 安装器，安装后用 `brew --version` 确认。[Homebrew 官网](https://brew.sh/) |
-| Python 3.12 | 工作台和个人音色各用一个虚拟环境，本机均为 3.12.13 | `init` 优先使用已有的 `python3.12`。如果终端还没有可运行的 Python 3，先执行 `brew install python@3.12`。 |
+| Python 3.12 | 工作台和个人音色各用一个虚拟环境，本机均为 3.12.13 | `init` 复用已有的 Python 3.12 环境。新机缺少 Python 3.12 时会通过 Homebrew 安装；也可手动执行 `brew install python@3.12`。 |
 | FFmpeg、FFprobe | 转码、探测和导出，本机均为 9.0.2 | `init` 检查已有安装是否支持 `drawtext`、`subtitles` 和 `libx264`，需要时通过 Homebrew 安装。手动执行 `brew install ffmpeg-full` 即可取得两个工具。 |
 | 中文字体 | 渲染字幕和图文，本机使用 STHeiti Medium | 优先使用系统已有的中文字体。也可在 macOS「字体册」下载安装中文字体，将 `ISTREAM_FONT` 设为字体文件的绝对路径。 |
 | macOS 系统语音 | 系统音色朗读，使用 `/usr/bin/say` | `say` 随 macOS 提供。更多音色可在「系统设置」中的朗读设置里下载，用 `say -v '?'` 列出可用音色。[Apple 声音下载说明](https://support.apple.com/zh-cn/guide/mac-help/mchlp2290/mac) |
@@ -70,7 +70,7 @@ build/voice-env/bin/python -m pip install -r studio/voice-requirements.txt
 只用独立 CLI 切片时，可在自己的虚拟环境执行 `python -m pip install -r requirements.txt`。CLI 规划与提示词拼装使用标准库。[CLI 依赖](requirements.txt) · [网页与媒体依赖](studio/web-requirements.txt) · [口型依赖](studio/requirements.txt) · [个人音色依赖](studio/voice-requirements.txt)
 
 <details>
-<summary>展开本机完整包清单（工作台 54 项，个人音色 39 项，含间接依赖和 pip）</summary>
+<summary>展开全新安装包清单（工作台 52 项，个人音色 39 项，含间接依赖和 pip）</summary>
 
 | Python 包 | 工作台 `.venv` | 个人音色 `build/voice-env` |
 | --- | --- | --- |
@@ -113,7 +113,6 @@ build/voice-env/bin/python -m pip install -r studio/voice-requirements.txt
 | `numpy` | 2.5.4 | 2.5.4 |
 | `onnxruntime` | 1.31.1 | — |
 | `opencv-python` | 5.0.0.93 | — |
-| `opencv-python-headless` | 5.0.0.93 | — |
 | `packaging` | 26.3 | 26.3 |
 | `pip` | 26.0 | 26.0 |
 | `platformdirs` | 4.14.5 | — |
@@ -122,10 +121,10 @@ build/voice-env/bin/python -m pip install -r studio/voice-requirements.txt
 | `pycparser` | 3.12 | 3.12 |
 | `Pygments` | — | 2.21.0 |
 | `PyYAML` | 6.0.3 | 6.0.3 |
-| `regex` | — | 2026.11.7 |
+| `regex` | — | 2026.11.9 |
 | `requests` | 2.34.2 | — |
 | `rich` | — | 15.0.0 |
-| `safetensors` | 0.8.0 | 0.8.0 |
+| `safetensors` | — | 0.8.0 |
 | `scikit-learn` | 1.9.1 | — |
 | `scipy` | 1.18.1 | 1.18.1 |
 | `sentencepiece` | — | 0.2.3 |

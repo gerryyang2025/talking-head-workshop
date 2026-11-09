@@ -6,7 +6,7 @@
 
 ## 首次安装
 
-在装有 Homebrew 的 Apple Silicon Mac 上，打开终端运行以下命令。
+在 Apple Silicon Mac 的原生终端中运行以下命令（已验证 macOS 15.5）。新机先安装 Homebrew，确认 `brew --version` 和 `git --version` 可用。如果系统提示缺少 Apple 命令行工具，运行 `xcode-select --install`。[Homebrew 安装说明](https://docs.brew.sh/Installation)
 
 ```sh
 git clone https://github.com/gerryyang2025/talking-head-workshop.git
