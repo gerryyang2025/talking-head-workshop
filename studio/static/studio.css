@@ -146,6 +146,7 @@ p {
   gap: 4px;
 }
 .navbtn {
+  text-decoration: none;
   background: transparent;
   border: 1px solid transparent;
   color: #abb2a9;

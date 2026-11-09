@@ -100,7 +100,9 @@ def home():
 
 
 @app.get("/studio", strict_slashes=False)
-def workbench():
+@app.get("/studio/<any(library,exports):page>", strict_slashes=False)
+@app.get("/studio/steps/<any(materials,clips,voice,shots,style,review):page>", strict_slashes=False)
+def workbench(page=None):
     return app.send_static_file("index.html")
 
 

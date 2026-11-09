@@ -51,14 +51,17 @@ const opt = (value, label, selected) =>
   ">" +
   esc(label) +
   "</option>";
-const steps = [
-  "准备母片",
-  "切片打标",
-  "文案配音",
-  "选镜与口型",
-  "多风格剪辑",
-  "检查导出",
-];
+const stageNames = {
+  materials: "准备母片",
+  clips: "切片打标",
+  voice: "文案配音",
+  shots: "选镜与口型",
+  style: "多风格剪辑",
+  review: "检查导出",
+};
+const steps = Object.values(stageNames);
+const stepPaths = Object.keys(stageNames).map(slug => "/studio/steps/" + slug);
+const viewPaths = {library: "/studio/library", history: "/studio/exports"};
 const layouts = {
   auto: "跟随风格",
   full: "全屏人物",
@@ -153,7 +156,7 @@ const fmt = (t) => {
 const sec = (t) => Number(t || 0).toFixed(2) + " s";
 let session,
   draft,
-  view = "work",
+  view,
   step = 2,
   mode = "framing",
   busy = false,
@@ -163,6 +166,7 @@ let session,
   stillClock = 0,
   stillTimer,
   progressJob;
+let navigationVersion = 0;
 let shotMap = {},
   resultTimeline = null,
   resultVoice = null;
@@ -401,34 +405,34 @@ function updateJob(j) {
   if (index < 0) session.jobs.unshift(j);
   else session.jobs[index] = j;
 }
-function nav() {
+function initNavigation() {
   $("#views").innerHTML = Object.entries(views)
-    .map(
-      ([k, [g, n]]) =>
-        '<button class="navbtn ' +
-        (view === k ? "on" : "") +
-        '" data-view="' +
-        k +
-        '">' +
-        icon(g) +
-        n +
-        "</button>",
-    )
+    .map(([key, [glyph, name]]) =>
+      `<a class="navbtn" data-view="${key}" href="${viewPaths[key] || stepPaths[step]}">${icon(glyph)}${name}</a>`)
     .join("");
   $("#steps").innerHTML = steps
-    .map(
-      (n, i) =>
-        '<button class="navbtn stage ' +
-        (view === "work" && step === i ? "on" : "") +
-        '" data-step="' +
-        i +
-        '"><span class="order">0' +
-        (i + 1) +
-        "</span>" +
-        n +
-        "</button>",
-    )
+    .map((name, i) =>
+      `<a class="navbtn stage" data-step="${i}" href="${stepPaths[i]}"><span class="order">0${i + 1}</span>${name}</a>`)
     .join("");
+}
+function activatePage(page, index, replace) {
+  navigationVersion++;
+  view = page;
+  step = index;
+  const path = viewPaths[view] || stepPaths[step];
+  if (replace || location.pathname !== path) {
+    const method = replace ? "replaceState" : "pushState";
+    history[method]({step}, "", path + location.search + location.hash);
+  }
+  $('#views [data-view="work"]').href = stepPaths[step];
+  for (const link of document.querySelectorAll(".rail nav a")) {
+    const active = link.dataset.view === view ||
+      (view === "work" && link.dataset.step === String(step));
+    link.classList.toggle("on", active);
+    if (active) link.setAttribute("aria-current", link.hasAttribute("data-step") ? "step" : "page");
+    else link.removeAttribute("aria-current");
+  }
+  document.title = (view === "work" ? steps[step] : views[view][1]) + " · 口播工坊";
   $("#crumb").textContent = views[view][1];
   $("#title").textContent = view === "work" ? "口播工作台" : views[view][1];
   $("#subheading").innerHTML =
@@ -537,28 +541,30 @@ function seek(t) {
   else if (Number.isFinite(v.duration)) v.currentTime = Math.min(t, v.duration);
   updateClock();
 }
-function setStep(i) {
-  step = i;
-  view = "work";
-  if (i >= 2 && i <= 4) showMaterialMode("framing");
-  else if (i < 2) showMaterialMode("source");
-  nav();
+function setStep(i, replace = false, keepMode = false) {
+  const entering = view !== "work";
+  activatePage("work", i, replace);
+  if (!keepMode && i < 5) showMaterialMode(i < 2 ? "source" : "framing");
+  if (entering) prepMonitor();
   inspector();
   drawTracks();
 }
-function showView(k) {
-  view = k;
-  nav();
-  if (k === "work") {
-    inspector();
-    prepMonitor();
-    drawTracks();
-  } else {
-    $("#video").pause();
-    $("#cutAudio").pause();
-    stopStill();
-    alternative();
-  }
+function showView(page, index = step, replace = false) {
+  if (page === "work") return switchStep(index, {prepareVoice: false, keepMode: !!$("#screen").dataset.mode});
+  activatePage(page, index, replace);
+  $("#video").pause();
+  $("#cutAudio").pause();
+  stopStill();
+  alternative();
+}
+function restoreLocation() {
+  const path = location.pathname.replace(/\/$/, "");
+  const saved = history.state?.step;
+  const fallback = Number.isInteger(saved) && stepPaths[saved] ? saved : (progressJob ? 5 : 2);
+  const workspace = Object.keys(viewPaths).find(key => viewPaths[key] === path);
+  if (workspace) return showView(workspace, fallback, true);
+  const index = stepPaths.indexOf(path);
+  return switchStep(index < 0 ? fallback : index, {replace: true, prepareVoice: false});
 }
 const timelineFPS = 25;
 const timelineFrames = () => Math.ceil(draft.voiceData.duration * timelineFPS - 1e-8);
@@ -887,11 +893,12 @@ function aspectButtons() {
   );
 }
 async function openFilm(id, playNow = true) {
+  const revision = navigationVersion;
   const [job, tl] = await Promise.all([
     api("/api/jobs/" + id), api("/api/jobs/" + id + "/timeline"),
   ]);
   const voice = await api("/api/voice/" + tl.voice + "/info");
-  if (!playNow && current()?.id !== id) return;
+  if (revision !== navigationVersion || (!playNow && current()?.id !== id)) return;
   updateJob(job);
   resultVoice = voice;
   resultTimeline = tl;
@@ -1092,7 +1099,7 @@ function inspector() {
         )
         .join("") +
       "</div>" +
-      (a
+      (a && shotMap[a.id]
         ? '<div class="btnrow">' +
           (a.kind === "video"
             ? '<button class="minor" id="addshot">增加切片</button>'
@@ -1385,7 +1392,7 @@ async function poll(id) {
       $("#produce").disabled = false;
       if (draft.job !== id) return;
       if (j.status === "done") {
-        await openFilm(id, false);
+        if (view === "work" && step === 5) await openFilm(id, false);
         message("成片已生成，可播放并下载");
       } else message(j.message);
       return;
@@ -1397,6 +1404,7 @@ async function poll(id) {
 }
 async function generate() {
   if (progressJob || busy) return;
+  const revision = navigationVersion;
   busy = true;
   $("#produce").disabled = true;
   try {
@@ -1425,7 +1433,7 @@ async function generate() {
       draft.job = j.id;
       playingJob = j.id;
       save();
-      setStep(5);
+      if (revision === navigationVersion) setStep(5);
     }
     poll(j.id);
   } finally {
@@ -1433,17 +1441,19 @@ async function generate() {
     $("#produce").disabled = !!progressJob;
   }
 }
-async function switchStep(n) {
+async function switchStep(n, {replace = false, prepareVoice = true, keepMode = false} = {}) {
+  setStep(n, replace, keepMode);
+  const revision = navigationVersion;
   if (n === 5 && current()?.status === "done" && mode !== "result") {
     await openFilm(current().id, false);
     return;
   }
-  if (n === 1) await loadShots(draft.hosts[0]);
-  if (n === 3) {
+  if (n === 1 || n === 3) {
     await loadShots(draft.hosts[0]);
-    if (draft.text.trim()) await ensureVoice();
+    if (revision !== navigationVersion) return;
+    inspector();
+    if (n === 3 && prepareVoice && draft.text.trim()) await ensureVoice();
   }
-  setStep(n);
 }
 async function use(a) {
   if (a.kind === "audio") {
@@ -1501,7 +1511,11 @@ function play() {
 document.addEventListener(
   "click",
   task(async (e) => {
-    const b = e.target.closest("button,a[data-use]");
+    const b = e.target.closest("button,a[data-use],a[data-view],a[data-step]");
+    if (b?.matches("a[data-view],a[data-step]")) {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+    }
     if (!b) {
       const lane = e.target.closest("#tracks .wave, #tracks .cut-lane, #tracks .ruler");
       if (lane && !$("#cutTransport").hidden) {
@@ -1538,7 +1552,7 @@ document.addEventListener(
       return;
     }
     if (b.dataset.view) {
-      showView(b.dataset.view);
+      await showView(b.dataset.view);
       return;
     }
     if (b.dataset.step !== undefined) {
@@ -1963,19 +1977,22 @@ async function start() {
   const ready = engines.filter(item => !item.missing.length).length;
   $("#engineInfo").textContent = ready + " / " + engines.length + " 项就绪 · 查看";
   $("#engineDot").classList.toggle("off", ready !== engines.length);
-  nav();
-  inspector();
-  prepMonitor();
-  drawTracks();
+  initNavigation();
   const v = $("#video");
   ["timeupdate", "loadedmetadata", "play", "pause", "ended"].forEach((k) =>
     v.addEventListener(k, updateClock),
   );
   if (draft.job && ["queued", "running"].includes(getJob(draft.job)?.status)) {
     progressJob = draft.job;
-    setStep(5);
-    poll(draft.job);
+    $("#produce").disabled = true;
   }
+  window.addEventListener("popstate", task(() => {
+    document.querySelector("dialog[open]")?.close();
+    return restoreLocation();
+  }));
+  const initialPage = restoreLocation();
+  if (progressJob) poll(progressJob);
   restoreTimeline();
+  await initialPage;
 }
 start().catch((e) => message(e.message));

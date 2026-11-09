@@ -45,6 +45,17 @@ class StudioWorkflow(unittest.TestCase):
         self.client = server.app.test_client()
         self.headers = {"X-Studio-Request": "1"}
 
+    def test_studio_deep_links_load_the_workbench(self):
+        stages = ("materials", "clips", "voice", "shots", "style", "review")
+        paths = ["/studio", "/studio/library", "/studio/exports", *("/studio/steps/" + s for s in stages)]
+        for path in paths:
+            for suffix in ("", "/"):
+                with self.subTest(path=path + suffix), self.client.get(path + suffix) as response:
+                    self.assertEqual(response.status_code, 200)
+                    self.assertIn(b'id="inspector"', response.data)
+        for path in ("/studio/unknown", "/studio/steps/unknown"):
+            self.assertEqual(self.client.get(path).status_code, 404)
+
     def test_system_voice_catalog_and_synthesis_keep_locale_and_saved_ids(self):
         listing = "\n".join((
             "Reed (中文（中国大陆）)    zh_CN    # 你好。",
