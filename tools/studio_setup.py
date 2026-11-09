@@ -68,21 +68,20 @@ def install(python, requirements):
                     ROOT / "studio" / requirements], check=True)
 
 
-def initialize(*, web_only):
-    if not web_only and (platform.system(), platform.machine()) != ("Darwin", "arm64"):
-        raise RuntimeError("本地模型需要 Apple Silicon Mac 和原生 arm64 终端。仅启动网页可运行 ./optools.sh init --web-only。")
+def initialize():
+    if (platform.system(), platform.machine()) != ("Darwin", "arm64"):
+        raise RuntimeError("本地模型需要 Apple Silicon Mac 和原生 arm64 终端。")
 
     python = environment(ROOT / ".venv")
     configure_ffmpeg(python)
     install(python, "web-requirements.txt")
     subprocess.run([python, "-c", "from studio.__main__ import app"], cwd=ROOT, check=True)
-    if not web_only:
-        ensure_musetalk(python)
-        voice_python = environment(ROOT / "build/voice-env")
-        install(voice_python, "voice-requirements.txt")
-        subprocess.run([voice_python, "-c", "from mlx_audio.tts.utils import load_model"], check=True)
-        subprocess.run([voice_python, "-m", "pip", "check"], check=True)
-        subprocess.run([python, "-m", "studio.setup_models"], cwd=ROOT, check=True)
+    ensure_musetalk(python)
+    voice_python = environment(ROOT / "build/voice-env")
+    install(voice_python, "voice-requirements.txt")
+    subprocess.run([voice_python, "-c", "from mlx_audio.tts.utils import load_model"], check=True)
+    subprocess.run([voice_python, "-m", "pip", "check"], check=True)
+    subprocess.run([python, "-m", "studio.setup_models"], cwd=ROOT, check=True)
     subprocess.run([python, "-m", "pip", "check"], check=True)
     print("环境已就绪。运行 ./optools.sh start 启动工作台。")
 

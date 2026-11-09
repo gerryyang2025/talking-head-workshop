@@ -109,9 +109,8 @@ def stop(pid):
 def main():
     parser = argparse.ArgumentParser(prog="./optools.sh", description="管理口播工坊的本地服务")
     commands = parser.add_subparsers(dest="action", required=True)
-    init_help = "安装工作台运行依赖及全部口型、个人音色模型"
-    init = commands.add_parser("init", help=init_help, description=init_help)
-    init.add_argument("--web-only", action="store_true", help="仅配置网页运行环境，跳过本地推理引擎和模型")
+    init_help = "安装全部运行依赖并部署本地口型和个人音色模型"
+    commands.add_parser("init", help=init_help, description=init_help)
     commands.add_parser("start", help="后台启动")
     commands.add_parser("stop", help="停止服务")
     commands.add_parser("restart", help="重启服务")
@@ -134,7 +133,7 @@ def main():
         if args.action == "init":
             from studio_setup import initialize
 
-            initialize(web_only=args.web_only)
+            initialize()
             return 0
         service = current()
         if args.action == "status" or (args.action == "start" and service):
