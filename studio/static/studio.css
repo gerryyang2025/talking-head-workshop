@@ -294,6 +294,8 @@ main {
 .crumb {
   color: var(--muted);
 }
+.crumb a { color: inherit; text-underline-offset: 3px; }
+.crumb a:hover { color: var(--lime); }
 .crumb svg {
   width: 15px;
 }

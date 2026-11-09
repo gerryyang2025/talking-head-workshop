@@ -96,6 +96,11 @@ def error(exc):
 
 @app.get("/")
 def home():
+    return app.send_static_file("home.html")
+
+
+@app.get("/studio", strict_slashes=False)
+def workbench():
     return app.send_static_file("index.html")
 
 

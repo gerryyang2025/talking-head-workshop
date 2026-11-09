@@ -1,76 +1,66 @@
-<h1 align="center">口播工坊 · 本地口播工作台</h1>
+# 口播工坊 · 本地数字人口播工作台
 
-<p align="center">
-  <strong>Gerry · 无限流数字人口播</strong><br>
-  母片先做好，切片反复用。换文案、换镜头、换风格，持续出片。
-</p>
+**Gerry · 无限流数字人口播**。准备一张单人照片或一段人物视频，写下台词，在本机完成配音、口型、剪辑和 MP4 导出。下一篇稿子可以继续使用同一套人物素材。
 
-<p align="center">
-  <a href="https://github.com/gerryyang2025/lanshu-infinite-stream-koubo/actions/workflows/test.yml"><img src="https://github.com/gerryyang2025/lanshu-infinite-stream-koubo/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-22C55E?style=flat-square" alt="MIT License"></a>
-  <a href="SKILL.md"><img src="https://img.shields.io/badge/Agent-Skill-111827?style=flat-square" alt="Agent Skill"></a>
-  <a href="#快速开始"><img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+"></a>
-  <a href="#快速开始"><img src="https://img.shields.io/badge/FFmpeg-7%2B-007808?style=flat-square&logo=ffmpeg&logoColor=white" alt="FFmpeg 7+"></a>
-  <a href="#核心流程"><img src="https://img.shields.io/badge/Timeline-Audio_Locked-0F766E?style=flat-square" alt="Audio-locked timeline"></a>
-</p>
-<p align="center">
-  <a href="#怎么省成本"><img src="https://img.shields.io/badge/Footage-Reusable-0D9488?style=flat-square" alt="Reusable footage"></a>
-  <a href="#核心流程"><img src="https://img.shields.io/badge/Lip--sync-Visible_Only-7C3AED?style=flat-square" alt="Lip-sync visible segments only"></a>
-  <a href="SKILL.md"><img src="https://img.shields.io/badge/Output-16%3A9_%7C_9%3A16-0284C7?style=flat-square" alt="16:9 and 9:16"></a>
-  <a href="SKILL.md"><img src="https://img.shields.io/badge/Quality-QC_Workflow-475569?style=flat-square" alt="Quality-control workflow"></a>
-</p>
+![口播工坊首页：同一主题的横版与竖版口播画面](docs/koubo-workshop.webp)
 
-## 无限流怎么玩
+[打开本机首页](http://127.0.0.1:8765/) · [直接进入工作台](http://127.0.0.1:8765/studio) · [第一次出片](#核心流程) · [首次安装](#首次安装) · [命令行与 Agent Skill](#命令行与-agent-skill)
 
-先生成或拍摄一套人物、服装、光线一致的**母片**，切成带动作、表情、景别标签的镜头库。每次写新稿，就按内容选镜头、配音、处理口型，再用不同版式和动效组合成片。
+## 快速开始
 
-适合课程、知识讲解、产品介绍等口播内容。素材库可以持续补新，镜头按使用情况轮换。
+**已经配置过这台 Mac**：在工程目录运行 `./optools.sh start`，打开[首页](http://127.0.0.1:8765/)了解功能，或收藏[制作工作台](http://127.0.0.1:8765/studio)继续编辑。两个地址都由本机服务提供。服务启动后可以关闭终端。
 
-![同一套人物切片和音轨，组合成六种剪辑风格](assets/showcase.gif)
+**第一次试做**：在工作台点「新建项目」，从「素材库」导入一张嘴部无遮挡的单人照片，在「准备母片」将它选为主讲。初次可以直接用一篇短测试文案和一个系统音色；确认整篇配音能播放后，再点「生成口播」。想使用自己的录音或音色，见下方配音说明。
 
-上图为原项目的剪辑示例，同一套人物切片和音轨组合成六种风格。
+## 核心流程
+
+| 在工作台打开 | 怎么用 |
+| --- | --- |
+| ① 准备母片 | 指定一份主讲照片或视频；可以从同一个素材库选择多份补充照片或视频。素材可跨项目复用，从项目移出只会取消引用。 |
+| ② 切片打标 | 查看建议切片，调整视频出入点，核对表情、视线和手势标签，剔除遮嘴或异常片段。 |
+| ③ 文案配音 | 选择短稿、长稿或输入自己的台词。选音色准备整篇配音；「短句试听音色」只比较声音。整篇音频就绪后，时间线才显示镜头、配音波形和字幕。 |
+| ④ 选镜与口型 | 逐句选切片、版式和出镜人物。可以在配音的指定秒数插入多个补充画面，也可按帧微调口型并预览剪辑。 |
+| ⑤ 多风格剪辑 | 组合全屏人物、分屏讲解、圆形小窗、动态图文或补充画面；选择画幅、全屏取景和底部字幕。切换风格只影响「跟随风格」的句段。 |
+| ⑥ 检查导出 | 点「生成口播」，完成后带声检查闭唇、接缝、字幕与遮挡。「有问题」可记录时间和说明，点时间即可跳回复查。从这里下载 MP4、时间轴 JSON，或在「导出记录」回看不同版本。 |
+
+[![实际制作工作台：主讲监看、剪辑时间线与横竖版设置](studio/static/showcase/workbench.webp)](studio/static/showcase/workbench.webp)
+
+上图是用仓库公开素材建立的演示项目，点击可看大图。首页的横竖版对照取自同一主题的[横版样片](recipes/demo60/out/demo60_preview_169.mp4)和[竖版样片](recipes/demo60/out/916/demo60_preview_916.mp4)。全新工作区可以从自己的素材开始。
+
+### 配音：读新稿，还是用现成的录音？
+
+| 已有资源 | 选择方式 | 时间线依据 |
+| --- | --- | --- |
+| 只有文案 | 在「文案配音」选 macOS 已安装的系统音色；可用短句试听比较。 | 根据每句实际合成的音频定时。 |
+| 自己的音色样本 | 安装可选的 Qwen3-TTS 后，在「素材库 → 添加个人音色」保存参考录音和逐字稿。之后直接在「文案配音」选这个音色读新稿。 | 模型在本机逐句合成，根据新配音的实际时长定时。 |
+| 录好了这篇台词 | 导入整篇音频，在素材库点「用作配音」，并填写对应台词。 | 按录音时长和台词字数初排，可在「选镜与口型」校正句段边界。 |
+
+个人音色建议使用 10～20 秒清晰的单人录音（WAV、M4A、MP3、AIFF 或 AAC）。逐字稿填写**参考录音里实际说的话**，可以从 UTF-8 TXT 导入。在「核对参考录音与逐字稿」可回听、更正后重新生成。
+
+### 主讲与补充素材
+
+主讲母片用于全屏、分屏和圆形小窗。要插播照片或视频，在「选镜与口型」拖动「配音定位」，点「插入补充画面」，选素材、设起止时间。可以连续插入、跨句或重复用同一素材；结束后接回原镜头。「配图」保留原配音，不改嘴；「人物口播」只给该镜头中需要说话的时段做口型。「动态图文」可以将台词与配图排在一起，也支持纯文字卡。
+
+检查句尾时先把「口型微调（帧）」留在 0：嘴先于声音试 +1，声音先到试 −1，每帧 40 毫秒。视频母片优先选能覆盖整句的连续切片，避免在句尾突然换头部姿势。详细校准、停顿闭唇和验证步骤见 [portrait-lipsync](skills/portrait-lipsync/SKILL.md)。
 
 ## 本地口播工作台
 
-在本机已配置的工程目录运行 `./optools.sh start`，然后打开[口播工坊](http://127.0.0.1:8765/)。服务在后台运行，可以关闭终端。
+### 首次安装
+
+网页的本地推理路径面向 **Apple Silicon Mac**。以下以 Python 3.12 为例。先安装带 `libass` 的 FFmpeg、FFprobe，并确保系统有中文字体。在工程根目录执行：
 
 ```bash
-./optools.sh status    # 显示 PID、网页就绪状态和访问地址
-./optools.sh logs      # 查看最近 80 行后台日志
-./optools.sh logs -f   # 持续查看日志，按 Ctrl+C 退出查看
-./optools.sh restart   # 重启
-./optools.sh stop      # 停止
-```
-
-脚本也能识别用 `.venv/bin/python -m studio` 手动启动的工作台。手动启动时日志在原终端，脚本启动时日志追加到 `build/studio/service.log`。停止或重启会中断正在生成的视频，请等渲染完成后再操作。需要换端口时可运行 `KOUBO_STUDIO_PORT=8766 ./optools.sh restart`。
-
-照片、视频和配音统一导入「素材库」，支持一次选取多个文件。在「准备母片」打开素材库，选择一份主讲母片，再将需要的照片或视频逐个选为补充素材。素材可以跨项目复用，从项目中移出只会取消引用。
-
-在「文案配音」选定音色后，工作台会为当前文案准备整篇配音，并显示镜头、配音波形和字幕。相同文案和音色已有配音时，选用或刷新草稿会直接载入。可点「短句试听音色」比较声音，或点「试听配音」播放整篇。系统声音列表来自 macOS，按语言和地区分组。要直接使用录好的整篇台词，在素材库点击「用作配音」，即可按录音时长初排时间线。
-
-要用自己的音色朗读新台词，打开「素材库 → 添加个人音色」，给音色起名，上传清晰的单人录音（建议 10～20 秒，支持 WAV、M4A、MP3、AIFF、AAC），填写录音逐字稿或从 UTF-8 的 TXT 文件导入。保存后到「文案配音 → 配音来源 → 个人音色」选择它，输入新台词并生成。参考录音、逐字稿和生成的配音保存在本机。模型按句合成，字幕、剪辑和口型使用新配音的实际时长。
-
-逐字稿只填写参考录音里实际说出的那几句话。已保存的音色可在「文案配音 → 核对参考录音与逐字稿」试听并修改，保存后即可重新生成配音。点「本地模型与引擎」可查看个人音色、口型、人脸定位模型及系统工具的用途和安装状态。
-
-「全屏人物」「分屏讲解」和「圆形小窗」使用主讲母片的切片。在「选镜与口型」把一句设为「补充画面」或「动态图文」，即可为它选择项目中的素材，指定「配图」或「人物口播」，点击时间线上的镜头可带声预览。只有一份补充素材时自动选用，多份时逐句选择，同一份可重复使用。「动态图文」也支持纯文字卡。「多风格剪辑」负责风格、画幅、取景和字幕，切换风格只改变设为「跟随风格」的句子的版式。
-
-复核口型时，先把「口型微调（帧）」留在 0，带声听一句含“把”“不”或“没”的台词。若整句都是嘴先动、声音后到，试 +1；声音先到则试 −1。每帧是 40 毫秒。句尾可以听最后一个字，再看下唇和下巴如何放松。工作台按配音的实际停顿，把最后一个发音口型逐渐过渡到同一镜头内的放松口型。使用视频母片时，主讲镜头间的短停顿会接着播放原片的头部和身体动作。
-
-如果同一句话里嘴和头一起突然换了位置，先比较切片与台词的时长。自动选镜优先使用能覆盖整句的切片；必须重复一段人物视频时，工作台会在循环处对齐前后姿势。若切片首尾转头角度或手势相差很大，换用较长的连续镜头通常更自然。
-
-要在一句话中切换多个画面，在「选镜与口型」的剪辑时间线播放或拖动「配音定位」，点击「插入补充画面」，从素材库选择照片或视频，设置起止秒数并保存。镜头按 25 FPS 对齐，可以首尾相接、跨句或重复使用同一素材；结束后接回该位置原有的镜头。点击补充轨上的镜头可移动时间、替换素材或删除。镜头列表中的「预览」可试听切换前后各一秒，「预览剪辑」可播放整条草稿。普通配图保留原配音，选择「人物口播」会为该镜头内的说话时段生成口型。
-
-成片生成后，在「检查导出」带声播放，逐项确认「通过」。选择「有问题」会暂停成片并记下播放位置，填写说明后点「保存问题」。点击已保存的秒数可跳回复查。修改文案或切换音色后，再点「生成口播」即可导出新版。「导出记录」保留各版成片及其复核进度。渲染完成即可下载 MP4。
-
-当前本机推理路径面向 Apple Silicon Mac，依赖支持 Metal 的 MLX、FFmpeg（含 libass）、FFprobe 和中文字体。首次配置新机器时使用工程虚拟环境执行以下命令。模型缓存约 2 GB，仅安装时需要下载；素材和导出保存在本机。
-
-```bash
+brew install python@3.12 ffmpeg-full
+export PATH="$(brew --prefix ffmpeg-full)/bin:$PATH"
+python3.12 -m venv .venv
 .venv/bin/python -m pip install -r studio/requirements.txt
 .venv/bin/python -m studio.setup_models
 ./optools.sh start
 ```
 
-新机器上安装个人音色功能时，在工程根目录运行以下命令。MLX-Audio 使用独立的 Python 环境，Qwen3-TTS 0.6B Base 的 4 位模型文件约 1.7 GB。下载完成后，点「生成并试听」即可离线合成。
+以后从新终端启动，也要让 `ffmpeg-full/bin` 在 `PATH` 中优先于其他 FFmpeg。口型及定位模型约 2 GB。打开工作台的「本地模型与引擎」，可查看每项依赖的用途和就绪状态：MuseTalk 生成口型，Whisper 编码器提取音频特征，YuNet 和 2DFAN4 定位面部；macOS 系统语音和 FFmpeg / FFprobe 分别负责配音与音视频处理。
+
+**可选：启用个人音色**。系统音色和整篇录音不需要这一步。个人音色通过独立环境中的 MLX-Audio 运行，Qwen3-TTS 0.6B Base 四位模型文件约 1.7 GB：
 
 ```bash
 .venv/bin/python -m venv build/voice-env
@@ -80,28 +70,30 @@ build/voice-env/bin/hf download mlx-community/Qwen3-TTS-12Hz-0.6B-Base-4bit \
   --local-dir build/models/qwen3-tts-0.6b-base-4bit
 ```
 
-工作台支持单人口播，整篇配音最长 10 分钟，文案最多 1500 字、60 个句段。个人音色、系统音色和上传的整篇录音使用同一时长上限。单段视频素材最长 120 秒。成片为 25 fps，可导出 1280 × 720 或 720 × 1280。单张照片可驱动口型，不同景别、转身和手势来自导入的母片。语义标签需人工复核。系统配音按实际逐句音频定时，上传录音的台词先按字数初排，可在「选镜与口型」调整时间。新工作区可直接上传素材，当前草稿保存在浏览器中，渲染历史、推理缓存和素材库保存在 `build/studio/`。
+### 服务、数据与输出
 
-## 核心流程
+```bash
+./optools.sh status    # 查看网页是否就绪和访问地址
+./optools.sh logs -f   # 跟踪日志；不加 -f 则显示最近 80 行
+./optools.sh restart   # 重启；请等当前渲染完成
+./optools.sh stop      # 停止服务
+```
 
-| 阶段 | 做什么 |
+默认监听本机 `127.0.0.1:8765`。可用 `KOUBO_STUDIO_PORT=8766 ./optools.sh restart` 换端口；浏览器草稿按来源保存，继续原草稿时请用原浏览器和端口。
+
+| 内容 | 默认位置或限制 |
 | --- | --- |
-| **① 准备母片** | 用参考图固定人物，准备近景、中景、温和手势等镜头，保持脸和嘴无遮挡。 |
-| **② 切片打标** | 按自然停顿和动作切片，标注表情、视线、手势与入出点，筛掉异常片段。 |
-| **③ 文案配音** | 校对配音、对齐台词，以声音锁定时间轴，字幕和镜头跟着声音走。 |
-| **④ 选镜与口型** | 按句挑切片，只给人物可见且需要说话的片段做口型；时序调整先完成。 |
-| **⑤ 多风格剪辑** | 组合全屏、分屏、圆形小窗、补充画面和动态图文，复用切片完成不同包装。 |
-| **⑥ 检查导出** | 核查嘴型、接缝、字幕与遮挡，完整播放后导出横版或竖版，并记录素材使用。 |
+| 项目草稿 | 当前浏览器的本地存储；清除站点数据会清除草稿。 |
+| 上传素材、音色参考、配音 | `build/studio/assets/`、`build/studio/voices/`；索引在 `build/studio/studio.sqlite3`。 |
+| 成片与缓存 | `build/studio/jobs/` 存放成片及时间轴；`build/studio/synced/` 复用已推理片段。后台日志为 `build/studio/service.log`。 |
+| 素材与文案 | 单段视频不超过 120 秒；每篇文案最多 1500 字、60 个句段，整篇配音最长 10 分钟。单张照片能驱动口型；手势与转头需要视频母片。 |
+| 网页导出 | 25 fps 的 MP4；横版 1280 × 720，竖版 720 × 1280。 |
 
 ## 怎么省成本
 
-- **同稿换风格**：共用母片、配音和已对好的口型，继续剪辑、渲染。
-- **新稿换内容**：母片继续用，重新配音，并处理新稿需要的口型。
-- **按需处理**：人物被全屏图解或补充画面覆盖的时段，跳过口型任务。
+模型和依赖首次安装需要联网。安装完成后，网页的配音、口型和导出在本机执行，无需云端 API Key，也不产生云端 token 费用；仍会占用机器的计算时间、磁盘与电力。同一套母片可以反复用；同稿换版式可以复用符合条件的口型缓存。全屏配图、纯文字卡等没有人物说话的时段会跳过口型推理。
 
-“无限流”强调长期复用与重新组合；母片、模型调用及返修仍按实际使用计费。
-
-## 快速开始
+## 命令行与 Agent Skill
 
 将本目录放进 Agent 的技能目录，例如项目下的 `.agents/skills/lanshu-infinite-stream-koubo/`，加载 [`SKILL.md`](SKILL.md)。提供人物参考图或已有切片库、文案和声音要求，即可让 Agent 按流程制作：
 
@@ -113,7 +105,7 @@ build/voice-env/bin/hf download mlx-community/Qwen3-TTS-12Hz-0.6B-Base-4bit \
 输出成片、字幕和检查结果。
 ```
 
-本地命令入口：
+下面是独立的 `istream` 命令行工具，用于规划、切片、出提示词和装配示例：
 
 ```bash
 git clone https://github.com/gerryyang2025/lanshu-infinite-stream-koubo.git
@@ -134,7 +126,7 @@ export PATH="$(brew --prefix ffmpeg-full)/bin:$PATH"
 python tools/check_environment.py --render
 ```
 
-视频、配音与真实口型服务需自行接入；包内口型适配器以模板为主，`passthrough` 用于预览，不会修改嘴型。以上环境检查和示例渲染均不调用生成模型。
+命令行示例的 `passthrough` 是装配预览，不修改嘴型；该适配器与上文网页工作台内置的 MuseTalk 推理是两条路径。以上环境检查和示例渲染均不调用生成模型。
 
 ```bash
 python tools/build_library.py
@@ -144,6 +136,8 @@ bash tools/run_demo.sh
 ```
 
 提示词源文件已随仓库提供。没有原始母片时，示例使用带标识的占位动画验证装配流程；原有预览和联系表可在 [`DEMO.md`](DEMO.md) 查看。要复现替身母片示例，将自己的两条原片放到 `source/original-koubo.mp4`、`source/ai-native-original.mp4`，重新切片并复核标签。
+
+![原项目的剪辑示例：同一套人物切片和音轨组合成六种风格](assets/showcase.gif)
 
 ## 搭配不同剪辑风格
 
