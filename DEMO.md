@@ -303,7 +303,7 @@ planned 50 clips, 25 MG, 140 captions · 231.61s · profile long · 9:16 · VO d
 ## 11. 复现
 
 ```bash
-cd /path/to/lanshu-infinite-stream-koubo
+cd /path/to/talking-head-workshop
 PY_NUMPY=/path/to/python-with-numpy bash tools/run_demo.sh      # 全部产物 + 22 个测试
 python3 -m unittest discover -s tests -v                          # 只跑测试
 ```

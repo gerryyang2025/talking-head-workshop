@@ -1,8 +1,8 @@
-# 口播工坊 · 本地数字人口播工作台
+# 口播工坊 · Talking Head Workshop
 
 **Gerry · 无限流数字人口播**。准备一张单人照片或一段人物视频，写下台词，在本机完成配音、口型、剪辑和 MP4 导出。下一篇稿子可以继续使用同一套人物素材。
 
-![口播工坊首页：同一主题的横版与竖版口播画面](docs/koubo-workshop.webp)
+![口播工坊首页：同一主题的横版与竖版口播画面](docs/talking-head-workshop.webp)
 
 [打开本机首页](http://127.0.0.1:8765/) · [直接进入工作台](http://127.0.0.1:8765/studio) · [第一次出片](#核心流程) · [首次安装](#首次安装) · [命令行与 Agent Skill](#命令行与-agent-skill)
 
@@ -97,10 +97,10 @@ build/voice-env/bin/hf download mlx-community/Qwen3-TTS-12Hz-0.6B-Base-4bit \
 
 ## 命令行与 Agent Skill
 
-将本目录放进 Agent 的技能目录，例如项目下的 `.agents/skills/lanshu-infinite-stream-koubo/`，加载 [`SKILL.md`](SKILL.md)。提供人物参考图或已有切片库、文案和声音要求，即可让 Agent 按流程制作：
+将本目录放进 Agent 的技能目录，例如项目下的 `.agents/skills/talking-head-workshop/`，加载 [`SKILL.md`](SKILL.md)。提供人物参考图或已有切片库、文案和声音要求，即可让 Agent 按流程制作：
 
 ```text
-使用 lanshu-infinite-stream-koubo。
+使用 talking-head-workshop。
 优先复用我的人物切片，以确认后的配音锁定时间轴。
 只对需要出镜说话的片段做口型。
 制作一条 16:9 口播，人物主讲、圆形小窗与全屏图解交替。
@@ -110,8 +110,8 @@ build/voice-env/bin/hf download mlx-community/Qwen3-TTS-12Hz-0.6B-Base-4bit \
 下面是独立的 `istream` 命令行工具，用于规划、切片、出提示词和装配示例：
 
 ```bash
-git clone https://github.com/gerryyang2025/lanshu-infinite-stream-koubo.git
-cd lanshu-infinite-stream-koubo
+git clone https://github.com/gerryyang2025/talking-head-workshop.git
+cd talking-head-workshop
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
@@ -139,14 +139,11 @@ bash tools/run_demo.sh
 
 提示词源文件已随仓库提供。没有原始母片时，示例使用带标识的占位动画验证装配流程；原有预览和联系表可在 [`DEMO.md`](DEMO.md) 查看。要复现替身母片示例，将自己的两条原片放到 `source/original-koubo.mp4`、`source/ai-native-original.mp4`，重新切片并复核标签。
 
-![原项目的剪辑示例：同一套人物切片和音轨组合成六种风格](assets/showcase.gif)
-
 ## 搭配不同剪辑风格
 
 可以参考下面这些独立 Skill 的分镜、版式和动效，再接上同一套人物切片与音轨：
 
 - **`talking-head-editor` · Renoise**：口播精剪、字幕花字、画中画。 [安装 Renoise](https://renoise.ai/mcp?utm_source=lufzzliz-aini-202610&utm_medium=xcom)
-- **[`lanshu-create-ai-presenter-video`](https://github.com/cclank/lanshu-create-ai-presenter-video) · cclank**：纸艺立体书等讲解风格。
 - **[`digital-human-koubo`](https://github.com/andyhuo520/digital-human-koubo) · andyhuo520**：发布解读、粒子文字、文档聚焦。
 
 ## 详细文档
@@ -162,7 +159,3 @@ bash tools/run_demo.sh
 ## 许可证
 
 项目代码采用 [MIT License](LICENSE)。第三方依赖、外部服务及人物、图片、音视频素材遵循各自的授权和使用条款。
-
----
-
-本项目的制作流程源自[岚叔的开源工程](https://github.com/cclank/lanshu-infinite-stream-koubo)。

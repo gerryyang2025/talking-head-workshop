@@ -1,5 +1,5 @@
 ---
-name: lanshu-infinite-stream-koubo
+name: talking-head-workshop
 description: >-
   高级无限流 / Advanced Infinite Stream — 数字人口播（talking-head）生产技能：底板只生成一次，切成带标签的镜头单元，
   按脚本像写代码一样装配（换镜头、推近、画中画、隐藏、重排、MG 动效），只把主播可见的片段送去口型模型（中文口型一等公民），

@@ -1364,7 +1364,7 @@ async function previewTone(button) {
   const voice = narrationVoice(draft.voice);
   if (!voice) return;
   const text = voice.role === "personal_voice" || voice.locale.startsWith("zh") ? "你好，欢迎来到口播工坊。听听这句话的语气和停顿。"
-    : voice.sample || "Welcome to Koubo Workshop.";
+    : voice.sample || "Welcome to Talking Head Workshop.";
   button.disabled = true;
   button.textContent = "正在准备试听…";
   try {

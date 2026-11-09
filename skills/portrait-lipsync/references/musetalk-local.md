@@ -2,7 +2,7 @@
 
 ## 接回项目
 
-在 `lanshu-infinite-stream-koubo` 中，先看 `prompts/identity/<人物ID>/ref.png` 和 `build/<人物ID>/talking-head/`。后者可能已有 `portrait-base.mp4`、`narration.wav`、`captions.srt` 和上一版成片。换人物时重新检测关键点和裁切范围。只修嘴型时从无字幕底板开始，最后叠一次字幕。
+在 `talking-head-workshop` 中，先看 `prompts/identity/<人物ID>/ref.png` 和 `build/<人物ID>/talking-head/`。后者可能已有 `portrait-base.mp4`、`narration.wav`、`captions.srt` 和上一版成片。换人物时重新检测关键点和裁切范围。只修嘴型时从无字幕底板开始，最后叠一次字幕。
 
 项目的 `istream/lipsync.py` 中，`passthrough` 只复制输入，返回 `synced: false`；当前 `musetalk` 适配器提供调用模板。先确认实际执行了推理，再把生成帧合成到画面。如果走项目的分镜流程，按作业清单写回对应片段，再执行合成。
 

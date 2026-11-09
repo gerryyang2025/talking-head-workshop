@@ -16,7 +16,7 @@
 - [ ] 分辨率 ≥ 1080p（能更高更好，留给推近 / 裁竖）
 - [ ] 帧率统一（优先 **25 fps**）
 - [ ] **每次挂上本参考图作身份参考**（identity reference）
-  - 路径：`/Users/gerry/Proj/github/new/lanshu-infinite-stream-koubo/prompts/identity/gerry/ref.png`
+  - 路径：`prompts/identity/gerry/ref.png`
   - 称呼：gerry
 - [ ] 首帧图：先出 IMG-A（近景）/ IMG-B（中景）/ IMG-A169（横屏），或把参考图按构图裁切后 img2img
 - [ ] **模型自带音频一律静音**（口型与配音另做）
