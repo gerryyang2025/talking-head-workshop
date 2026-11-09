@@ -324,6 +324,133 @@ class StudioWorkflow(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "照片或视频"):
                 self.production.plan(cfg)
 
+    def test_automatic_pick_prefers_a_full_take_but_preserves_an_explicit_short_cut(self):
+        self.media.save_asset(dict(id="lead", role="host", shots=[
+            dict(id=name, asset="lead", enabled=True, start=0, end=duration)
+            for name, duration in [("short", 1.), ("long", 4.)]
+        ]))
+        lines = [dict(text="一句", start=i*3, end=i*3+3, layout="full") for i in range(3)]
+        lines[2]["shot"] = "short"
+        cfg = dict(voiceId="voice", aspect="9:16", style="studio", hosts=["lead"], lines=lines)
+        with patch.object(self.production, "load_voice", return_value=dict(duration=9, lines=lines)):
+            timeline = self.production.plan(cfg)
+        self.assertEqual([row["shot"]["id"] for row in timeline["rows"]], ["long", "long", "short"])
+
+    def test_rest_pose_only_uses_confirmed_silence(self):
+        import numpy as np
+        from studio.mouth_rest import rest_weights
+
+        envelope = np.full(40, .08, dtype=np.float32)
+        envelope[3:7] = .001       # Brief low-energy sound inside speech.
+        envelope[10:19] = .0005    # Sustained near-silence inside a timed sentence.
+        envelope[24:27] = 0        # Short gap between two timed sentences.
+        gaps = [dict(first=24, stop=27, voiced=False), dict(first=32, stop=35, voiced=False)]
+        weights = rest_weights(np.repeat(envelope, 640), len(envelope), 25, 16000, gaps)
+        self.assertFalse(weights[3:7].any())
+        self.assertTrue(0 < weights[10] < .1)
+        self.assertEqual(weights[15], 1)
+        self.assertTrue(np.all(np.diff(weights[10:16]) >= 0))
+        self.assertLess(np.max(np.abs(np.diff(weights[10:19]))), .5)
+        self.assertTrue(np.all((weights[24:27] > 0) & (weights[24:27] < .5)))
+        self.assertFalse(weights[32:35].any())  # A timing gap alone cannot mute a visible word.
+
+        # A breath at a sentence boundary used to release a nearly closed mouth twice.
+        envelope[10:27] = .0005
+        envelope[20:22] = .007
+        def sampled():
+            return rest_weights(np.repeat(envelope, 640), len(envelope), 25, 16000, gaps)
+        self.assertEqual(sampled()[20:22].tolist(), [1, 1])
+        envelope[20:22] = .06
+        self.assertFalse(sampled()[20:22].any())  # Protect an actual soft-to-loud restart.
+
+    def test_lips_settle_in_the_current_frame(self):
+        import numpy as np
+        from studio.mouth_rest import settle_lips
+
+        pts = np.zeros((68, 2), dtype=np.float32)
+        pts[48:60] = [[33, 46], [43, 39], [54, 34], [72, 32], [90, 34], [99, 39],
+                      [111, 46], [99, 56], [90, 60], [72, 62], [54, 60], [43, 56]]
+        pts[60:68] = [[34, 46], [54, 40], [72, 39], [91, 40], [110, 46],
+                      [91, 53], [72, 55], [54, 53]]
+        frame = np.full((96, 144, 3), 80, dtype=np.uint8)
+        frame[40:55, 60:84] = 240  # Exposed teeth between distinct lip and chin textures.
+        frame[55:61, 60:84] = 120
+        frame[66:68, 60:84] = 150
+        counts = []
+        for amount in (0, .25, .5, .75, 1):
+            result = settle_lips(frame, pts, amount)
+            counts.append(int((result[:, 72, 0] > 190).sum()))
+            np.testing.assert_array_equal(result[:, :25], frame[:, :25])
+        self.assertEqual(counts[0], 15)
+        self.assertTrue(all(a > b for a, b in zip(counts, counts[1:])))
+        self.assertEqual(counts[-1], 0)
+        self.assertLess(np.where(result[:, 72, 0] == 150)[0].min(), 66)
+        self.assertIs(settle_lips(frame, np.zeros_like(pts), 1), frame)
+
+    def test_sustained_pause_uses_a_continuous_gesture_when_raw_lips_reopen(self):
+        import cv2 as cv
+        import numpy as np
+        from studio.mouth_rest import PausePerformance
+
+        gaps = [16, 16, 2, 18, 2, 16, 2, 18, 16, 2, 15, 2, 14, 16]
+        weights = np.array([0, .07, .26, .5, .74, .93, 1, 1, 1, 1, .84, .5, .16, 0])
+        frames, landmarks = [], []
+        for index, gap in enumerate(gaps):
+            points = np.zeros((68, 2), np.float32)
+            points[[36, 45, 30]] = [[34, 15], [110, 15], [72, 25]]
+            points[48:60] = [[33,46], [43,38], [54,35], [72,33], [90,35], [99,38],
+                             [111,46], [99,52], [90,56], [72,57+gap/2], [54,56], [43,52]]
+            points[60:68] = [[34,46], [54,45-gap/4], [72,45-gap/2], [90,45-gap/4],
+                             [110,46], [90,45+gap/4], [72,45+gap/2], [54,45+gap/4]]
+            frame = np.full((96, 144, 3), 105, np.uint8)
+            cv.fillConvexPoly(frame, points[48:60].astype(int), (80, 80, 150))
+            cv.fillConvexPoly(frame, points[60:68].astype(int), (245, 245, 245))
+            frame[0, 0] = index
+            frames.append(frame)
+            landmarks.append(points)
+        tracker = types.SimpleNamespace(points=lambda f: landmarks[int(f[0, 0, 0])])
+
+        def render(first, stop, indices):
+            def read(index):
+                self.assertIn(index, range(first, stop))  # No cross-shot donor frames.
+                return frames[index]
+            gesture = PausePerformance(weights, first, stop, tracker, None, None)
+            return [gesture.apply(read(i), i, read) for i in indices]
+
+        result = render(0, len(frames), range(len(frames)))
+        openings = [int((frame[:, 72, 0] > 190).sum()) for frame in result]
+        self.assertTrue(np.all(np.diff(openings[:7]) <= 0), openings)
+        self.assertTrue(np.all(np.diff(openings[9:]) >= 0), openings)
+        self.assertEqual(len(set(openings[6:10])), 1)
+        self.assertIs(result[0], frames[0])
+        for index in (2, 7, 11):
+            np.testing.assert_array_equal(render(0, len(frames), [index])[0], result[index])
+        # This cut interrupts the closing ramp. It must stop partway to contact.
+        truncated = render(0, 5, range(5))
+        openings = [int((frame[:, 72, 0] > 190).sum()) for frame in truncated]
+        self.assertTrue(3 < openings[-1] < openings[0], openings)
+
+    def test_short_video_pause_follows_the_plate_without_restarting_its_mouth_or_loop(self):
+        import numpy as np
+        from studio.mouth_transition import MovingTail
+
+        base = np.zeros((68, 2), np.float32)
+        base[[36, 45, 30, 48, 54]] = [[34, 15], [110, 15], [72, 25], [42, 54], [102, 54]]
+        def frame(shift, speaking=False):
+            image = np.full((120, 156, 3), 25+shift, np.uint8)
+            image[50:58, 65+shift:80+shift] = 150 if speaking else 240
+            image[0, 0] = shift
+            return image
+        source = types.SimpleNamespace(pos=2, rate=25, length=5)
+        source.next = lambda: frame(source.pos)
+        tracker = types.SimpleNamespace(points=lambda f: base + np.float32([f[0, 0, 0], 0]))
+        tail = MovingTail(source, 2, frame(2, speaking=True), tracker)
+        later, earlier = tail.read(2), tail.read(1)
+        self.assertEqual(earlier[0, -1, 0], 28)
+        self.assertEqual(later[0, -1, 0], 29)
+        self.assertEqual(later[54, 83, 0], 150)
+        np.testing.assert_array_equal(tail.read(3), later)
+
     def test_speaking_insert_preview_and_export_share_absolute_audio_frames(self):
         import cv2 as cv
         import numpy as np
@@ -348,8 +475,12 @@ class StudioWorkflow(unittest.TestCase):
 
             def sync(self, frames, indexes, shift, fixed, state):
                 calls.extend(indexes)
-                for frame in frames:
-                    frame[:] = (15, 240, 15)
+                for frame, index in zip(frames, indexes):
+                    frame[:] = (15, 240, index * 8)
+
+        class NoFace:
+            def landmarks(self, _frame):
+                raise ValueError("No face in the synthetic solid-color test image")
 
         def pixel(movie, index, x, y):
             video = cv.VideoCapture(str(movie))
@@ -363,7 +494,7 @@ class StudioWorkflow(unittest.TestCase):
 
         config = dict(voiceId=ident, aspect="16:9", style="editorial", hosts=[],
                       lines=lines, insert="photo", insertSpeaking=True)
-        with patch.dict("sys.modules", {"studio.engine": types.SimpleNamespace(MouthEngine=MarkMouth)}):
+        with patch.dict("sys.modules", {"studio.engine": types.SimpleNamespace(MouthEngine=MarkMouth, FaceLandmarks=NoFace)}):
             preview = self.production.render_card_preview(
                 dict(config, line=0, start=.2, end=.6), folder)
             self.assertEqual(calls, list(range(5, 15)))
@@ -377,19 +508,94 @@ class StudioWorkflow(unittest.TestCase):
         self.assertGreater(pixel(film, 6, 320, 320)[1], 200)  # Mouth result reaches the card.
         self.assertGreater(pixel(film, 20, 640, 320)[1], 200)  # And the full-screen insert.
         self.assertGreater(pixel(film, 24, 640, 320)[0], 150)
+        # Red encodes source time: the first image holds, then follows the calibrated clock.
+        for first in (5, 18):
+            start_red = int(pixel(film, first, 320, 320)[2])
+            self.assertAlmostEqual(int(pixel(film, first+1, 320, 320)[2]), start_red, delta=2)
+            self.assertAlmostEqual(int(pixel(film, first+4, 320, 320)[2]), start_red+24, delta=5)
 
         # A speaking cut crosses a pause. Only its two voiced ranges reach the model.
         calls.clear()
         config.update(insertSpeaking=False, cutaways=[dict(first=10, stop=21, insert="photo", insertSpeaking=True)])
         tl = self.production.plan(config)
-        with patch.dict("sys.modules", {"studio.engine": types.SimpleNamespace(MouthEngine=MarkMouth)}):
+        with patch.dict("sys.modules", {"studio.engine": types.SimpleNamespace(MouthEngine=MarkMouth, FaceLandmarks=NoFace)}):
             preview = self.production.render(tl, folder, lambda *_: None, window=(12, 21))
+            preview_red = int(pixel(preview, 0, 160, 160)[2])
             self.assertGreater(pixel(preview, 0, 160, 160)[1], 200)
             self.assertGreater(pixel(preview, 4, 160, 160)[0], 150)
             self.assertGreater(pixel(preview, 7, 160, 160)[1], 200)
             result = self.production.render(tl, folder, lambda *_: None)
+            self.assertAlmostEqual(int(pixel(film, 12, 320, 320)[2]), preview_red, delta=4)
         self.assertEqual(calls, list(range(10, 15)) + list(range(18, 21)))
         self.assertEqual((result["cached"], result["skipped"]), (8, 17))
+
+    def test_looped_speaker_moves_continuously_and_preview_matches_export(self):
+        import cv2 as cv
+        import numpy as np
+
+        p = self.production
+        w, h = 160, 96
+        path = self.media.STORE / "synced.mp4"
+        # A synthetic head pans right, then jumps back to the trim in-point.
+        texture = np.full((h, w, 3), (35, 35, 40), dtype=np.uint8)
+        cv.ellipse(texture, (80, 47), (24, 38), 0, 0, 360, (130, 165, 205), -1)
+        for x in (70, 90):
+            cv.circle(texture, (x, 36), 5, (35, 45, 55), -1, cv.LINE_AA)
+        cv.ellipse(texture, (80, 61), (10, 3), 0, 0, 360, (45, 50, 90), -1)
+        with p.encoder(path, (w, h)) as sink:
+            for i in range(21):
+                frame = np.roll(texture, (i+3) % 10, axis=1)
+                sink.write(frame.tobytes())
+        span = dict(first=12, stop=33, offset=3, hold=False, origin=12, length=21, layout="full")
+
+        def read(first, stop, cycle):
+            sink = io.BytesIO()
+            with patch.object(p, "compose", side_effect=lambda frame, *_: frame):
+                p.draw_span(sink, span, path, (w,h), first, stop, False, "cover", cycle=cycle)
+            return np.frombuffer(sink.getvalue(), dtype=np.uint8).reshape((-1, h, w, 3))
+
+        raw = read(12, 33, None)
+        fixed = read(12, 33, (10, 25))
+        # Absolute frame 20 is the first wrap (including time calibration).
+        def jump(frames):
+            return cv.absdiff(frames[7], frames[8])[:, 22:-22].mean()
+        self.assertLess(jump(fixed), .65 * jump(raw))
+        np.testing.assert_array_equal(read(19, 23, (10, 25)), fixed[7:11])
+        np.testing.assert_array_equal(raw[:2], fixed[:2])  # No warp outside the seam.
+
+    def test_short_host_pause_uses_last_synced_frame_even_when_preview_starts_in_the_gap(self):
+        import cv2 as cv
+        import numpy as np
+        p = self.production
+        host = dict(shot=dict(asset="lead", start=0, end=1), insert=None, insertSpeaking=False)
+        tl = dict(frames=25, voice="v", shift=0, duration=1., aspect="16:9", subtitles=False, rows=[
+            dict(host, layout="full", text="上句", first=0, stop=10),
+            dict(host, layout="split", text="下句", first=14, stop=25)])
+        folder = self.media.STORE
+        wav = folder / "voices/v/voice.wav"
+        wav.parent.mkdir(parents=True)
+        with wave.open(str(wav), "wb") as handle:
+            handle.setparams((1, 2, 16000, 0, "NONE", ""))
+            handle.writeframes(np.full(16000, 3000, dtype="<i2").tobytes())
+        self.media.save_asset(dict(id="lead", role="host", kind="photo"))
+        synced = folder / "take.mp4"
+        with p.encoder(synced, (80, 96)) as sink:
+            for index in range(10):
+                sink.write(np.full((96, 80, 3), index * 20, np.uint8).tobytes())
+        gap = p.visual_spans(tl)[1]
+        self.assertEqual((gap["layout"], gap["rest_from"], gap["voiced"]), ("full", 0, False))
+        self.assertTrue(self.server.visible_speech([gap]))
+        with patch.object(p, "sync_parts", return_value=([synced], 0, 10)) as sync:
+            preview = p.render(tl, folder, lambda *_: None, window=(11, 14))
+        self.assertEqual([s["first"] for s in sync.call_args.args[0]], [0])
+        cap = cv.VideoCapture(str(preview))
+        try:
+            for _ in range(3):
+                ok, frame = cap.read()
+                self.assertTrue(ok)
+                self.assertAlmostEqual(int(frame[180, 320, 0]), 160, delta=5)
+        finally:
+            cap.release()
 
     def test_timed_cutaways_resume_source_and_keep_speech_and_captions_on_the_master_clock(self):
         p = self.production

@@ -253,7 +253,7 @@ def hear(ident):
 
 
 def visible_speech(spans):
-    return any(s["voiced"] and (s["shot"] or s["insertSpeaking"]) for s in spans)
+    return any((s["voiced"] or "rest_from" in s) and (s["shot"] or s["insertSpeaking"]) for s in spans)
 
 
 @app.post("/api/timeline-preview")

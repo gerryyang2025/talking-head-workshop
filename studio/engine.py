@@ -7,27 +7,8 @@ import onnxruntime as ort
 from .media import MODELS, FPS
 
 
-class MouthEngine:
-    def __init__(self, wav16):
-        import mlx.core as mx
-        from musetalk_mlx.pipeline_mlx import MuseTalkPipeline
-        from musetalk_mlx.whisper.log_mel import log_mel_spectrogram, N_SAMPLES
-        from musetalk_mlx.whisper.audio2feature import get_whisper_chunk
-
-        self.mx = mx
-        self.pipe = MuseTalkPipeline.from_pretrained_mlx(MODELS / "musetalk-1.5-fp16")
-        embeddings = [
-            self.pipe.whisper_encoder(
-                log_mel_spectrogram(mx.array(wav16[i : i + N_SAMPLES])).astype(
-                    mx.float16
-                )
-            )
-            for i in range(0, len(wav16), N_SAMPLES)
-        ]
-        self.audio = get_whisper_chunk(
-            mx.concatenate(embeddings, axis=1), len(wav16), fps=FPS
-        ).astype(mx.float16)
-        mx.eval(self.audio)
+class FaceLandmarks:
+    def __init__(self):
         self.detector = cv.FaceDetectorYN.create(
             str(MODELS / "studio/yunet.onnx"), "", (512, 512), 0.82
         )
@@ -63,6 +44,30 @@ class MouthEngine:
         raw = self.fan.run(None, {self.fan.get_inputs()[0].name: sample})
         pts = next(o for o in raw if o.ndim == 3)[0, :, :2] * 4
         return cv.transform(pts[None], cv.invertAffineTransform(mat))[0]
+
+
+class MouthEngine(FaceLandmarks):
+    def __init__(self, wav16):
+        import mlx.core as mx
+        from musetalk_mlx.pipeline_mlx import MuseTalkPipeline
+        from musetalk_mlx.whisper.log_mel import log_mel_spectrogram, N_SAMPLES
+        from musetalk_mlx.whisper.audio2feature import get_whisper_chunk
+
+        super().__init__()
+        self.mx = mx
+        self.pipe = MuseTalkPipeline.from_pretrained_mlx(MODELS / "musetalk-1.5-fp16")
+        embeddings = [
+            self.pipe.whisper_encoder(
+                log_mel_spectrogram(mx.array(wav16[i : i + N_SAMPLES])).astype(
+                    mx.float16
+                )
+            )
+            for i in range(0, len(wav16), N_SAMPLES)
+        ]
+        self.audio = get_whisper_chunk(
+            mx.concatenate(embeddings, axis=1), len(wav16), fps=FPS
+        ).astype(mx.float16)
+        mx.eval(self.audio)
 
     def face(self, frame, pts):
         h, w = frame.shape[:2]

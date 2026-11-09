@@ -9,6 +9,7 @@ from contextlib import contextmanager
 import cv2 as cv
 import numpy as np
 from istream.lipsync import zh_mouth_risk
+from .mouth_transition import MovingTail, PoseTransition, loop_windows
 from .media import (
     STORE,
     FPS,
@@ -31,6 +32,9 @@ STYLES = {
 SIZES = {"16:9": (1280, 720), "9:16": (720, 1280)}
 CAPTION_BAND = 104  # pixels at both supported export resolutions
 SPLIT_FRACTION = 0.54
+# SyncNet measured a 1–2 frame lead in MuseTalk 1.5's native 25 fps output.
+# Apply the baseline when reading a synced clip so existing inference is reusable.
+MOUTH_DELAY_FRAMES = 1
 
 
 def load_voice(vid):
@@ -196,8 +200,8 @@ def plan(config):
             shot = min(
                 candidates,
                 key=lambda s: (
-                    uses[s["id"]],
                     0 if s["end"] == 0 or s["end"] - s["start"] >= end - start else 1,
+                    uses[s["id"]],
                 ),
             )
             uses[shot["id"]] += 1
@@ -449,39 +453,82 @@ def visual_spans(tl):
             offset = min(offset, source["stop"] - source["first"] - 1)
         elif not covered and not voiced:
             pause_start = rows[ri - 1]["stop"] if ri else 0
-            if first >= row["stop"]:
-                pause_start = row["stop"]
-            offset = first - pause_start
-        spans.append(dict(
+            if first >= row["stop"] and row["shot"]:
+                # Continue from the last displayed source time in the tail.
+                offset = max(0, first - row["first"] - MOUTH_DELAY_FRAMES)
+            elif row["shot"] and 0 < row["first"] - pause_start <= 6:
+                # A brief lead-in shows the incoming speaker. Do not play the
+                # first few head movements twice when the synced take starts.
+                hold = True
+                offset = 0
+            else:
+                offset = first - (row["stop"] if first >= row["stop"] else pause_start)
+        span = dict(
             first=first, stop=stop, layout=layout, shot=source.get("shot"),
             insert=source["insert"], insertSpeaking=source["insertSpeaking"],
             voiced=voiced, offset=offset, hold=hold, origin=source["first"],
             length=source["stop"] - source["first"], owner=("cut", ci) if covered else ("line", ri),
-        ))
+        )
+        # Give the outgoing speaker a few frames to finish closing before the
+        # next host shot. A timed cutaway always retains its exact in/out points.
+        if (spans and not voiced and not covered and row["shot"] and stop-first <= 6
+                and spans[-1]["voiced"] and spans[-1]["shot"] and spans[-1]["owner"][0] == "line"):
+            previous = spans[-1]
+            span = dict(previous, first=first, stop=stop, voiced=False, hold=True,
+                        rest_from=previous["first"])
+        spans.append(span)
     return spans
 
 
-def draw_span(sink, span, part, size, start, stop, subtitles, framing):
-    source = None
+def draw_span(sink, span, part, size, start, stop, subtitles, framing, performance=None,
+              cycle=None, open_tail=None):
+    source = tail = tail_source = None
+    windows = loop_windows(span, start, stop, *cycle, MOUTH_DELAY_FRAMES) if part and cycle else {}
+    count = span["stop"] - span["first"]
     if part:
-        source = synced_frames(part, span["stop"] - span["first"])
-        source.pos = start - span["first"]
-    else:
+        source = synced_frames(part, count)
+    elif span["shot"]:
         shot = span["shot"]
-        if shot:
-            source = Frames(asset(shot["asset"]), shot["start"], shot["end"])
-        elif span["insert"]:
-            source = Frames(asset(span["insert"]))
-        if source:
-            source.pos = span["offset"] + (0 if span["hold"] else start - span["first"])
+        source = Frames(asset(shot["asset"]), shot["start"], shot["end"])
+    elif span["insert"]:
+        source = Frames(asset(span["insert"]))
+
+    def read_frame(index):
+        nonlocal tail, tail_source
+        if source is None:
+            return None
+        local = index - span["first"]
+        if part:
+            last = max(0, count - 1 - MOUTH_DELAY_FRAMES)
+            source.pos = min(last, max(0, local - MOUTH_DELAY_FRAMES))
+            if local >= count and open_tail and performance:
+                if tail is None:
+                    tail_source = open_tail()
+                    tail = MovingTail(tail_source, span["offset"] + last, source.next(), performance.tracker)
+                return tail.read(local - count + 1)
+        else:
+            source.pos = span["offset"] + (0 if span["hold"] else local)
+        return source.next()
+
     try:
-        frame = None
+        seam = active_cut = None
         for index in range(start, stop):
-            if source and (frame is None or not span["hold"]):
-                frame = source.next()
+            frame = read_frame(index)
             progress = min(1, max(0, (index - span["origin"]) / max(1, span["length"] - 1)))
-            sink.write(compose(frame, span["layout"], size, subtitles, framing, progress).tobytes())
+            picture = performance.apply(frame, index, read_frame) if performance else frame
+            if index in windows:
+                cut, radius = windows[index]
+                if cut != active_cut:
+                    saved = source.pos
+                    source.pos = cut - span["first"] - MOUTH_DELAY_FRAMES - 1
+                    seam = PoseTransition(source.next(), source.next())
+                    source.pos = saved
+                    active_cut = cut
+                picture = seam.apply(picture, index - cut, radius)
+            sink.write(compose(picture, span["layout"], size, subtitles, framing, progress).tobytes())
     finally:
+        if tail_source:
+            tail_source.close()
         if source:
             source.close()
 
@@ -602,6 +649,15 @@ def render_card_preview(config, folder):
     return render(tl, folder, lambda *_: None, window=(first, first + count))
 
 
+def speaker_clip(span):
+    shot = span["shot"]
+    if shot:
+        return shot["asset"], shot["start"], shot["end"]
+    if span.get("insertSpeaking") and span["insert"]:
+        return span["insert"], 0, 0
+    return None
+
+
 def sync_parts(rows, voice_id, shift, total, folder, notify):
     cache = STORE / "synced"
     cache.mkdir(exist_ok=True)
@@ -611,17 +667,11 @@ def sync_parts(rows, voice_id, shift, total, folder, notify):
     inferred = cached = 0
     for index, row in enumerate(rows):
         count = row["stop"] - row["first"]
-        shot = row["shot"]
-        if not row.get("voiced", True):
+        clip = speaker_clip(row)
+        if not row.get("voiced", True) or not clip:
             parts.append(None)
             continue
-        if shot:
-            ident, start, end = shot["asset"], shot["start"], shot["end"]
-        elif row.get("insertSpeaking"):
-            ident, start, end = row["insert"], 0, 0
-        else:
-            parts.append(None)
-            continue
+        ident, start, end = clip
         offset_key = (row["offset"],) if row.get("offset") else ()
         key = signature(
             "musetalk-v1",
@@ -692,8 +742,33 @@ def render(tl, folder, notify, window=None):
     voice = STORE / "voices" / tl["voice"] / "voice.wav"
     ass = folder / "captions.ass"
     write_ass(tl, ass, origin=first)
-    spans = [s for s in visual_spans(tl) if s["first"] < stop and s["stop"] > first]
+    all_spans = visual_spans(tl)
+    # Render the synced line and its short trailing pause as one performance.
+    # Keep the inference interval itself unchanged so the same audio frames and
+    # cached take are used when a preview starts inside that pause.
+    tails = {s["rest_from"]: s["stop"] for s in all_spans if "rest_from" in s}
+    spans = [s for s in all_spans if "rest_from" not in s and s["first"] < stop
+             and tails.get(s["first"], s["stop"]) > first]
     parts, inferred, cached = sync_parts(spans, tl["voice"], tl["shift"], total, folder, notify)
+    weights = rest_mouth = None
+    clips = [speaker_clip(span) for span in spans]
+    actors = {ident: asset(ident) for ident in {clip[0] for clip in clips if clip}}
+    cycles = {}
+    for clip in {c for c, part in zip(clips, parts) if c and part and actors[c[0]]["kind"] == "video"}:
+        source = Frames(actors[clip[0]], *clip[1:])
+        try:
+            cycles[clip] = (source.length, source.rate)
+        finally:
+            source.close()
+    if any(parts) or any(a["kind"] == "video" for a in actors.values()):
+        from .mouth_rest import PausePerformance, RestMouth, rest_weights
+        raw = ff("-i", voice, "-ar", "16000", "-ac", "1", "-f", "f32le", "pipe:1")
+        weights = rest_weights(np.frombuffer(raw, "<f4"), total, FPS, 16000, all_spans)
+        video_tail = any(clip and actors[clip[0]]["kind"] == "video" and
+                         s["stop"] < min(stop, tails.get(s["first"], s["stop"]))
+                         for s, clip in zip(spans, clips))
+        if video_tail or np.any(weights[first:stop]):
+            rest_mouth = RestMouth()
     notify(76, "正在组合镜头、动态图文和字幕")
     output = folder / "film.mp4"
     filters = "subtitles='" + _esc(str(ass)) + "'"
@@ -705,9 +780,19 @@ def render(tl, folder, notify, window=None):
         output, size, *audio_trim, "-i", voice, "-map", "0:v:0", "-map", "1:a:0",
         "-vf", filters, "-c:a", "aac", "-b:a", "160k",
     ) as sink:
-        for span, part in zip(spans, parts):
-            draw_span(sink, span, part, size, max(span["first"], first), min(span["stop"], stop),
-                      tl["subtitles"], tl.get("framing", "cover"))
+        for span, part, clip in zip(spans, parts, clips):
+            display_stop = tails.get(span["first"], span["stop"])
+            performance = open_tail = None
+            if rest_mouth and clip and (part or actors[clip[0]]["kind"] == "video"):
+                def open_source(key=clip):
+                    ident, begin, end = key
+                    return Frames(actors[ident], begin, end)
+                performance = PausePerformance(weights, span["first"], display_stop, rest_mouth, clip, open_source)
+                if display_stop > span["stop"] and actors[clip[0]]["kind"] == "video":
+                    open_tail = open_source
+            draw_span(sink, span, part, size, max(span["first"], first), min(display_stop, stop),
+                      tl["subtitles"], tl.get("framing", "cover"), performance,
+                      cycles.get(clip) if span["voiced"] else None, open_tail)
     if window:
         return output
     notify(95, "正在逐帧解码并核对音画时长")

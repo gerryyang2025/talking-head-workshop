@@ -1171,9 +1171,9 @@ function inspector() {
           "</div>"
         : '<button class="outline" id="voiceBtn">准备配音后开始选镜</button>') +
       '<button class="outline" data-view="library">从素材库选取补充素材</button>' +
-      '<label class="field"><span>嘴型延后帧数（负数为提前）</span><input id="shift" type="number" min="-8" max="8" value="' +
+      '<label class="field"><span>口型微调（帧）</span><input id="shift" type="number" min="-8" max="8" value="' +
       draft.shift +
-      '"></label>';
+      '"></label><p class="hint">0 使用默认校准。每帧 40 毫秒，正数延后，负数提前。</p>';
   }
   if (step === 4) {
     body =
