@@ -1012,6 +1012,43 @@ function lipModelControl() {
     options.join("") + '</select></label><p class="hint">' + esc(hints[draft.lipModel] || "") + '</p>';
 }
 
+function jobActive(job) {
+  return ["queued", "running", "pausing", "cancelling"].includes(job?.status);
+}
+function jobTiming(job) {
+  const start = Date.parse(job.started || job.queuedAt || job.created);
+  const end = jobActive(job) ? Date.now() : Date.parse(job.finished);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return "";
+  const label = job.status === "queued" ? "已排队" : job.started ? (job.attempt > 1 ? "本轮用时" : "生成用时") : "总用时";
+  const seconds = Math.max(0, Math.floor((end - start) / 1000));
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor(seconds / 60) % 60;
+  const duration = [hours ? hours + " 小时" : "", hours || minutes ? minutes + " 分" : "", seconds % 60 + " 秒"];
+  return label + " " + duration.filter(Boolean).join(" ");
+}
+function jobMetrics(job) {
+  const m = job.metrics;
+  if (!m) return "";
+  const speed = m.fps > 0 ? "实测推理速度 " + Number(m.fps.toPrecision(3)) + " 帧/秒" : "";
+  if (job.status === "done") return speed;
+  const remaining = Math.max(0, m.total - m.inferred - m.cached);
+  return ["新推理 " + m.inferred + " 帧", "复用 " + m.cached + " 帧", "待处理 " + remaining + " 帧",
+    speed].filter(Boolean).join(" · ");
+}
+const controllingJobs = new Set();
+function jobControls(job) {
+  const actions = {
+    queued: [["pause", "暂停排队"], ["cancel", "取消排队"]],
+    running: [["pause", "暂停生成"], ["cancel", "停止生成"]],
+    paused: job.canRestart ? [["resume", "继续生成"], ["cancel", "停止生成"]] : [["cancel", "停止生成"]],
+    cancelled: [["retry", "按原设置重试"]], failed: [["retry", "按原设置重试"]],
+  }[job.status];
+  if (!actions || (["cancelled", "failed"].includes(job.status) && !job.canRestart)) return "";
+  const buttons = actions.map(([action, label]) =>
+    '<button class="outline" data-job-id="' + esc(job.id) + '" data-job-action="' + action + '"' +
+    (controllingJobs.has(job.id) ? " disabled" : "") + '>' + label + '</button>');
+  return '<div class="btnrow">' + buttons.join("") + '</div>';
+}
 function jobBox(j) {
   if (!j)
     return '<p class="hint">点击「生成口播」，即可用当前文案和配音生成成片。已生成的版本可在「导出记录」查看。</p>';
@@ -1021,9 +1058,11 @@ function jobBox(j) {
     '</b><span class="hint">' +
     esc(j.message) + " · " + esc(modelName(j.lipModel)) +
     "</span>" +
-    (j.status === "running" || j.status === "queued"
-      ? '<progress max="100" value="' + j.progress + '"></progress>'
-      : "") +
+    (jobTiming(j) ? '<small>' + jobTiming(j) +
+      (j.status === "running" && j.updated ? " · 最近进展 " + esc(j.updated.slice(11, 19)) : "") + '</small>' : "") +
+    (jobMetrics(j) ? '<small>' + jobMetrics(j) + '</small>' : "") +
+    (jobActive(j) ? '<small>总体进度 ' + j.progress + '%</small><progress aria-label="总体进度" max="100" value="' +
+      j.progress + '"></progress>' : "") + jobControls(j) +
     (j.qc
       ? '<p class="hint">' +
         j.qc.size.join(" × ") +
@@ -1258,6 +1297,14 @@ function inspector() {
   $("#toneBtn")?.toggleAttribute("disabled", busy);
   $("#produce").disabled = busy || !!progressJob;
 }
+let historyPollTimer;
+async function refreshHistoryJobs() {
+  if (view !== "history") { historyPollTimer = null; return; }
+  const jobs = session.jobs.filter(job => jobActive(job) && job.id !== progressJob);
+  await Promise.allSettled(jobs.map(async job => updateJob(await api("/api/jobs/" + job.id))));
+  historyPollTimer = null;
+  if (view === "history") alternative();
+}
 function alternative() {
   if (view === "history") {
     $("#other").innerHTML =
@@ -1275,17 +1322,21 @@ function alternative() {
             j.aspect + " · " + esc(modelName(j.lipModel)) +
             " · " +
             esc(j.message) +
+            (jobTiming(j) ? " · " + jobTiming(j) : "") +
+            (jobMetrics(j) ? " · " + jobMetrics(j) : "") +
             (j.status === "done" ? " · " + reviewSummary(j) : "") +
             "</small></div>" +
             (j.status === "done"
               ? '<button class="outline" data-watch="' +
                 j.id +
                 '">查看成片</button>'
-              : "") +
+              : jobControls(j)) +
             "</div>",
         )
         .join("") || '<p class="hint">导出的成片和检查结果会保存在这里。</p>') +
       "</div>";
+    if (!historyPollTimer && session.jobs.some(job => jobActive(job) && job.id !== progressJob))
+      historyPollTimer = setTimeout(refreshHistoryJobs, 1800);
     return;
   }
   $("#other").innerHTML =
@@ -1415,7 +1466,7 @@ async function poll(id) {
     updateJob(j);
     if (step === 5 && view === "work") inspector();
     if (view === "history") alternative();
-    if (["done", "failed"].includes(j.status)) {
+    if (!jobActive(j)) {
       progressJob = null;
       $("#produce").disabled = false;
       if (draft.job !== id) return;
@@ -1646,6 +1697,26 @@ document.addEventListener(
     }
     if (b.dataset.use) {
       await use(findAsset(b.dataset.use));
+      return;
+    }
+    if (b.dataset.jobAction) {
+      const id = b.dataset.jobId;
+      if (controllingJobs.has(id)) return;
+      controllingJobs.add(id);
+      b.disabled = true;
+      try {
+        const job = await api("/api/jobs/" + id + "/" + b.dataset.jobAction, {});
+        updateJob(job);
+        if (id === draft.job && !progressJob && jobActive(job)) {
+          progressJob = id;
+          $("#produce").disabled = true;
+          poll(id);
+        }
+      } finally {
+        controllingJobs.delete(id);
+        if (view === "history") alternative();
+        else if (step === 5) inspector();
+      }
       return;
     }
     if (b.dataset.watch) {
@@ -2015,7 +2086,7 @@ async function start() {
   ["timeupdate", "loadedmetadata", "play", "pause", "ended"].forEach((k) =>
     v.addEventListener(k, updateClock),
   );
-  if (draft.job && ["queued", "running"].includes(getJob(draft.job)?.status)) {
+  if (jobActive(getJob(draft.job))) {
     progressJob = draft.job;
     $("#produce").disabled = true;
   }

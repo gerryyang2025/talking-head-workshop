@@ -9,7 +9,7 @@ import shutil
 import threading
 import tempfile
 import traceback
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import CancelledError, ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -36,6 +36,8 @@ app.config.update(MAX_CONTENT_LENGTH=160 * 1024 * 1024)
 executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="studio-render")
 asset_lock = threading.RLock()
 voice_lock = threading.Lock()
+export_lock = threading.Lock()
+export_stops = {}
 
 
 def lipsync_models():
@@ -121,10 +123,16 @@ def workbench(page=None):
     return app.send_static_file("index.html")
 
 
+def public_job(job):
+    if job["status"] in ("failed", "cancelled", "paused"):
+        job["canRestart"] = (STORE / "jobs" / job["id"] / "timeline.json").is_file()
+    return job
+
+
 def all_jobs():
     with db() as con:
         return [
-            json.loads(r[0])
+            public_job(json.loads(r[0]))
             for r in con.execute("SELECT info FROM jobs ORDER BY rowid DESC LIMIT 60")
         ]
 
@@ -328,36 +336,84 @@ def put_job(info, usage=None):
             )
 
 
-def worker(info, timeline):
-    def notify(p, message):
-        if info["progress"] != p or info["message"] != message:
-            info.update(status="running", progress=p, message=message)
-            put_job(info)
+def timestamp():
+    return datetime.datetime.now().astimezone().isoformat(timespec="seconds")
+
+
+def worker(info, timeline, stop):
+    def check_cancel():
+        if stop.is_set():
+            raise CancelledError()
+
+    def notify(progress, message, metrics=None):
+        with export_lock:
+            check_cancel()
+            changed_counts = metrics is not None and info.get("metrics") != metrics
+            if changed_counts or info["progress"] != progress or info["message"] != message:
+                if metrics is not None:
+                    info["metrics"] = metrics
+                info.update(progress=progress, message=message, updated=timestamp())
+                put_job(info)
 
     try:
+        with export_lock:
+            if stop.is_set():  # Cancelled while waiting in the executor queue.
+                return
+            info.update(status="running", started=timestamp(), message="正在准备导出")
+            put_job(info)
         folder = STORE / "jobs" / info["id"]
-        folder.mkdir(parents=True, exist_ok=True)
-        (folder / "timeline.json").write_text(
-            json.dumps(timeline, ensure_ascii=False, indent=2)
-        )
-        summary = render(timeline, folder, notify)
-        # A cut can interrupt a shot several times. Count each placement once.
-        placements = {s["owner"]: s for s in visual_spans(timeline)}.values()
-        used = collections.Counter(s["shot"]["id"] for s in placements if s["shot"])
-        materials = used.copy()
-        materials.update(s["insert"] for s in placements if s["insert"])
-        info.update(
-            status="done",
-            progress=100,
-            message="成片可播放",
-            qc=summary,
-            usage=dict(materials),
-        )
-        put_job(info, used)
+        with tempfile.TemporaryDirectory(dir=folder) as tmp:
+            take = Path(tmp)
+            summary = render(timeline, take, notify, check_cancel=check_cancel,
+                             checkpoints=folder / "batches", on_inference=notify)
+            # A cut can interrupt a shot several times. Count each placement once.
+            placements = {s["owner"]: s for s in visual_spans(timeline)}.values()
+            used = collections.Counter(s["shot"]["id"] for s in placements if s["shot"])
+            materials = used.copy()
+            materials.update(s["insert"] for s in placements if s["insert"])
+            with export_lock:
+                check_cancel()
+                (take / "film.mp4").replace(folder / "film.mp4")
+                info.update(status="done", progress=100, finished=timestamp(),
+                            message="成片可播放", qc=summary, usage=dict(materials))
+                put_job(info, used)
+        shutil.rmtree(folder / "batches", ignore_errors=True)
     except Exception as exc:
-        traceback.print_exc()
-        info.update(status="failed", message=str(exc)[:500] or type(exc).__name__)
+        with export_lock:
+            if stop.is_set():
+                with db() as con:
+                    pausing = job_info(info["id"], con)["status"] == "pausing"
+                if pausing:
+                    info.update(status="paused", message="已暂停，可继续生成")
+                else:
+                    info.update(status="cancelled", message="已停止生成")
+            else:
+                traceback.print_exc()
+                info.update(status="failed", message=str(exc)[:500] or type(exc).__name__)
+            info["finished"] = timestamp()
+            put_job(info)
+    finally:
+        with export_lock:
+            if export_stops.get(info["id"]) is stop:
+                export_stops.pop(info["id"])
+
+
+def enqueue(info, timeline):
+    # Called under export_lock. A resumed attempt may start before the old worker exits.
+    for field in ("updated", "finished", "started", "metrics"):
+        info.pop(field, None)
+    info.update(status="queued", progress=0, message="等待本机渲染", queuedAt=timestamp(),
+                attempt=info.get("attempt", 0) + 1)
+    stop = threading.Event()
+    put_job(info)
+    export_stops[info["id"]] = stop
+    try:
+        executor.submit(worker, dict(info), timeline, stop)
+    except RuntimeError:
+        export_stops.pop(info["id"], None)
+        info.update(status="failed", finished=timestamp(), message="本机导出队列已关闭，可重试")
         put_job(info)
+        raise
 
 
 @app.post("/api/jobs")
@@ -373,20 +429,62 @@ def create_job():
         title=tl["title"],
         aspect=tl["aspect"],
         lipModel=tl["lipModel"],
-        status="queued",
-        progress=0,
-        message="等待本机渲染",
-        created=datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
+        created=timestamp(),
     )
-    put_job(info)
-    executor.submit(worker, dict(info), tl)
+    with export_lock:
+        folder = STORE / "jobs" / info["id"]
+        folder.mkdir(parents=True)
+        (folder / "timeline.json").write_text(json.dumps(tl, ensure_ascii=False, indent=2))
+        enqueue(info, tl)
     return jsonify(info), 202
 
 
 @app.get("/api/jobs/<ident>")
 def get_job(ident):
     with db() as con:
-        return jsonify(job_info(ident, con))
+        return jsonify(public_job(job_info(ident, con)))
+
+
+@app.post("/api/jobs/<ident>/<any(cancel,pause,resume,retry):action>")
+def control_job(ident, action):
+    with export_lock:
+        with db() as con:
+            info = job_info(ident, con)
+        status = info["status"]
+        if action in ("resume", "retry"):
+            if status in ("queued", "running"):
+                return jsonify(info)
+            allowed = ("paused",) if action == "resume" else ("cancelled", "failed")
+            if status not in allowed:
+                abort(409, description="当前状态无法重新排队")
+            snapshot = STORE / "jobs" / ident / "timeline.json"
+            if not snapshot.is_file():
+                abort(409, description="这条旧记录缺少时间轴，请从工作台重新生成")
+            timeline = json.loads(snapshot.read_text())
+            if visible_speech(visual_spans(timeline)):
+                require_lipsync(selected_model(timeline))
+            info.setdefault("attempt", 1)  # Includes the original attempt of a legacy job.
+            enqueue(info, timeline)
+            return jsonify(info), 202
+
+        pause = action == "pause"
+        terminal, pending = ("paused", "pausing") if pause else ("cancelled", "cancelling")
+        if status in (pending, terminal):
+            return jsonify(public_job(info))
+        if status == "paused" and not pause:
+            # A pause already ended this attempt's clock.
+            info.update(status="cancelled", message="已停止生成")
+            info.setdefault("finished", timestamp())
+        elif ident in export_stops and status in ("queued", "running", "pausing"):
+            export_stops[ident].set()
+            if status == "queued":
+                info.update(status=terminal, finished=timestamp(), message="已暂停排队" if pause else "已取消排队")
+            else:
+                info.update(status=pending, message="正在暂停生成" if pause else "正在停止生成")
+        else:
+            abort(409, description="任务状态已变化，请刷新后再试")
+        put_job(info)
+        return jsonify(public_job(info))
 
 
 @app.post("/api/jobs/<ident>/review")

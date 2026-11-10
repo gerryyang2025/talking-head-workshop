@@ -5,6 +5,7 @@ import importlib.util
 import json
 import shutil
 import tempfile
+import threading
 import types
 import unittest
 import wave
@@ -705,6 +706,156 @@ class StudioWorkflow(unittest.TestCase):
         self.assertEqual(clean[0]["emotion"], "平静")
         with self.assertRaisesRegex(ValueError, "出点"):
             self.media.clean_shots(a, [{"start": 2, "end": 1}])
+
+    def test_stop_one_running_export_and_one_queued_export(self):
+        entered = threading.Event()
+        released = threading.Event()
+        timeline = dict(voice="v", title="test", aspect="16:9", lipModel="latentsync")
+        result = dict(frames=1)
+
+        def render(timeline, folder, notify, *, check_cancel, checkpoints, on_inference):
+            (folder / "film.mp4").write_bytes(b"partial")
+            if not entered.is_set():
+                entered.set()
+                released.wait(timeout=5)
+            check_cancel()
+            return result
+
+        def submit():
+            response = self.client.post("/api/jobs", json={}, headers=self.headers)
+            self.assertEqual(response.status_code, 202, response.json)
+            return "/api/jobs/" + response.json["id"]
+
+        def cancel(url):
+            return self.client.post(url + "/cancel", headers=self.headers)
+
+        with patch.object(self.server, "plan", return_value=timeline), patch.object(
+            self.server, "visual_spans", return_value=[]
+        ), patch.object(self.server, "render", render):
+            first = submit()
+            try:
+                self.assertTrue(entered.wait(timeout=5))
+                queued, last = submit(), submit()
+                self.assertEqual(cancel(queued).json["status"], "cancelled")
+                self.assertEqual(cancel(first).json["status"], "cancelling")
+                self.assertEqual(cancel(first).json["status"], "cancelling")
+            finally:
+                released.set()
+            # This barrier runs after all three tasks in the single-worker queue.
+            self.server.executor.submit(lambda: None).result(timeout=5)
+            for url in (first, queued):
+                self.assertEqual(cancel(url).json["status"], "cancelled")
+                self.assertIn("finished", self.client.get(url).json)
+                self.assertEqual(self.client.get(url + "/film").status_code, 404)
+            self.assertFalse(list((self.media.STORE / "jobs" / first.split("/")[-1]).rglob("film.mp4")))
+            done = self.client.get(last).json
+            self.assertEqual(done["status"], "done")
+            self.assertLessEqual(done["started"], done["finished"])
+            self.assertEqual(cancel(last).status_code, 409)
+
+    def test_pause_releases_queue_and_resume_or_retry_uses_saved_settings(self):
+        entered, release = threading.Event(), threading.Event()
+        original = dict(voice="v", title="original", aspect="16:9", lipModel="latentsync")
+        rendered = []
+
+        def render(timeline, folder, notify, *, check_cancel, checkpoints, on_inference):
+            rendered.append(timeline["title"])
+            on_inference(25, "正在推理", dict(total=8, inferred=2, cached=0, fps=2.0))
+            if not entered.is_set():
+                entered.set()
+                release.wait(timeout=5)
+            check_cancel()
+            (folder / "film.mp4").write_bytes(b"finished")
+            return dict(frames=8)
+
+        def action(url, name):
+            return self.client.post(url + "/" + name, headers=self.headers)
+
+        def submit():
+            response = self.client.post("/api/jobs", json={}, headers=self.headers)
+            self.assertEqual(response.status_code, 202)
+            return "/api/jobs/" + response.json["id"]
+
+        def drain():
+            self.server.executor.submit(lambda: None).result(timeout=5)
+
+        with patch.object(self.server, "plan", side_effect=[original, dict(original, title="queued"),
+                          dict(original, title="next")]) as plan, patch.object(
+            self.server, "visual_spans", return_value=[]
+        ), patch.object(self.server, "render", render):
+            job = submit()
+            try:
+                self.assertTrue(entered.wait(timeout=5))
+                queued, following = submit(), submit()
+                self.assertEqual(action(queued, "pause").json["status"], "paused")
+                self.assertEqual(action(queued, "resume").status_code, 202)
+                self.assertEqual(action(queued, "resume").json["attempt"], 2)
+                self.assertEqual(action(queued, "cancel").json["status"], "cancelled")
+                self.assertEqual(action(job, "pause").json["status"], "pausing")
+            finally:
+                release.set()
+                drain()
+            paused = self.client.get(job).json
+            self.assertTrue(paused["canRestart"])
+            self.assertEqual((paused["status"], paused["metrics"]["inferred"]), ("paused", 2))
+            self.assertEqual(self.client.get(job + "/film").status_code, 404)
+            self.assertEqual(self.client.get(following).json["status"], "done")
+            self.assertEqual(action(job, "resume").json["attempt"], 2)
+            self.assertEqual(action(queued, "retry").json["attempt"], 3)
+            drain()
+            self.assertEqual(rendered, ["original", "next", "original", "queued"])
+            self.assertEqual(plan.call_count, 3)
+            self.assertEqual(self.client.get(job).json["status"], "done")
+            self.assertEqual(self.client.get(queued).json["status"], "done")
+        self.server.put_job(dict(id="legacy", status="failed"))
+        self.assertFalse(self.client.get("/api/jobs/legacy").json["canRestart"])
+        self.assertEqual(action("/api/jobs/legacy", "retry").status_code, 409)
+
+    @unittest.skipUnless(shutil.which("ffmpeg"), "FFmpeg required")
+    def test_latentsync_resume_preserves_batch_order_audio_offsets_and_frame_count(self):
+        from concurrent.futures import CancelledError
+        from studio import native_lipsync as native
+        import cv2 as cv
+        import numpy as np
+
+        folder = self.media.STORE
+        cache = folder / "batches"
+        output = folder / "joined.mp4"
+        engine = native.NativeLipEngine("latentsync", None)
+        encoder = self.production.encoder
+        calls = []
+
+        def render(source, first, length, tmp, encoder, report, check_cancel, *, frame_offset):
+            calls.append((first, source.pos, length, frame_offset))
+            with encoder(tmp, (32, 32)) as stream:
+                for i in range(length):
+                    stream.write(np.full((32, 32, 3), 12 * (source.pos + i), np.uint8).tobytes())
+            if len(calls) == 2:
+                raise CancelledError()
+
+        events = []
+        def run():
+            return engine.render_checkpointed(types.SimpleNamespace(pos=2), 5, 9, output, encoder,
+                                              lambda *args: events.append(args), lambda: None, cache)
+
+        with patch.object(native, "LATENTSYNC_BATCH", 4), patch.object(engine, "render", render):
+            with self.assertRaises(CancelledError):
+                run()
+            self.assertEqual([p.name for p in cache.iterdir()], ["0.mp4"])
+            self.assertFalse(output.exists())
+            events.clear()
+            self.assertEqual(run(), 4)
+        self.assertEqual(calls, [(5, 2, 4, 0), (9, 6, 4, 4), (9, 6, 4, 4), (13, 10, 1, 8)])
+        self.assertEqual([(n, reused) for n, _, reused in events], [(4, 4), (8, 4), (9, 4)])
+        capture = cv.VideoCapture(str(output))
+        try:
+            for pos in range(2, 11):
+                ok, frame = capture.read()
+                self.assertTrue(ok)
+                self.assertAlmostEqual(frame.mean(), 12 * pos, delta=5)
+            self.assertFalse(capture.read()[0])
+        finally:
+            capture.release()
 
     def test_review_belongs_to_a_finished_film_and_merges_legacy_checks(self):
         def save(items, **options):

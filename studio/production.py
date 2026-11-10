@@ -2,7 +2,9 @@ import collections
 import json
 import math
 import re
+import shutil
 import subprocess
+import time
 import textwrap
 from contextlib import contextmanager
 
@@ -495,7 +497,7 @@ def visual_spans(tl):
 
 
 def draw_span(sink, span, part, size, start, stop, subtitles, framing, performance=None,
-              cycle=None, open_tail=None):
+              cycle=None, open_tail=None, on_frame=None):
     source = tail = tail_source = None
     delay = span.get("delay", MOUTH_DELAY_FRAMES)
     windows = loop_windows(span, start, stop, *cycle, delay) if part and cycle else {}
@@ -541,6 +543,8 @@ def draw_span(sink, span, part, size, start, stop, subtitles, framing, performan
                     active_cut = cut
                 picture = seam.apply(picture, index - cut, radius)
             sink.write(compose(picture, span["layout"], size, subtitles, framing, progress).tobytes())
+            if on_frame and ((index + 1) % FPS == 0 or index + 1 == stop):
+                on_frame(index + 1)
     finally:
         if tail_source:
             tail_source.close()
@@ -673,19 +677,44 @@ def speaker_clip(span):
     return None
 
 
-def sync_parts(rows, voice_id, shift, total, folder, notify, model):
+def sync_parts(rows, voice_id, shift, total, folder, notify, model, check_cancel, checkpoints):
     cache = STORE / "synced"
     cache.mkdir(exist_ok=True)
     voice = STORE / "voices" / voice_id / "voice.wav"
     parts = []
     engine = None
     inferred = cached = 0
-    for index, row in enumerate(rows):
+    measured_seconds = 0.0
+    spoken = [row for row in rows if row.get("voiced", True) and speaker_clip(row)]
+    speech_frames = sum(row["stop"] - row["first"] for row in spoken)
+    segment = 0
+    for row in rows:
+        check_cancel()
         count = row["stop"] - row["first"]
         clip = speaker_clip(row)
         if not row.get("voiced", True) or not clip:
             parts.append(None)
             continue
+        segment += 1
+
+        last_done = 0
+        last_reused = 0
+        sampled_at = time.monotonic()
+
+        def report(done, detail="", reused=0):
+            nonlocal measured_seconds, sampled_at, last_done, last_reused
+            if done > last_done:
+                now = time.monotonic()
+                if done - last_done > reused - last_reused:
+                    measured_seconds += now - sampled_at
+                sampled_at, last_done, last_reused = now, done, reused
+            new_frames = inferred + done - reused
+            processed = inferred + cached + done
+            metrics = dict(total=speech_frames, inferred=new_frames, cached=cached + reused,
+                           fps=round(new_frames / measured_seconds, 4) if measured_seconds else None)
+            message = f"口型推理 · 第 {segment}/{len(spoken)} 段"
+            notify(10 + 62 * processed // speech_frames, message + (f" · {detail}" if detail else ""), metrics)
+
         ident, start, end = clip
         offset_key = (row["offset"],) if row.get("offset") else ()
         key = signature(
@@ -702,10 +731,11 @@ def sync_parts(rows, voice_id, shift, total, folder, notify, model):
         path = cache / (key + ".mp4")
         if path.exists():
             parts.append(path)
+            report(count, "已复用", count)
             cached += count
             continue
         if engine is None:
-            notify(8, f"正在载入本机 {MODEL_NAMES[model]} 口型模型")
+            report(0, "正在载入口型模型")
             raw = ff("-i", voice, "-ar", "16000", "-ac", "1", "-f", "f32le", "pipe:1")
             samples = np.frombuffer(raw, "<f4")
             samples = np.pad(samples, (0, max(0, total * 640 - len(samples))))
@@ -722,14 +752,24 @@ def sync_parts(rows, voice_id, shift, total, folder, notify, model):
         src.pos = row.get("offset", 0)
         tmp = folder / (key + ".mp4")
         state = {}
+        sampled_at = time.monotonic()
+        reused = 0
+        batch_folder = None
         try:
-            if model in NATIVE_WEIGHTS:
-                notify(10 + int(62 * row["first"] / total), f"{MODEL_NAMES[model]} · 第 {index + 1} 段")
-                engine.render(src, row["first"] - shift, count, tmp, encoder)
+            if model == "latentsync" and checkpoints:
+                from .native_lipsync import LATENTSYNC_BATCH
+                if count > LATENTSYNC_BATCH:
+                    batch_folder = checkpoints / key
+            if batch_folder:
+                reused = engine.render_checkpointed(src, row["first"] - shift, count, tmp, encoder,
+                                                    report, check_cancel, batch_folder)
+            elif model in NATIVE_WEIGHTS:
+                engine.render(src, row["first"] - shift, count, tmp, encoder, report, check_cancel)
             else:
                 first_frame = src.next()
                 with encoder(tmp, first_frame.shape[1::-1]) as sink:
                     for j in range(0, count, 4):
+                        check_cancel()
                         ix = list(range(j, min(count, j + 4)))
                         frames = [first_frame.copy() if k == 0 else src.next() for k in ix]
                         engine.sync(
@@ -741,10 +781,7 @@ def sync_parts(rows, voice_id, shift, total, folder, notify, model):
                         )
                         for f in frames:
                             sink.write(f.tobytes())
-                        notify(
-                            10 + int(62 * (row["first"] + ix[-1]) / total),
-                            f"口型推理 · 第 {index + 1} 段",
-                        )
+                        report(ix[-1] + 1)
         except ValueError as exc:
             if row.get("insertSpeaking"):
                 raise ValueError(f"补充素材口播失败：{exc} 可更换清晰的单人素材，或把用途改为「配图」。") from exc
@@ -753,11 +790,14 @@ def sync_parts(rows, voice_id, shift, total, folder, notify, model):
             src.close()
         tmp.replace(path)
         parts.append(path)
-        inferred += count
+        inferred += count - reused
+        cached += reused
+        if batch_folder:
+            shutil.rmtree(batch_folder, ignore_errors=True)
     return parts, inferred, cached
 
 
-def render(tl, folder, notify, window=None):
+def render(tl, folder, notify, window=None, *, check_cancel=lambda: None, checkpoints=None, on_inference=None):
     from istream.render import _esc
 
     size = SIZES[tl["aspect"]]
@@ -773,7 +813,9 @@ def render(tl, folder, notify, window=None):
     tails = {s["rest_from"]: s["stop"] for s in all_spans if "rest_from" in s}
     spans = [s for s in all_spans if "rest_from" not in s and s["first"] < stop
              and tails.get(s["first"], s["stop"]) > first]
-    parts, inferred, cached = sync_parts(spans, tl["voice"], tl["shift"], total, folder, notify, selected_model(tl))
+    report = on_inference or (lambda progress, message, metrics: notify(progress, message))
+    parts, inferred, cached = sync_parts(spans, tl["voice"], tl["shift"], total, folder, report,
+                                         selected_model(tl), check_cancel, checkpoints)
     weights = rest_mouth = None
     clips = [speaker_clip(span) for span in spans]
     actors = {ident: asset(ident) for ident in {clip[0] for clip in clips if clip}}
@@ -794,7 +836,11 @@ def render(tl, folder, notify, window=None):
                          for s, clip in zip(spans, clips))
         if video_tail or np.any(weights[first:stop]):
             rest_mouth = RestMouth()
-    notify(76, "正在组合镜头、动态图文和字幕")
+    def composition_progress(end):
+        check_cancel()
+        notify(76 + 18 * (end - first) // (stop - first), f"正在合成画面 · {end - first}/{stop - first} 帧")
+
+    composition_progress(first)
     output = folder / "film.mp4"
     filters = "subtitles='" + _esc(str(ass)) + "'"
     audio_trim = []
@@ -817,7 +863,7 @@ def render(tl, folder, notify, window=None):
                     open_tail = open_source
             draw_span(sink, span, part, size, max(span["first"], first), min(display_stop, stop),
                       tl["subtitles"], tl.get("framing", "cover"), performance,
-                      cycles.get(clip) if span["voiced"] else None, open_tail)
+                      cycles.get(clip) if span["voiced"] else None, open_tail, composition_progress)
     if window:
         return output
     notify(95, "正在逐帧解码并核对音画时长")

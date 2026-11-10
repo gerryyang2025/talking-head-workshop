@@ -172,8 +172,13 @@ def init():
         entries = con.execute("SELECT id,info FROM jobs").fetchall()
         for row in entries:
             info = json.loads(row["info"])
-            if info["status"] in ("running", "queued"):
-                info.update(status="failed", message="服务上次已停止，可重新生成。")
+            if info["status"] in ("running", "queued", "cancelling", "pausing"):
+                if info["status"] == "pausing":
+                    info.update(status="paused", message="已暂停，可继续生成")
+                elif info["status"] == "cancelling":
+                    info.update(status="cancelled", message="已停止生成")
+                else:
+                    info.update(status="failed", message="服务上次已停止，可重新生成。")
                 con.execute(
                     "UPDATE jobs SET info=? WHERE id=?", (json.dumps(info), row["id"])
                 )
