@@ -1,5 +1,6 @@
 import hashlib
 import json
+import logging
 import math
 import os
 import re
@@ -164,11 +165,30 @@ def build_asset(path, kind, role, name, ident):
     return a
 
 
+def clear_deleted_export(ident):
+    """Remove only this export's files. Keep the cleanup request until it succeeds."""
+    if not re.fullmatch(r"[0-9a-f]{32}", ident):
+        raise ValueError("无效的导出编号")
+    folder = STORE / "jobs" / ident
+    try:
+        if folder.is_symlink():
+            folder.unlink()
+        elif folder.exists():
+            shutil.rmtree(folder)
+    except OSError:
+        logging.getLogger(__name__).exception("清理导出文件失败 %s", ident)
+        return False
+    with db() as con:
+        con.execute("DELETE FROM pending_export_cleanup WHERE job=?", (ident,))
+    return True
+
+
 def init():
     with db() as con:
         con.executescript("""CREATE TABLE IF NOT EXISTS assets(id TEXT PRIMARY KEY, info TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY, info TEXT NOT NULL);
-        CREATE TABLE IF NOT EXISTS usage(job TEXT, shot TEXT, times INTEGER, PRIMARY KEY(job,shot));""")
+        CREATE TABLE IF NOT EXISTS usage(job TEXT, shot TEXT, times INTEGER, PRIMARY KEY(job,shot));
+        CREATE TABLE IF NOT EXISTS pending_export_cleanup(job TEXT PRIMARY KEY);""")
         entries = con.execute("SELECT id,info FROM jobs").fetchall()
         for row in entries:
             info = json.loads(row["info"])
@@ -183,6 +203,9 @@ def init():
                     "UPDATE jobs SET info=? WHERE id=?", (json.dumps(info), row["id"])
                 )
         known = {r[0] for r in con.execute("SELECT id FROM assets")}
+        pending_cleanup = [r[0] for r in con.execute("SELECT job FROM pending_export_cleanup")]
+    for ident in pending_cleanup:
+        clear_deleted_export(ident)
     base = ROOT / "build/gerry/talking-head"
     for ident, file, kind, role, name in [
         ("demo-plate", base / "portrait-base.mp4", "video", "host", "Gerry · 半身母片"),

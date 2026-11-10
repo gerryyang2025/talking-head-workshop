@@ -403,7 +403,9 @@ function task(fn) {
     }
   };
 }
+const deletedExports = new Set();
 function updateJob(j) {
+  if (deletedExports.has(j.id)) return;
   const index = session.jobs.findIndex((item) => item.id === j.id);
   if (index < 0) session.jobs.unshift(j);
   else session.jobs[index] = j;
@@ -907,7 +909,7 @@ async function openFilm(id, playNow = true) {
     api("/api/jobs/" + id), api("/api/jobs/" + id + "/timeline"),
   ]);
   const voice = await api("/api/voice/" + tl.voice + "/info");
-  if (revision !== navigationVersion || (!playNow && current()?.id !== id)) return;
+  if (revision !== navigationVersion || deletedExports.has(id) || (!playNow && current()?.id !== id)) return;
   updateJob(job);
   resultVoice = voice;
   resultTimeline = tl;
@@ -1036,18 +1038,22 @@ function jobMetrics(job) {
     speed].filter(Boolean).join(" · ");
 }
 const controllingJobs = new Set();
-function jobControls(job) {
+function jobControls(job, inHistory = false) {
+  const retry = job.canRestart ? [["retry", "按原设置重试"]] : [];
   const actions = {
     queued: [["pause", "暂停排队"], ["cancel", "取消排队"]],
     running: [["pause", "暂停生成"], ["cancel", "停止生成"]],
     paused: job.canRestart ? [["resume", "继续生成"], ["cancel", "停止生成"]] : [["cancel", "停止生成"]],
-    cancelled: [["retry", "按原设置重试"]], failed: [["retry", "按原设置重试"]],
-  }[job.status];
-  if (!actions || (["cancelled", "failed"].includes(job.status) && !job.canRestart)) return "";
+    cancelled: retry, failed: retry,
+  }[job.status] || [];
   const buttons = actions.map(([action, label]) =>
     '<button class="outline" data-job-id="' + esc(job.id) + '" data-job-action="' + action + '"' +
     (controllingJobs.has(job.id) ? " disabled" : "") + '>' + label + '</button>');
-  return '<div class="btnrow">' + buttons.join("") + '</div>';
+  if (inHistory && job.status === "done")
+    buttons.push('<button class="outline" data-watch="' + esc(job.id) + '">查看成片</button>');
+  if (inHistory && ["done", "failed", "cancelled"].includes(job.status))
+    buttons.push('<button class="outline delete-action" aria-haspopup="dialog" data-delete-export="' + esc(job.id) + '">删除</button>');
+  return buttons.length ? '<div class="btnrow">' + buttons.join("") + '</div>' : "";
 }
 function jobBox(j) {
   if (!j)
@@ -1297,6 +1303,81 @@ function inspector() {
   $("#toneBtn")?.toggleAttribute("disabled", busy);
   $("#produce").disabled = busy || !!progressJob;
 }
+function showDeleteExport(job) {
+  const dialog = $("#deleteExport");
+  dialog.dataset.id = job.id;
+  $("#deleteExportName").textContent = job.title;
+  $("#deleteExportMeta").textContent = job.created.replace("T", " ").slice(0, 19) + " · " + modelName(job.lipModel);
+  const link = $("#downloadBeforeDelete");
+  link.hidden = job.status !== "done";
+  if (link.hidden) link.removeAttribute("href");
+  else link.href = "/api/jobs/" + encodeURIComponent(job.id) + "/film?download=1";
+  dialog.querySelector("[role=alert]").textContent = "";
+  dialog.showModal();
+}
+function forgetExport(id) {
+  const preview = (playingJob || draft.job) === id;
+  deletedExports.add(id);
+  session.jobs = session.jobs.filter(job => job.id !== id);
+  function detach(project) {
+    if (project.job === id) project.job = null;
+    if (project.review) delete project.review[id];
+  }
+  detach(draft);
+  try {
+    const projects = savedProjects();
+    Object.values(projects).forEach(detach);
+    localStorage.setItem("frame-studio-projects", JSON.stringify(projects));
+    const saved = JSON.parse(localStorage.getItem("frame-studio-draft-v1"));
+    if (saved) {
+      detach(saved);
+      localStorage.setItem("frame-studio-draft-v1", JSON.stringify(saved));
+    }
+  } catch { message("浏览器未能更新已保存的导出引用"); }
+  if (progressJob === id) {
+    clearTimeout(pollTimer);
+    progressJob = null;
+    $("#produce").disabled = busy;
+  }
+  if (preview) {
+    playingJob = null;
+    resultTimeline = null;
+    resultVoice = null;
+    if (mode === "result") mode = "source";
+    prepMonitor();
+    drawTracks();
+  }
+  if (view === "history") alternative();
+  else if (view === "work" && step === 5) inspector();
+}
+async function confirmDeleteExport() {
+  const dialog = $("#deleteExport"), id = dialog.dataset.id;
+  const button = $("#confirmDeleteExport");
+  if (!dialog.open || button.disabled) return;
+  button.disabled = true;
+  try {
+    const result = await api("/api/jobs/" + encodeURIComponent(id) + "/delete", {});
+    if (dialog.open && dialog.dataset.id === id) dialog.close();
+    const index = session.jobs.findIndex(job => job.id === id);
+    session.jobs = result.jobs.filter(job => !deletedExports.has(job.id));
+    forgetExport(id);
+    exportChanges?.postMessage(id);
+    if (view === "history") {
+      const rows = $("#other").querySelectorAll(".historyrow");
+      (rows[Math.min(index, rows.length - 1)]?.querySelector("button") || $('#views [data-view="history"]')).focus();
+    }
+    message(result.cleanupPending ? "记录已删除，剩余文件将在下次启动时继续清理" : "导出记录已删除");
+  } catch (error) {
+    if (dialog.open && dialog.dataset.id === id) dialog.querySelector("[role=alert]").textContent = error.message;
+    else message(error.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+const exportChanges = typeof BroadcastChannel === "function" ? new BroadcastChannel("studio-export-deletions") : null;
+exportChanges?.addEventListener("message", event => {
+  if (draft && typeof event.data === "string") forgetExport(event.data);
+});
 let historyPollTimer;
 async function refreshHistoryJobs() {
   if (view !== "history") { historyPollTimer = null; return; }
@@ -1326,11 +1407,7 @@ function alternative() {
             (jobMetrics(j) ? " · " + jobMetrics(j) : "") +
             (j.status === "done" ? " · " + reviewSummary(j) : "") +
             "</small></div>" +
-            (j.status === "done"
-              ? '<button class="outline" data-watch="' +
-                j.id +
-                '">查看成片</button>'
-              : jobControls(j)) +
+            jobControls(j, true) +
             "</div>",
         )
         .join("") || '<p class="hint">导出的成片和检查结果会保存在这里。</p>') +
@@ -1463,6 +1540,7 @@ async function poll(id) {
   clearTimeout(pollTimer);
   try {
     const j = await api("/api/jobs/" + id);
+    if (deletedExports.has(id)) return;
     updateJob(j);
     if (step === 5 && view === "work") inspector();
     if (view === "history") alternative();
@@ -1479,7 +1557,7 @@ async function poll(id) {
   } catch (e) {
     message(e.message);
   }
-  pollTimer = setTimeout(() => poll(id), 1800);
+  if (!deletedExports.has(id)) pollTimer = setTimeout(() => poll(id), 1800);
 }
 async function generate() {
   if (progressJob || busy) return;
@@ -1697,6 +1775,14 @@ document.addEventListener(
     }
     if (b.dataset.use) {
       await use(findAsset(b.dataset.use));
+      return;
+    }
+    if (b.dataset.deleteExport) {
+      showDeleteExport(getJob(b.dataset.deleteExport));
+      return;
+    }
+    if (b.id === "confirmDeleteExport") {
+      await confirmDeleteExport();
       return;
     }
     if (b.dataset.jobAction) {

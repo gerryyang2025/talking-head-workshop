@@ -809,6 +809,21 @@ dialog input {
   justify-content: space-between;
   gap: 10px;
 }
+.historyrow .btnrow {
+  flex-wrap: wrap;
+}
+.historyrow > .btnrow {
+  justify-content: flex-end;
+}
+.delete-action {
+  color: #f3b9aa;
+}
+#deleteExportMeta {
+  display: block;
+}
+#deleteExport .btnrow {
+  justify-content: flex-end;
+}
 .historyrow b,
 .historyrow small {
   display: block;

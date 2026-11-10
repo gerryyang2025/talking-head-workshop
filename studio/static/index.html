@@ -134,6 +134,19 @@
       </form>
       <div id="dialogBody"></div>
     </dialog>
+    <dialog id="deleteExport" aria-labelledby="deleteExportTitle" aria-describedby="deleteExportImpact">
+      <h3 id="deleteExportTitle">删除这条导出记录？</h3>
+      <div class="stack">
+        <div><b id="deleteExportName"></b><small id="deleteExportMeta"></small></div>
+        <p class="hint" id="deleteExportImpact">将永久删除这次导出的成片、时间轴、复核记录和中间文件。项目草稿、素材和配音会保留。</p>
+        <a id="downloadBeforeDelete" download>先下载 MP4</a>
+        <small role="alert"></small>
+        <form method="dialog" class="btnrow">
+          <button class="outline" autofocus>取消</button>
+          <button class="outline delete-action" id="confirmDeleteExport" type="button">确认删除</button>
+        </form>
+      </div>
+    </dialog>
     <dialog id="cardPreview" aria-labelledby="cardPreviewTitle">
       <form method="dialog"><button class="iconBtn closer" aria-label="关闭视频预览">×</button></form>
       <h3 id="cardPreviewTitle">动态图文预览</h3>

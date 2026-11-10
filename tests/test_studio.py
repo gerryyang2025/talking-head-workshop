@@ -936,6 +936,60 @@ Pages occupied by compressor: 1048576.
         finally:
             capture.release()
 
+    def test_delete_export_removes_only_its_files_and_usage(self):
+        store = self.media.STORE
+        old, other = self.media.token(), self.media.token()
+        for ident in (old, other):
+            folder = store / "jobs" / ident
+            (folder / "batches").mkdir(parents=True)
+            (folder / "batches" / "0.mp4").write_bytes(b"batch")
+            (folder / "timeline.json").write_text("{}")
+            (folder / "film.mp4").write_bytes(b"video")
+            self.server.put_job(dict(id=ident, status="done", title="同名", review={"mouth": {"status": "passed"}}),
+                                {"shared-shot": 3})
+        for name in ("assets", "voices", "synced"):
+            (store / name).mkdir(exist_ok=True)
+            (store / name / "keep").write_bytes(b"shared")
+        (store / "jobs" / old / "linked").symlink_to(store / "assets", target_is_directory=True)
+        url = "/api/jobs/" + old
+        self.assertEqual(self.client.post(url + "/delete").status_code, 403)
+        self.assertEqual(self.client.post(url + "/delete", headers={**self.headers, "Origin": "http://elsewhere"}).status_code, 403)
+        for _ in range(2):
+            reply = self.client.post(url + "/delete", headers=self.headers)
+            self.assertEqual(reply.status_code, 200)
+            self.assertFalse(reply.json["cleanupPending"])
+            self.assertEqual([j["id"] for j in reply.json["jobs"]], [other])
+        for suffix in ("", "/film", "/timeline"):
+            self.assertEqual(self.client.get(url + suffix).status_code, 404)
+        self.assertFalse((store / "jobs" / old).exists())
+        self.assertEqual((store / "jobs" / other / "film.mp4").read_bytes(), b"video")
+        for name in ("assets", "voices", "synced"):
+            self.assertEqual((store / name / "keep").read_bytes(), b"shared")
+        with self.media.db() as con:
+            self.assertEqual([tuple(r) for r in con.execute("SELECT * FROM usage")], [(other, "shared-shot", 3)])
+            self.assertEqual(con.execute("SELECT count(*) FROM pending_export_cleanup").fetchone()[0], 0)
+
+    def test_delete_export_status_and_restart_cleanup(self):
+        ident = self.media.token()
+        url = "/api/jobs/" + ident + "/delete"
+        folder = self.media.STORE / "jobs" / ident
+        folder.mkdir(parents=True)
+        for status in ("queued", "running", "pausing", "paused", "cancelling"):
+            self.server.put_job(dict(id=ident, status=status))
+            self.assertEqual(self.client.post(url, headers=self.headers).status_code, 409)
+            self.assertTrue(folder.is_dir())
+            self.assertEqual(self.client.get("/api/jobs/" + ident).json["status"], status)
+        self.server.put_job(dict(id=ident, status="cancelled"))
+        with patch.object(self.media.shutil, "rmtree", side_effect=PermissionError("busy")), self.assertLogs("studio.media"):
+            self.assertTrue(self.client.post(url, headers=self.headers).json["cleanupPending"])
+        self.assertTrue(folder.exists())
+        self.assertEqual(self.client.get("/api/jobs/" + ident).status_code, 404)
+        self.media.init()
+        self.assertFalse(folder.exists())
+        # Old failed jobs can already have lost their export directories.
+        self.server.put_job(dict(id=ident, status="failed"))
+        self.assertFalse(self.client.post(url, headers=self.headers).json["cleanupPending"])
+
     def test_review_belongs_to_a_finished_film_and_merges_legacy_checks(self):
         def save(items, **options):
             return self.client.post(

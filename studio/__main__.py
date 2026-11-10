@@ -487,6 +487,30 @@ def control_job(ident, action):
         return jsonify(public_job(info))
 
 
+@app.post("/api/jobs/<ident>/delete")
+def delete_job(ident):
+    if not re.fullmatch(r"[0-9a-f]{32}", ident):
+        abort(404)
+    with export_lock:
+        with db() as con:
+            con.execute("BEGIN IMMEDIATE")
+            row = con.execute("SELECT info FROM jobs WHERE id=?", (ident,)).fetchone()
+            if row:
+                status = json.loads(row[0])["status"]
+                if status not in ("done", "failed", "cancelled"):
+                    abort(409, description="请先停止此任务，待停止后再删除")
+                stop = export_stops.get(ident)
+                if stop is not None and not stop.is_set():
+                    abort(409, description="任务正在收尾，请稍后再试")
+                con.execute("DELETE FROM usage WHERE job=?", (ident,))
+                con.execute("DELETE FROM jobs WHERE id=?", (ident,))
+                con.execute("INSERT INTO pending_export_cleanup VALUES (?)", (ident,))
+            pending = con.execute("SELECT 1 FROM pending_export_cleanup WHERE job=?", (ident,)).fetchone()
+        # Commit the deletion before touching files. Interrupted cleanup resumes at startup.
+        cleaned = not pending or media.clear_deleted_export(ident)
+    return jsonify(jobs=all_jobs(), cleanupPending=not cleaned)
+
+
 @app.post("/api/jobs/<ident>/review")
 def review_job(ident):
     payload = request.get_json()
