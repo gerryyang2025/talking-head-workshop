@@ -36,7 +36,7 @@ cd talking-head-workshop
 
 [![制作工作台中的画面监看、剪辑时间线和制作面板](studio/static/showcase/workbench.webp)](studio/static/showcase/workbench.webp)
 
-**怎么选口型模型？** 未指定模型的项目使用 MuseTalk 1.5。选择 EDTalk 256 时，建议使用嘴部清晰、有自然露齿片段的近景素材。想让一张人物照片跟着声音改变头姿和表情，选 **SoulX-FlashHead Lite**。给它视频时，会取可见口播段的首帧驱动。要保留真人视频里已有的转头、眨眼和手势，选 **LatentSync 1.6**。SoulX-FlashHead 和 LatentSync 均在本机通过 Metal 推理。LatentSync 耗时较长，可先用短稿试做。LatentSync 转换包内的人脸权重限非商业研究使用。[模型来源和授权说明](ARCHITECTURE.md#本地模型)
+**怎么选口型模型？** 未指定模型的项目使用 MuseTalk 1.5。选择 EDTalk 256 时，建议使用嘴部清晰、有自然露齿片段的近景素材。想让一张人物照片跟着声音改变头姿和表情，选 **SoulX-FlashHead Lite**。给它视频时，会取可见口播段的首帧驱动。要保留真人视频里已有的转头、眨眼和手势，选 **LatentSync 1.6**。SoulX-FlashHead 和 LatentSync 均在本机通过 Metal 推理。LatentSync 耗时较长，可先用短稿试做。生成时会按本机余量选择「双路合批」或「节省内存」，可在「检查导出」查看实际模式。LatentSync 转换包内的人脸权重限非商业研究使用。[模型来源和授权说明](ARCHITECTURE.md#本地模型)
 
 **怎么选配音？** 系统音色可以直接读新稿。要用自己的音色，在「素材库 → 添加个人音色」上传清晰的单人参考录音，填写录音里实际说出的逐字稿，保存后到「文案配音」选择该音色。如果已经录好了整篇台词，直接导入音频并选「用作配音」，核对逐句边界即可。「短句试听音色」用于比较音色，整篇配音就绪后才会建立时间线。[打开文案配音](http://127.0.0.1:8765/studio/steps/voice)
 

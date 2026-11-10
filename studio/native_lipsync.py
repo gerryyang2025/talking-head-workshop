@@ -12,11 +12,25 @@ from pathlib import Path
 import cv2 as cv
 import numpy as np
 
+from .latent_memory import memory_mode
 from .media import FPS, MODELS, ff
 from .setup_models import NATIVE_CLI, NATIVE_WEIGHTS
 
 
 LATENTSYNC_BATCH = 96
+
+
+class NativeMemoryError(ValueError):
+    """The native backend explicitly reported a memory allocation failure."""
+
+
+def allocation_error(text):
+    text = text.lower()
+    return any(marker in text for marker in (
+        "out of memory", "outofmemory", "bad_alloc", "failed to allocate",
+        "could not allocate", "cannot allocate memory",
+        "insufficient memory", "not enough memory",
+    ))
 
 
 def write_audio(path, samples, first, count):
@@ -65,6 +79,8 @@ class NativeLipEngine:
     def __init__(self, model, samples):
         self.model = model
         self.samples = samples
+        self.legacy_memory = False
+        self.allocation_failed = False
 
     def request_options(self, folder, frame, source, offset, length, size, encoder):
         if self.model == "soulx_flashhead":
@@ -83,7 +99,6 @@ class NativeLipEngine:
                 original = frame if offset == 0 and i == 0 else source.next()
                 video.write(original.tobytes())
         return ["--request-option", f"reference_video_file={reference}",
-                "--session-option", "latentsync.mem_saver=true",
                 "--request-option", f"frames_per_chunk={min(8, length)}",
                 "--request-option", "cache_interval=3"]
 
@@ -136,7 +151,42 @@ class NativeLipEngine:
                 lines = errors.read().decode(errors="replace").strip().splitlines()
                 reason = next((line for line in reversed(lines) if "failed:" in line),
                               lines[-1] if lines else f"退出码 {process.returncode}")
-                raise ValueError(f"{self.model} 本机推理失败：{reason}")
+                # ggml may put the allocator diagnostic before the final generic
+                # error or in its native log instead of stderr.
+                with log.open("rb") as trace:
+                    trace.seek(max(0, log.stat().st_size - 8192))
+                    diagnostic = trace.read().decode(errors="replace")
+                error = NativeMemoryError if allocation_error("\n".join(lines) + diagnostic) else ValueError
+                raise error(f"{self.model} 本机推理失败：{reason}")
+
+    def generate_batch(self, folder, audio, options, detail, check_cancel):
+        if self.model != "latentsync":
+            return self.generate(folder, audio, options, detail, check_cancel)
+        if self.legacy_memory or self.allocation_failed:
+            saver, reason = True, "继续原批次" if self.legacy_memory else "本轮曾出现内存分配失败"
+        else:
+            saver, reason = memory_mode()
+
+        def run(saver, reason):
+            mode = "节省内存" if saver else "双路合批"
+            label = f"{mode}（{reason}）"
+            detail(label)
+            self.generate(folder, audio, [*options, "--session-option",
+                          f"latentsync.mem_saver={str(saver).lower()}"],
+                          lambda phase: detail(f"{label} · {phase}"), check_cancel)
+
+        try:
+            run(saver, reason)
+        except NativeMemoryError:
+            if saver:
+                raise
+            # Keep the exact prepared WAV/MP4, seed and temporal window. Only
+            # retry this uncommitted batch; do not retry a cancellation or face error.
+            check_cancel()
+            self.allocation_failed = True
+            for name in ("latentsync_video.json", "latentsync_video_rgb24.rgb"):
+                (folder / name).unlink(missing_ok=True)
+            run(True, "内存分配失败，重试本批")
 
     def render_checkpointed(self, source, first, count, output, encoder, report, check_cancel, folder):
         # LatentSync batches have independent audio and source frames. Publish each
@@ -189,8 +239,8 @@ class NativeLipEngine:
                     audio = folder / "speech.wav"
                     write_audio(audio, self.samples, first + offset, length)
                     options = self.request_options(folder, frame, source, offset, length, size, encoder)
-                    self.generate(folder, audio, options,
-                                  lambda phase: report(offset, f"{batch} · {phase}"), check_cancel)
+                    self.generate_batch(folder, audio, options,
+                                        lambda phase: report(offset, f"{batch} · {phase}"), check_cancel)
                     frames = output_frames(self.model, folder)
                     try:
                         for _ in range(length):

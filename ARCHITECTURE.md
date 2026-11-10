@@ -37,7 +37,9 @@
 | 2DFAN4 | 定位人脸与唇部关键点 | [下载 FaceFusion 权重](https://huggingface.co/facefusion/models-3.0.0/resolve/main/2dfan4.onnx) | `studio/2dfan4.onnx` |
 | Qwen3-TTS 12Hz 0.6B Base 4-bit | 按参考录音和逐字稿合成个人音色 | [模型目录 · 0d6bb6fe](https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-0.6B-Base-4bit/tree/0d6bb6fe33f92d47a507e23b9148940e8366ab5b) | `qwen3-tts-0.6b-base-4bit/`，保留根目录的 8 个模型与配置文件和 `speech_tokenizer/` 下的 4 个文件 |
 
-本机 M1 Pro（32 GB）使用同一段真人视频和 1.92 秒配音，首次导出 48 帧竖版样片，SoulX Lite 用时约 1 分 08 秒，LatentSync 1.6 约 13 分 53 秒。句段缓存命中后可直接复用。
+本机 M1 Pro（32 GB）使用同一段真人视频和 1.92 秒配音，首次导出 48 帧竖版样片，SoulX Lite 用时约 1 分 08 秒，LatentSync 1.6 约 13 分 53 秒。这是原节省内存模式的数据。句段缓存命中后可直接复用。
+
+LatentSync 在每个新推理批次启动前检查内存。物理内存至少 32 GiB、macOS 内存压力正常且预计可用至少 12 GiB 时，使用 [audio.cpp 的双路合批模式](https://github.com/0xShug0/audio.cpp/blob/v0.9.4/docs/models/latentsync.md#session-options)。其余情况使用节省内存模式；若合批分配内存失败，仅用相同输入重算当前批次，本轮后续批次保持节省模式。两种模式沿用相同的 8 帧窗口（短片段取实际帧数上限）、20 步去噪和 25 FPS；合批可能产生轻微数值差异。要在自己的 Mac 上实测，等任务队列空闲后运行 `.venv/bin/python -m tools.benchmark_latentsync 母片.mp4 配音.wav`。它用同一段 32 帧素材依次测试两种模式，报告用时、帧率和进程内存峰值，不写入项目缓存。
 
 两个 GGUF 包分别包含所需的音频编码器、生成模型及视觉组件。LatentSync 包含 InsightFace 的预训练人脸模型，其条款限非商业研究使用。SoulX Lite 的 LTX VAE 另适用 OpenRAIL-M。[LatentSync 转换包说明](https://huggingface.co/audio-cpp/LatentSync-1.6-GGUF) · [SoulX 权重授权](https://huggingface.co/Soul-AILab/SoulX-FlashHead-1_3B)
 

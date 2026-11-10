@@ -728,6 +728,14 @@ def sync_parts(rows, voice_id, shift, total, folder, notify, model, check_cancel
             end,
             *offset_key,
         )
+        legacy_batch = False
+        if model == "latentsync":
+            # Existing takes need no inference. Finish a legacy partial take
+            # with its original CFG layout, but never publish a new auto-mode
+            # take under the legacy key (batched CFG can differ numerically).
+            legacy_batch = bool(checkpoints and (checkpoints / key / "0.mp4").is_file())
+            if not legacy_batch and not (cache / (key + ".mp4")).is_file():
+                key = signature("latentsync-auto-memory-v1", key)
         path = cache / (key + ".mp4")
         if path.exists():
             parts.append(path)
@@ -758,6 +766,7 @@ def sync_parts(rows, voice_id, shift, total, folder, notify, model, check_cancel
         try:
             if model == "latentsync" and checkpoints:
                 from .native_lipsync import LATENTSYNC_BATCH
+                engine.legacy_memory = legacy_batch
                 if count > LATENTSYNC_BATCH:
                     batch_folder = checkpoints / key
             if batch_folder:

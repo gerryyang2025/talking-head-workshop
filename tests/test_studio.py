@@ -811,6 +811,85 @@ class StudioWorkflow(unittest.TestCase):
         self.assertFalse(self.client.get("/api/jobs/legacy").json["canRestart"])
         self.assertEqual(action("/api/jobs/legacy", "retry").status_code, 409)
 
+    def test_latentsync_memory_admission_uses_pressure_and_available_memory(self):
+        from studio import latent_memory as mem
+        stats = """Mach Virtual Memory Statistics: (page size of 16384 bytes)
+Pages free: 524288.
+Pages inactive: 262144.
+File-backed pages: 262144.
+Pages occupied by compressor: 1048576.
+"""
+        with patch.object(mem.sys, "platform", "darwin"):
+            for readings, saver in (
+                ([f"{32 * mem.GIB} 1", stats], False),  # 8 GiB free + 4 GiB reclaimable
+                ([f"{64 * mem.GIB} 1", stats.replace("File-backed pages: 262144", "File-backed pages: 0")], True),
+                ([f"{64 * mem.GIB} 2"], True), ([f"{64 * mem.GIB} 4"], True),
+                ([f"{16 * mem.GIB} 1"], True), ([f"{64 * mem.GIB} 0"], True),
+                ([f"{64 * mem.GIB} 1", "unexpected output"], True), ([OSError("unavailable")], True),
+            ):
+                with self.subTest(readings=readings), patch.object(mem, "_read", side_effect=readings):
+                    self.assertEqual(mem.memory_mode()[0], saver)
+
+    def test_latentsync_batch_adapts_and_retries_only_allocator_failure(self):
+        from concurrent.futures import CancelledError
+        from studio import native_lipsync as native
+
+        engine = native.NativeLipEngine("latentsync", None)
+        inputs = (self.media.STORE, self.media.STORE / "speech.wav", ["--request-option", "frames_per_chunk=8"])
+        labels = []
+        oom = native.NativeMemoryError("Metal out of memory")
+        with patch.object(native, "memory_mode", side_effect=[(True, "压力高"), (False, "余量足")]) as probe, \
+                patch.object(engine, "generate", side_effect=[None, oom, None, None]) as gen:
+            for _ in range(3):
+                engine.generate_batch(*inputs, labels.append, lambda: None)
+            self.assertEqual(probe.call_count, 2)
+            self.assertEqual([c.args[2][-1] for c in gen.call_args_list],
+                             ["latentsync.mem_saver=" + v for v in ("true", "false", "true", "true")])
+            self.assertTrue(all(c.args[:2] == inputs[:2] and c.args[2][:-2] == inputs[2] for c in gen.call_args_list))
+            self.assertTrue(any("重试本批" in label for label in labels))
+        for error in (ValueError("no eligible face"), CancelledError()):
+            engine = native.NativeLipEngine("latentsync", None)
+            with patch.object(native, "memory_mode", return_value=(False, "")), \
+                    patch.object(engine, "generate", side_effect=error) as gen:
+                with self.assertRaises(type(error)):
+                    engine.generate_batch(*inputs, labels.append, lambda: None)
+                gen.assert_called_once()
+
+    def test_latentsync_legacy_take_and_partial_batch_survive_adaptive_mode(self):
+        from studio import native_lipsync as native
+        prod = self.production
+        folder = self.media.STORE
+        batches = folder / "batches"
+        row = dict(first=0, stop=97, shot=dict(asset="host", start=0, end=4))
+        old = self.media.signature("latentsync-1.6-q8-v1", "voice", 0, 97, 0, "host", 0, 4)
+        partial = batches / old
+        partial.mkdir(parents=True)
+        (partial / "0.mp4").touch()
+        called = []
+
+        def render(engine, source, first, count, target, encoder, report, cancel, checkpoint):
+            called.append((engine.legacy_memory, checkpoint))
+            target.write_bytes(b"take")
+            return 96 if (checkpoint / "0.mp4").is_file() else 0
+
+        def sync():
+            return prod.sync_parts([row], "voice", 0, 97, folder, lambda *_: None,
+                                   "latentsync", lambda: None, batches)
+
+        with patch.object(prod, "ff", return_value=b""), patch.object(prod, "Frames"), \
+                patch.object(prod, "asset"), patch.object(native.NativeLipEngine, "render_checkpointed", render):
+            results, inferred, cached = sync()
+            self.assertEqual((inferred, cached, called), (1, 96, [(True, partial)]))
+            self.assertEqual(results[0].stem, old)
+            self.assertEqual(sync()[1:], (0, 97))
+            results[0].unlink()
+            fresh, inferred, cached = sync()
+            self.assertFalse(called[-1][0])
+            self.assertNotEqual(fresh, results)
+            self.assertEqual((inferred, cached), (97, 0))
+            self.assertEqual(sync()[1:], (0, 97))
+            self.assertEqual(len(called), 2)
+
     @unittest.skipUnless(shutil.which("ffmpeg"), "FFmpeg required")
     def test_latentsync_resume_preserves_batch_order_audio_offsets_and_frame_count(self):
         from concurrent.futures import CancelledError
